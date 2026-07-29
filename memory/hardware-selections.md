@@ -6,13 +6,20 @@
 
 ## 0. Selection principles (read first)
 
-1. **The wheel sees exactly 5 electrical functions at its connector: +5V, GND, PADDLE_UP, PADDLE_DOWN, CAN (H+L).**
-   Every wheel part must live within that constraint — no 12V parts on the wheel, no extra signal wires.
-2. **First-principles power reasoning:** the Nexus R5's internal 5V sensor supplies are sized for
-   sensors (hundreds of mA, shared with actual sensors). A wheel with ~24 RGB LEDs can transiently
-   draw ~0.7–1.0A. **Therefore the wheel's 5V must come from a dedicated 5V source — the dash PCB
-   provides a protected 5V/1.5A auxiliary output for this.** Never wire the wheel's 5V to an ECU
-   sensor-supply pin.
+1. **The wheel sees exactly 5 electrical functions at its connector: +12V, GND, PADDLE_UP, PADDLE_DOWN, CAN (H+L).**
+   Every wheel part must live within that constraint — no extra signal wires, no dependency on any
+   other board. (Rev A used a 5V feed from the dash; superseded — see §0.2 and lesson L9.)
+2. **First-principles power reasoning:** the wheel runs from **vehicle 12V** and regulates locally.
+   Two reasons it is *not* fed a pre-regulated 5V rail from the dash:
+   (a) **Independence** — a 5V feed made the wheel unable to function without the dash board present
+   and healthy, coupling two products that have no functional reason to be coupled.
+   (b) **Contact-resistance tolerance** — the wheel's power crosses slip-ring / quick-release
+   contacts that oxidize and wear. That is the real-world failure mode, not steady-state drop. At
+   5V/0.63A, a set of contacts degrading to 500 mΩ costs 315 mV out of ~600 mV of LDO headroom
+   (half the margin, gone). At 12V the same degradation costs 145 mV out of ~7V — unmeasurable. 12V
+   also halves the current through those wearing contacts (≈0.29A vs 0.63A).
+   **Never wire either board's power to an ECU sensor-supply pin** — those are sized for sensors and
+   shared with them; the wheel's LED load would brown out the sensors along with itself.
 3. **Sunlight is the display spec, not resolution.** A reflective display gets *brighter* in sunlight;
    an emissive display must fight the sun (~10,000–100,000 lux). So the wheel uses a reflective
    memory-in-pixel LCD and the dash uses a 1000 cd/m² transmissive panel (the practical minimum for
@@ -55,7 +62,7 @@ domestic equivalent SIT1051T/3 exists at LCSC.
 **First-principles justification:**
 - **5V supply → full CAN differential drive** (better noise margin on a car harness than 3.3V-only
   transceivers like TCAN332), while **VIO=3.3V** interfaces directly with the G474 with no level shifting.
-- We already have 5V on both boards by requirement, so the 5V supply costs nothing.
+- Both boards have a local 5V rail, so the 5V supply costs nothing.
 - 1 Mbit/s (Haltech bus rate) is well within its 5 Mbit/s rating; ±58V bus fault tolerance survives
   harness mis-wiring to battery.
 - `/3` silent-mode pin tied off; no standby logic to get wrong.
@@ -66,24 +73,31 @@ termination policy), common-mode choke footprint (DNP unless emissions testing d
 
 ## 3. Power
 
-### 3.1 Wheel (5V in → 3.3V logic)
+### 3.1 Wheel (12V in → 5V → 3.3V)
 
 | Function | Part | Why |
 |---|---|---|
-| Input protection | **SMBJ5.0A** TVS + **MF-MSMF110** 1.1A polyfuse + reverse-blocking not used (see note) | TVS clamps harness transients/ESD on the 5V line; polyfuse protects the coiled cord/harness from a board fault. Reverse-polarity series diode is **not** used because a 0.3–0.5V drop is 6–10% of a 5V rail; instead the connector (keyed DTM) physically prevents reversal, and the TVS shorts a reversed supply → polyfuse trips. This is a deliberate first-principles trade: keyed connector + fuse beats wasting rail margin. |
-| 3.3V rail | **AMS1117-3.3** (SOT-223) | JLCPCB *basic* part (no setup fee, always stocked), 800 mA (≥5× our 3.3V load), 1.1V dropout fits 5→3.3 with margin, SOT-223 is a good heat spreader and trivially hand-solderable. A "better" LDO buys nothing here: the 3.3V load is ~100 mA and the input is regulated 5V already. |
-| Analog rail | Ferrite bead + 1µF/100nF into VDDA | Keeps LED switching noise out of the ADC reference. |
+| Input protection | **SMBJ33A** TVS + **1A polyfuse** + **P-MOSFET** reverse protection (DMP3056L class) | The wheel is now fed raw vehicle 12V, so it sees the full automotive transient environment (load dump, inductive kicks) that the dash's regulation used to absorb for it. This is the **same proven stack as the dash §3.2** — copy the circuit, don't reinvent it. **The move to 12V pays for reverse protection**: at 5V a series diode's 0.3–0.5V was 6–10% of the rail and was rejected; at 12V a P-FET costs ~20 mV, so the wheel gains protection Rev A did not have. |
+| 5V rail (1.5A) | **AP63205WU-7** sync buck (TSOT-26), or LMR33630 if commonality with the dash is preferred | An LDO is impossible here: 12→5V at 0.63A would dissipate 0.63 × 7 ≈ **4.4 W** in a handheld part. A sync buck dissipates ~0.35 W. 3.8–32V input rides out clamped transients. Feeds the LED bars and the CAN transceiver. |
+| 3.3V rail | **AMS1117-3.3** (SOT-223) from the 5V rail | Unchanged and still correct: the 3.3V load is ~100 mA off an already-regulated 5V → 0.17 W dissipation. JLC *basic* part, hand-solderable. Adding a second buck here would buy nothing. |
+| Analog rail | Ferrite bead + 1µF/100nF into VDDA | Keeps buck + LED switching noise out of the ADC reference. |
+| USB (sim) | BAT60A Schottky OR-ing VBUS into the **5V rail, downstream of the buck** | Lets the sim variant run from USB with the buck unpopulated — see `sim-variant-instructions.md`. |
 
-**LEDs run directly on the (protected) 5V input rail**, not through the LDO — that's the whole reason the wheel is fed 5V.
+**LEDs run on the local 5V rail**, not through the LDO.
+
+**Layout consequence (do not ignore):** the buck adds a switching node ~15×15 mm inside a small board
+that also carries a memory LCD SPI, encoder lines, and an 800 kHz WS2812 data line. Place it in the
+connector corner, keep the hot loop <20 mm², and keep it clear of the quick-release hub keep-out. The
+LED data line remains the board's worst aggressor, so this is a manageable addition, not a new class of problem.
 
 ### 3.2 Dash (12V vehicle in → 5V → 3.3V)
 
 | Function | Part | Why |
 |---|---|---|
 | Input protection | **SMBJ33A** TVS, series **2A polyfuse**, reverse-polarity **P-MOSFET** (DMP3056L or similar, drain-to-battery orientation) | Automotive 12V sees load dump/inductive transients; 33V standoff TVS clamps them below the buck's 36V rating. P-FET reverse protection costs ~20 mV (vs 500 mV for a diode) — on 12V we can afford a FET and it protects the whole board. |
-| 5V rail (3A) | **TI LMR33630ADDAR** sync buck, 400 kHz | 36V max input survives clamped transients with margin (first-principles: TVS clamping voltage ≈ 45V pk for µs — LMR33630 abs max 42V is tight, so the TVS is SMBJ26A **if** measured clamp exceeds this; default SMBJ33A + verify with scope, see rigor file). 3A covers: wheel aux feed (≤1.5A) + 5V sensors + margin. Fixed-frequency sync buck = predictable EMI, no diode drop. Alternative if JLC stock fails: TPS54331 (hand-solder SO-8). |
-| 3.3V rail (2A) | **AP63203WU-7** fixed 3.3V sync buck (TSOT-26) | The dash 3.3V load is dominated by the display backlight driver (~1.2A at 100% on the 1000-nit panel) — an LDO from 5V would burn ~2W; a buck keeps dissipation <0.2W. 3.8–32V input; fed from the 5V rail. JLC-stocked. |
-| 5V AUX out (wheel feed) | 1.5A polyfuse + SMBJ5.0A at the connector | The dash is the wheel's power source; the aux output must not let a wheel/harness fault kill the dash. |
+| 5V rail (2A) | **TI LMR33630ADDAR** sync buck, 400 kHz | 36V max input survives clamped transients with margin (first-principles: TVS clamping voltage ≈ 45V pk for µs — LMR33630 abs max 42V is tight, so the TVS is SMBJ26A **if** measured clamp exceeds this; default SMBJ33A + verify with scope, see rigor file). **Downsized from 3A to 2A** now that the wheel powers itself: remaining 5V loads are the servo-signal buffers, 5V sensor excitation, and CAN. Fixed-frequency sync buck = predictable EMI, no diode drop. Alternative if JLC stock fails: TPS54331 (hand-solder SO-8). |
+| 3.3V rail (2A) | **AP63203WU-7** fixed 3.3V sync buck (TSOT-26) | The dash 3.3V load is dominated by the display backlight driver (~1.2A at 100% on the 1000-nit panel) — an LDO from 5V would burn ~2W; a buck keeps dissipation <0.2W. 3.8–32V input; fed from `+12V_P`. JLC-stocked. |
+| ~~5V AUX out~~ | **Deleted in Rev B** | The wheel is now 12V-fed and standalone. Removing the aux output deletes its polyfuse, TVS, and two connector positions, and lets the 5V buck shrink. Recorded as lesson L9. |
 
 ## 4. Human interface
 
@@ -178,7 +192,7 @@ the fast edge), clamps third (bound the voltage). It appears identically on the 
 Digi-Key stocked (~$15). Connects via 10-pin 0.5 mm FPC.
 - **Reflective = sunlight-proof by physics**: it modulates *reflected* ambient light, so direct sun
   *increases* contrast. Every emissive option (OLED/TFT) at this size is invisible at noon or needs
-  a >600 cd/m² backlight the 5V budget can't spare.
+  a >600 cd/m² backlight that would dominate the wheel's power budget.
 - **~50 µW** typical power — rounding error in the wheel budget.
 - 3-wire SPI + EXTCOMIN toggle; trivial firmware; updates at any rate we like (encoder values don't
   need video rates).
@@ -202,14 +216,72 @@ Riverdi-direct / Mouser (~$150–190 class).
 
 | Location | Part | Why |
 |---|---|---|
-| Wheel ↔ car | **Deutsch DTM 6-way** (DTM04-6P panel side / DTM06-6S harness) | Exactly 6 circuits needed (5V, GND, CANH, CANL, PADDLE_UP, PADDLE_DOWN) — the connector *is* the requirement stated in copper. Keyed (reverse-plug impossible → enables the no-series-diode 5V decision), gold sockets, sealed, crimped, motorsport-standard, ~$8/pair. Autosport/ASL is the pro upgrade; 10× the cost, zero functional gain at FSAE loads. Wheel quick-release passthrough: use a 6-way coiled cord or through-hub contacts with the same 6 circuits. |
-| Dash ↔ car | **Deutsch DTM 12-way** ×2 | One power/bus connector (12V, GND, CANH, CANL, 5V_AUX_OUT + return for the wheel feed), one DAQ connector (8 × AIN + 5V sensor supply + GNDs). Same crimp tooling as the wheel — one tool, one spares kit. |
+| Wheel ↔ car | **Deutsch DTM 6-way** (DTM04-6P panel side / DTM06-6S harness) | Exactly 6 circuits needed (**12V**, GND, CANH, CANL, PADDLE_UP, PADDLE_DOWN) — the connector *is* the requirement stated in copper. Keyed and sealed, gold sockets, crimped, motorsport-standard, ~$8/pair. Autosport/ASL is the pro upgrade; 10× the cost, zero functional gain at FSAE loads. Wheel quick-release passthrough: a 6-way coiled cord or through-hub contacts carrying the same 6 circuits. **Rev B:** with 12V on pin 1, reverse protection is a P-FET on the board (§3.1) rather than relying on connector keying alone — belt and braces, since a quick-release is mated by a driver in a hurry. |
+| Dash ↔ car | **Deutsch DTM 12-way** ×2 | J1 power/bus/servo-signal (12V, GND, CANH, CANL, SERVO1_PWM, SERVO2_PWM — the last two reuse the positions freed by deleting the Rev A `5V_AUX_OUT`); J2 DAQ (6 × AIN, 2 × ARB position feedback, 5V sensor supply, 3 × sensor GND). Same crimp tooling as the wheel — one tool, one spares kit. **Servo power never crosses either connector** (§9.1). |
 | PCB-internal (display FPC) | 10-pin (wheel) / 20-pin (dash) 0.5 mm FPC ZIF | Dictated by the display modules. |
 | Aux buttons / paddles on wheel PCB | **JST-GH** (1.25 mm, positive lock) | Locking (vibration), tiny, cheap, JLC-stocked. Never use unlocked 2.54 mm headers in a vehicle. |
 | Debug | **Tag-Connect TC2030-CTX** footprint (no connector cost) + USB-C | SWD access with zero BOM cost and no connector to vibrate loose. |
 | Sim/DFU | **USB-C 16-pin** (e.g. HRO TYPE-C-31-M-12, LCSC C165948) + USBLC6-2SC6 ESD + 5.1k CC pull-downs | USB 2.0 FS only; C because nobody should buy a micro-B cable in 2026. |
 
-## 9. Availability summary (checked July 2026)
+## 9. Dash servo outputs — adjustable anti-roll bar (2 channels)
+
+**Requirement:** two outputs on the dash to drive servo-actuated ARBs (front and rear).
+
+### 9.1 Architecture decision: signal-only, servo power external
+
+**Selected:** the dash sources **2 × buffered 5V PWM signal lines + ground reference**. Servo power
+comes from a **separate 12V→7.4V BEC/regulator in the harness**, independently fused.
+
+**First-principles justification:** high-torque digital servos of the class used for ARB actuation
+(Savox SB-2290SG and equivalents) draw ~5A stall at 7.4V. Two channels is ~10A / **~74W**. Putting
+that through a dash PCB means a large buck, a heatsink, and 10A of copper running beside a display
+and an 8-channel analog front end — all to save one harness branch. Signal-only keeps the dash small,
+cool, and analog-quiet, and lets the servo supply be fused and killed independently of the dash.
+**A DTM pin is rated 7.5A — 10A of servo current must not cross this connector either.**
+
+> **Ground rule (classic failure):** the servo supply's ground **must** star back to dash ground.
+> PWM is referenced to the dash's ground; if the servo BEC grounds elsewhere, the reference floats
+> and pulse widths are interpreted wrong or jitter. Signal + GND travel together to each servo.
+
+### 9.2 Output stage (per channel)
+
+`MCU TIM4_CHx (3.3V PWM) → 74AHCT2G125 (dual buffer, 5V) → 100 Ω series → SMAJ5.0A clamp → connector`
+
+| Part | Why |
+|---|---|
+| **74AHCT2G125** dual buffer, 5V | Servos expect a ~5V logic pulse; **AHCT** TTL input thresholds (VIH 2.0V) legally accept 3.3V logic — the identical, correct level-shift used for the WS2812 chain (§5). Buffering means a harness fault damages a $0.15 buffer, not the MCU. |
+| **100 Ω series** | Fault-current limiter and transmission-line damper. A 12V short onto a servo line pushes only (12−5)/100 ≈ **70 mA** into the clamp — survivable — instead of destroying the buffer. Also damps ringing on a multi-metre run to the suspension. |
+| **SMAJ5.0A** at the connector | These lines run the length of the car near suspension and wiring looms; clamp transients at the connector before they travel. |
+
+- **MCU pins:** `PB6`/`PB7` = TIM4_CH1/CH2 — two channels off one timer, so both servos share a
+  timebase. Standard 50 Hz frame (1.0–2.0 ms pulse); firmware may raise to 333 Hz for digital servos.
+- **Position feedback:** reassign **AIN7/AIN8** of the existing DAQ front end (§ dash instructions) to
+  ARB position sensors — servo pot tap or an external rotary sensor on the bar. Costs **zero new parts**
+  (0–5V front end already fits) and enables the divergence alarm in §9.3.
+- **Connector:** the two signals take **J1 pins 5–6** — exactly the positions freed by deleting the
+  Rev A `+5V_AUX` wheel feed, referenced to J1's power ground. They are deliberately **not** on the DAQ
+  connector: eight analog returns share J2's grounds, and any current in a shared return becomes offset
+  on every DAQ channel. A PWM signal must also reference the ground its receiver uses, and the servo
+  BEC stars to power ground. No new connector either way.
+
+### 9.3 Safety requirements (firmware — these are requirements, not preferences)
+
+1. **Hold last commanded position on CAN loss.** Never spring to a default or centre. An ARB step
+   change mid-corner is a handling event; a frozen bar is merely a car with a fixed setup.
+2. **Firmware endstops** on commanded pulse width (configurable min/max per channel). A servo driven
+   against a mechanical hard stop draws stall current indefinitely and burns out — this is the single
+   most likely way to destroy a servo.
+3. **Slew-rate limit** (full travel no faster than ~2 s) so a knob spin can't slam the linkage.
+4. **Divergence alarm:** if commanded vs. measured position differ beyond threshold for >500 ms,
+   flag on the dash and log — this is how a seized linkage, stripped spline, or dead servo announces itself.
+5. **Servo supply independently fused and killable** without taking the dash down.
+
+**Open mechanical question (tracked as A7):** whether the ARB mechanism back-drives when servo power
+is lost. A self-locking worm drive holds its setting; a direct lever does not. This determines
+whether losing servo power is a non-event or a mid-session setup change, and it is a mechanical-team
+answer, not an electronics one.
+
+## 10. Availability summary (checked July 2026)
 
 | Part | Source | Status |
 |---|---|---|
@@ -217,7 +289,9 @@ Riverdi-direct / Mouser (~$150–190 class).
 | TJA1051T/3 | LCSC / Digi-Key | In stock (SIT1051T/3 fallback) |
 | WS2812B-2020 | LCSC C965555 / JLC | 35k+ stock, ~$0.05 |
 | AMS1117-3.3 | JLC **basic** | Always stocked |
-| LMR33630ADDAR / AP63203WU-7 | LCSC / JLC | In stock |
+| LMR33630ADDAR / AP63203WU-7 / AP63205WU-7 | LCSC / JLC | In stock |
+| 74AHCT1G125 / 74AHCT2G125 | LCSC / JLC | In stock (commodity logic) |
+| DMP3056L (reverse-polarity P-FET) | LCSC / Digi-Key | In stock |
 | LS013B7DH05 | Digi-Key | In stock, ships same day |
 | RVT50HQBNWN00 | Riverdi / Mouser | In stock (lead-time risk: single-source — order early, see rigor file) |
 | EVQ-WK4001 | Digi-Key / Mouser / Newark | In stock |
