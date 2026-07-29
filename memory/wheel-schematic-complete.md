@@ -130,7 +130,37 @@ Divider maths: 12 V × 10/57 = 2.11 V and 5 V × ½ = 2.5 V, both inside the 3.3
 - `C22`: 4.7 µF 16 V X7R 0805, one per board, near the MCU.
 - `VBAT` → `+3V3` (no coin cell; RTC not used).
 
-### 3.2 Reset, boot, debug
+### 3.2 HSE crystal — **required, and missing from the first draft**
+
+`PF0-OSC_IN` = **LQFP-64 pin 5**, `PF1-OSC_OUT` = **pin 6**. Both are bonded on this package.
+
+| Ref | Part / value | Connection |
+|---|---|---|
+| `Y1` | HSE crystal, **8 MHz or 16 MHz**, **≤50 ppm** initial + temp, CL 8–12 pF, ESR ≤80 Ω, SMD 3225 | pin 1 → `OSC_IN` (PF0), pin 2 → `GND`, pin 3 → `OSC_OUT` (PF1), pin 4 → `GND` |
+| `C_X1`, `C_X2` | `2 × (CL − C_stray)`, C0G, 0402 — **≈18 pF for a 12 pF CL crystal**, ≈10 pF for 8 pF CL | `OSC_IN` → `GND`, `OSC_OUT` → `GND` |
+| `R_X1` | 0 Ω, 0402 (footprint for a series damping resistor) | in series `OSC_OUT` → `Y1` pin 3 |
+
+**Why a crystal is mandatory here — the internal RC is not good enough for 1 Mbit/s CAN.** The
+datasheet gives HSI16 as **−1 % / +1 % over 0…85 °C** and **−2 % / +1.5 % over −40…125 °C**
+(Table 43). CAN bit timing tolerates roughly **±0.5 %** per node in practice, and about ±1.58 % in
+the absolute best case with ideal sample-point placement — and that budget is shared with *every
+other node on the bus*. Two nodes each 1 % off can be 2 % apart. Running the wheel on HSI16 would
+give intermittent error frames and bus-off events that get worse as the car heats up: another
+"perfect on the bench, broken in the car" signature, and a maddening one to chase because it looks
+like software.
+
+A 50 ppm crystal is 0.005 % — a hundred times better than CAN needs, and standard crystals are
+cheap, so there is no reason to economise here.
+
+**USB does not force this decision, but benefits from it.** The G4 can do crystal-less USB using
+HSI48 plus the Clock Recovery System trimming against USB SOF packets. Since CAN requires a crystal
+anyway, clock both from the HSE via the PLL and delete a whole class of clock-accuracy questions.
+
+**[OPEN — pick and verify a part]** the crystal spec above is derived, not copied from a specific
+datasheet. Choose an actual part, then set `C_X1`/`C_X2` from **its** CL: `C = 2 × (CL − C_stray)`
+with `C_stray ≈ 3–5 pF` for this geometry. Do not carry over the 18 pF figure blindly.
+
+### 3.3 Reset, boot, debug
 
 | Ref | Value | Connection |
 |---|---|---|
@@ -140,7 +170,7 @@ Divider maths: 12 V × 10/57 = 2.11 V and 5 V × ½ = 2.5 V, both inside the 3.3
 | `J_SWD` | Tag-Connect **TC2030-CTX** footprint (copper + 3 locating holes, no part) | pin 1 `+3V3`, 2 `SWDIO`(PA13), 3 `NRST`, 4 `SWCLK`(PA14), 5 `GND`, 6 NC |
 | `J4` | JST-GH 3-pin, `SM03B-GHS-TB` | 1 `DBG_TX`(PA9), 2 `DBG_RX`(PA10), 3 `GND` |
 
-### 3.3 USB-C (sim variant and DFU)
+### 3.4 USB-C (sim variant and DFU)
 
 | Ref | Part / value | Connections |
 |---|---|---|
@@ -337,6 +367,7 @@ zero unsuppressed warnings before moving to layout.
 | PA9 / PA10 | `DBG_TX` / `DBG_RX` | USART1 |
 | PA1 / PA2 | `V12_SENSE` / `V5_SENSE` | ADC1_IN3 / ADC1_IN4 |
 | PB0 / PB1 | `PADDLE_UP_SNS` / `PADDLE_DN_SNS` | GPIO input |
+| **PF0 / PF1** | `OSC_IN` / `OSC_OUT` | **HSE crystal — LQFP-64 pins 5 and 6.** Mandatory for 1 Mbit CAN (§3.2) |
 | PA8, PB2, PB4, PB5, PB13 | spare | bring to test points if convenient |
 
 **Every encoder pair is CH1+CH2 of one timer**, which is what hardware quadrature mode requires. Do
@@ -351,6 +382,7 @@ draft for exactly this reason.
 |---|---|---|
 | LMR36015 variant fSW | Stocked variants are 1 MHz; a 400 kHz part needs `L=15 µH`, `COUT=3×22 µF` | Reading the ordering table for the part you actually buy |
 | Sharp FPC contact side + SCS polarity | Not yet read from the spec sheet | Reading it before selecting `J3` |
+| HSE crystal part + load caps | Spec derived (≤50 ppm, CL 8–12 pF); exact part not chosen | Pick a part, then set `C_X1/2 = 2 × (CL − C_stray)` from **its** datasheet |
 | WS2812B-2020 exact current | Datasheet is image-only, no text layer | Bench measurement (assumption A3) — the 0.45 A firmware cap holds regardless |
 | SMAJ24CA / SMAJ5.0A / SMBJ5.0A parameters | Not read; low risk since standoff clearly exceeds their rails | Quick datasheet check at G6 |
 

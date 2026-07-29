@@ -12,7 +12,7 @@
 
 | Part | Status | Outcome |
 |---|---|---|
-| STM32G474RET6 | **VERIFIED** (AF/pin tables) | **3 defects found — pin map rebuilt.** See §1 |
+| STM32G474RET6 | **PARTIAL — see §1.4 for what was *not* read** | **4 defects found** (3 pin-map + missing clock source). See §1 |
 | Sharp LS013B7DH05 | **PARTIAL** | **1 defect found (EXTMODE omitted).** See §2 |
 | TJA1051T/3 | **VERIFIED** | Compliant as designed. See §3 |
 | Haltech CAN broadcast protocol | VERIFIED | Read in full; §2.3 table transcribed from it |
@@ -111,6 +111,50 @@ PA15=51, PC10=52, PC11=53, PC12=54, PD2=55, PB3=56, PB4=57, PB5=58.
 
 **Dash pin map is now verified separately in §6** — it fared much better than the wheel's, because it
 never attempted six hardware encoder pairs. It does inherit the CAN/BOOT0 issue (defect 1.3).
+
+---
+
+### Defect 1.4 — No clock source was specified at all (CRITICAL)
+
+The schematic definition had **no crystal and no oscillator section**. The MCU would have run on the
+internal HSI16 RC, and the datasheet (Table 43) gives its accuracy as:
+
+| Condition | Drift |
+|---|---|
+| 0 … 85 °C | **−1 % / +1 %** |
+| −40 … 125 °C | **−2 % / +1.5 %** |
+
+CAN bit timing tolerates roughly **±0.5 % per node** in practice (about ±1.58 % in the theoretical
+best case with ideal sample-point placement), and that budget is **shared with every other node on
+the bus** — two nodes each 1 % off are 2 % apart. At 1 Mbit/s on HSI16 the boards would throw
+intermittent error frames and bus-off events, worsening as the car heats up. Classic
+"perfect on the bench, broken in the car", and it presents as a software bug.
+
+**Corrected:** `Y1` HSE crystal (8 or 16 MHz, ≤50 ppm) on **PF0-OSC_IN (LQFP-64 pin 5)** and
+**PF1-OSC_OUT (pin 6)** — both verified bonded on this package — with load caps sized from the chosen
+crystal's CL. A 50 ppm part is 0.005 %, a hundred times better than CAN needs, and costs pennies.
+USB does not force the decision (the G4 can run crystal-less USB via HSI48 + CRS), but since CAN
+requires a crystal anyway, clocking both from the HSE removes the question entirely.
+
+### 1.4b What was NOT read from the STM32 datasheet
+
+Honest scope of the MCU verification. **Read and checked:** Table 13 alternate functions, the pin
+definition table (LQFP-64 bonding and pin numbers), FDCAN1 pin options, the `PB8-BOOT0` naming, ADC
+instance availability per pin, HSI16 accuracy (Table 43), and OSC pin availability.
+
+**Not read — these values appear in the docs but came from memory and are still unverified:**
+
+| Claim | Where it is used | Risk if wrong |
+|---|---|---|
+| ±5 mA pin injection current limit | The DAQ fault analysis (0.8 mA is "safe") | Would change the AFE series resistor |
+| ~0.10 A MCU run current at 170 MHz | Both boards' power budgets | Budgets have large margin; low risk |
+| ADC max external source impedance / sample-time table | Justifies omitting the op-amp buffer at 5 kΩ | Could force the DNP TLV9004 to be fitted |
+| Six VDD pins on LQFP-64 → six 100 nF caps | Decoupling count | Cosmetic; add caps to match the real pin count |
+| `nBOOT_SEL = 1` selects the option bit over the pin | The BOOT0 mitigation (defect 1.3) | **Must be confirmed** — the mitigation depends on it |
+| Absolute maximum ratings, VDDA sequencing | General | Standard practice covers it |
+
+The `nBOOT_SEL` semantics are the one that matters, because the whole BOOT0 fix rests on them.
+Confirm in the reference manual (RM0440) before first flash.
 
 ---
 
