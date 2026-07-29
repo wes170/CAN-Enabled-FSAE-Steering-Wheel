@@ -22,7 +22,14 @@
 > operate. Rationale and the contact-resistance arithmetic: `hardware-selections.md` §0.2 and
 > `system-architecture-and-can.md` §3.
 
-- **MCU pin map (STM32G474RET6) — verify in STM32CubeMX before schematic capture, then freeze:**
+- **MCU pin map (STM32G474RET6) — ⚠ PROVISIONAL, DO NOT FREEZE ⚠**
+
+> This table was originally written from memory, **not** from the STM32G474 datasheet, and a
+> verification pass is in progress (see `memory/datasheet-verification.md`). Known suspect areas:
+> encoder A/B pairs must be **both channels of the same timer with the correct alternate function**
+> for hardware quadrature mode, and arbitrary GPIO pairs do not satisfy that. Do not capture a
+> schematic, order a board, or write CubeMX config against this table until the verification file
+> marks it VERIFIED. Origin: lesson L16.
 
 | MCU pin | Net | Function |
 |---|---|---|
@@ -39,7 +46,7 @@
 | PC0/PC1, PC2/PC3, PC4/PC5, PC6/PC7, PB0/PB1, PB2/PB10 | `ENC1_A/B` … `ENC6_A/B` | 4 thumb (**PEC09**, right-angle) + 2 faceplate (PEC11H). Pin map is unchanged if thumb encoders move to satellite boards — the nets just leave via JST-GH instead of local pads |
 | PB11–PB15, PC13 | `ENC1_SW` … `ENC6_SW` | encoder push switches |
 | PC8–PC12, PD2 | `BTN1` … `BTN6` | sealed tactiles / JST-GH remotes |
-| BOOT0 | 10k to GND + test point | DFU entry via TP short to 3V3 |
+| BOOT0 | **no strap — option bit only** | `PB8-BOOT0` is `FDCAN1_RX`; see §3.2 item 2 |
 
 - Stackup: **4-layer JLC7628**: L1 signal, L2 solid GND, L3 3V3/5V pours + slow signals, L4 signal.
 - LED chain order: `LED1…LED16` = shift bar left→right, `LED17…LED20` = TC bar, `LED21…LED24` = lockup bar.
@@ -82,7 +89,13 @@ This is now the *same input stage as the dash* (§1.1 of the dash doc). Copy tha
 
 ### 3.2 `wheel-mcu.SchDoc`
 1. STM32G474RET6: 100 nF at **every** VDD pin + one 4.7 µF bulk; VDDA from `+3V3A`.
-2. NRST: 100 nF to GND (+ pin to TC2030). BOOT0: 10k to GND + TP.
+2. NRST: 100 nF to GND (+ pin to TC2030).
+   **BOOT0: DO NOT fit a pulldown or strap.** `PB8-BOOT0` is also `FDCAN1_RX` on this package, and a
+   pulldown would fight the transceiver's RXD output. BOOT0 must come from the **`nBOOT0` option bit
+   (`nBOOT_SEL = 1`)**, set at first flash and re-checked after any mass erase — otherwise an idle
+   (recessive-high) CAN bus makes the MCU boot into the system bootloader every power-on. Full
+   analysis: `memory/datasheet-verification.md` §1 defect 1.3. DFU entry is via USB DFU or an
+   SWD-triggered jump, never a BOOT0 strap.
 3. Tag-Connect TC2030-CTX wired SWDIO/SWCLK/NRST/3V3/GND.
 4. USB-C: VBUS → Schottky (BAT60A) OR-ing into `+5V` **through a 0Ω DNP link `R_VBUS`** (populated only in sim variant — see sim doc §2), CC1/CC2 → 5.1 kΩ to GND, D+/D− → **USBLC6-2SC6** → PA11/PA12. Shield to GND via 1 MΩ ∥ 4.7 nF.
 5. Debug UART on JST-GH 3-pin (TX, RX, GND).
@@ -109,7 +122,35 @@ Repeat this conditioning cell for **every** encoder A/B/SW and button line (make
 2. 24 × WS2812B-2020 daisy-chain (DOUT→DIN), each with 100 nF; 2 × 100 µF bulk (one at each bar group). Power from `+5V`.
 
 ### 3.6 `wheel-display.SchDoc`
-10-pin FPC ZIF per Sharp LS013B7DH05 spec: SCLK, SI, SCS, EXTCOMIN, DISP, VDD=`+3V3`, VDDA=`+3V3`, GNDs; 100 nF + 1 µF at the connector. (Pin numbering from the Sharp spec sheet — transcribe it into the schematic as a table note.)
+**Verified against the Sharp LS013B7DH05 spec sheet (LD-27503A) §4, table 4-1.** 10-pin FPC:
+
+| Pin | Signal | Connect to |
+|---|---|---|
+| 1 | SCLK | `LCD_SCLK` (PA5) |
+| 2 | SI | `LCD_SI` (PA7) |
+| 3 | SCS | `LCD_SCS` (PA4) — chip select |
+| 4 | EXTCOMIN | `LCD_EXTCOMIN` (PB6, TIM4_CH1) — external COM inversion input, **H = enable** |
+| 5 | DISP | `LCD_DISP` (PB3) — display on/off (Hi = show memory, Lo = white; memory retained either way) |
+| 6 | VDDA | `+3V3` (analog supply) |
+| 7 | VDD | `+3V3` (digital supply) |
+| 8 | **EXTMODE** | **strap — see below. Do not leave floating.** |
+| 9 | VSS | GND (digital) |
+| 10 | VSSA | GND (analog) |
+
+> **EXTMODE was missing from the previous revision of this instruction and is not optional.**
+> It selects *how* COM inversion happens: `EXTMODE = Hi` enables the hardware `EXTCOMIN` pin,
+> `EXTMODE = Lo` uses the software serial input flag instead. A memory LCD **must** have COM
+> inversion running — it is what prevents a DC bias accumulating across the liquid crystal. Leave
+> pin 8 floating and the inversion mode is undefined, which risks permanent image sticking and panel
+> degradation. **Strap EXTMODE to `+3V3` via a 0 Ω link (with a DNP pulldown alternative)** so the
+> hardware EXTCOMIN path this design uses is actually selected, and firmware toggling PB6 at ~1 Hz
+> does what it is supposed to do. Origin: lesson L16.
+>
+> Still unverified on this part: FPC contact side (top vs bottom) and SCS polarity/timing. Confirm
+> both from the spec sheet before the footprint and firmware are frozen.
+
+Decoupling: 100 nF + 1 µF at the connector, per the spec's note that VDD–GND and VDDA–GND impedance
+must be kept low in use.
 
 ### 3.7 Top sheet + ERC
 Wire sheet symbols, then **Project ▸ Validate**. Zero errors, zero *unsuppressed* warnings — suppressions require a written justification comment (rigor gate G1).

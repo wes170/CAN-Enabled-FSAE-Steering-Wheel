@@ -43,7 +43,16 @@
 > **must** star back to dash `GND`, or the PWM reference floats. See `hardware-selections.md` §9.1 and
 > the planned servo power conditioning board in `system-architecture-and-can.md` §3A.4.
 
-- **MCU pin map (STM32G474RET6)** — identical to wheel for CAN/USB/SWD/UART (PB8/PB9, PA11/PA12, PA13/PA14, PA9/PA10). Differences:
+- **MCU pin map (STM32G474RET6) — ⚠ PROVISIONAL, DO NOT FREEZE ⚠**
+
+> The wheel's pin map was rebuilt against the real STM32G474 alternate-function table and **three
+> defects were found** (`memory/datasheet-verification.md` §1). **This dash map has not yet had the
+> same treatment.** It definitely inherits defect 1.3 — `PB8-BOOT0` is `FDCAN1_RX`, so this board
+> must also take BOOT0 from the `nBOOT0` option bit and must **not** have a BOOT0 strap. The servo
+> `PB6/PB7 = TIM4_CH1/CH2` assignment is confirmed valid by the AF table, but the ADC channel
+> assignments and the display SPI pins still need checking against the datasheet.
+
+Identical to wheel for CAN/USB/SWD/UART (PB8/PB9, PA11/PA12, PA13/PA14, PA9/PA10). Differences:
 
 | MCU pin | Net | Function |
 |---|---|---|

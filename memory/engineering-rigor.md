@@ -9,6 +9,13 @@
 1. **First principles or it doesn't ship.** Every part, value, and layout choice must have a stated
    physical reason (see `hardware-selections.md` style). "The reference design did it" is a starting
    point for analysis, not a justification.
+1a. **No number enters a document until it has been read out of a datasheet.** Pin numbers, pin
+   names, package pin counts, component values, current and voltage limits — all of it. Detail
+   written from memory *looks* identical to detail that was verified, which is exactly what makes it
+   dangerous: it propagates into firmware, harness drawings, and the board order at the same time.
+   Where a value is genuinely a placeholder, the text must say "spec — select at capture" rather
+   than presenting it as a decision. Status is tracked per part in `datasheet-verification.md`.
+   (Origin: lesson L16 — four defects, three of them in one table.)
 2. **Assumptions are tracked, numbered, and closed.** Open assumptions live in
    `system-architecture-and-can.md` §5 (A1–A8 currently). No board order while an assumption that
    could force a respin is open — protocol assumptions (A1, A2) can be closed with a $30 USB-CAN
@@ -152,6 +159,30 @@
   good in-stock part (Bourns PEC09) over this. Read the stock number first; also check whether the
   specific variant is a stocked reel/bulk part or a non-stocked tray part (`T00xx`), since variants of
   the same series differ.
+
+- **L16 (2026-07, datasheet audit — the worst process failure in the project so far):** The schematic
+  instructions were written from memory, not from datasheets, and reviewed as if they had been
+  verified. A single direct question ("did you read every datasheet?") exposed four defects in under
+  an hour, three of them in the *same* pin-map table that the docs instructed the team to **freeze as
+  the single source of truth**:
+  **(a)** four of six encoder pairs could not do hardware quadrature, because encoder mode needs
+  CH1+CH2 of one timer and the pins had been chosen for looking adjacent;
+  **(b)** the LED data pin collided with an encoder's timer channel;
+  **(c)** CAN_RX landed on `PB8-BOOT0`, and since an idle CAN bus is recessive-high, the board would
+  have booted into the system bootloader every time it was powered with a live bus — working
+  perfectly on the bench with the bus unplugged;
+  **(d)** the Sharp LCD's `EXTMODE` strap pin was omitted entirely, leaving COM inversion undefined
+  and risking permanent panel damage.
+  None of these were exotic. All four were one table-lookup away. **Plausible-sounding detail is the
+  most dangerous kind of wrong, because it survives review** — a reviewer checks whether the pin map
+  is self-consistent, not whether it was invented. Hence standing rule 1a, and hence
+  `datasheet-verification.md`, which requires a written finding per part before that part is trusted.
+- **L17 (2026-07, package-driven conflict):** Peripheral availability is a *package* property, not a
+  chip property. FDCAN1 exists on three pin pairs in the STM32G474 die but only two are bonded on
+  LQFP-64, and one of those is the USB pair — so choosing USB forced CAN onto the BOOT0 pin. There
+  was no way to have USB, CAN, and a clean BOOT0 on this package simultaneously; the conflict had to
+  be *managed* (option bits) rather than routed around. **Check peripheral pin availability in the
+  specific package before committing to a package, not after.**
 
 ## 5A. Planned future work (do not lose track of these)
 
