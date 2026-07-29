@@ -10,7 +10,7 @@
    physical reason (see `hardware-selections.md` style). "The reference design did it" is a starting
    point for analysis, not a justification.
 2. **Assumptions are tracked, numbered, and closed.** Open assumptions live in
-   `system-architecture-and-can.md` §5 (A1–A5 currently). No board order while an assumption that
+   `system-architecture-and-can.md` §5 (A1–A8 currently). No board order while an assumption that
    could force a respin is open — protocol assumptions (A1, A2) can be closed with a $30 USB-CAN
    sniffer *before* spending board money.
 3. **Worst case, not typical.** Budgets (current, voltage drop, temperature, timing) use datasheet
@@ -25,7 +25,7 @@
 7. **Single source of truth for interfaces.** Connector pinouts and MCU pin maps live in the Altium
    instruction files' §0 tables. Firmware, harness drawings, and schematics copy *from* there.
 8. **Version control everything** — Altium project, OutJobs, this memory folder. A design that isn't
-   in git didn't happen. Tag the commit that each board order was generated from (`wheel-revA-ordered`).
+   in git didn't happen. Tag the commit that each board order was generated from (`wheel-revB-ordered`).
 9. **Change one thing at a time during bring-up and debugging.** Record every observation in a
    bring-up log file per board (`hardware/<board>/bringup-log.md`).
 10. **The car is a hostile environment**: assume 12 V transients, ESD through the driver, vibration,
@@ -39,15 +39,24 @@
 | **G1 — Schematic review** | ERC zero errors; every suppression justified in a comment; pin-map tables in docs match schematic (someone *else* reads them aloud); power tree drawn and budget re-added; every connector pin accounted for |
 | **G2 — Layout review** | DRC zero errors; 3D collision vs. mechanical STEP; L2 GND unbroken (visual sweep); protection-at-connector placement audit; hot-loop audit on switchers |
 | **G3 — Paper build** | 1:1 print taped to the real wheel/panel; hands on it; encoder/button reach test with gloves |
-| **G4 — Netlist cross-check** | Independent re-derivation of J1/J2 pinouts from the schematic vs. §0 tables vs. harness drawing |
+| **G4 — Netlist cross-check** | Independent re-derivation of J1/J2 pinouts from the schematic vs. §0 tables vs. harness drawing — **including which ground each signal references** (see L13) |
 | **G5 — Peer sign-off** | A second person reviews G1–G4 evidence; their name goes in the log |
 | **G6 — Pre-order** | BOM availability re-checked same-day; variants' fitted lists diffed; gerbers visually inspected in a third-party viewer (not Altium) |
 
 ## 3. Design-for-safety specifics of this project (do not lose these)
 
-- **Never power the wheel from an ECU 5 V sensor rail** — it's sized for sensors; LED load will brown
-  it out and take sensors with it. The dash's fused 5 V AUX is the wheel's only approved source.
-  (Origin: first-principles catch during architecture, 2026-07.)
+- **Never power either board from an ECU 5 V sensor rail** — it's sized for sensors and shared with
+  them; the wheel's LED load will brown it out and take the sensors with it. (Origin: first-principles
+  catch during architecture, 2026-07.) **Rev B:** the wheel now runs from vehicle 12 V and regulates
+  locally, so it is standalone — it no longer depends on the dash. The dash's 5 V AUX output is deleted.
+- **ARB servo safety is firmware-enforced and non-negotiable** (full spec: `system-architecture-and-can.md`
+  §3A.3). Four rules: hold last position on CAN loss (**never** spring to centre — an ARB step change
+  mid-corner is a handling event); firmware endstops on pulse width (a servo against a hard stop draws
+  stall current until it burns); slew limiting; commanded-vs-measured divergence alarm. Any change to
+  the servo task requires re-testing all four.
+- **Servo power never crosses the dash PCB or its connectors.** ~10 A of stall current versus a 7.5 A
+  DTM pin rating, next to a display and an 8-channel analog front end. Signal + ground reference only;
+  the BEC's ground must star back to dash GND or the PWM reference floats.
 - **Paddle path must work with wheel electronics dead.** It's pure copper + TVS; any future "smart
   paddle" idea must keep a passive fallback. Shifting is a driver-safety function.
 - **Dash shows stale-data indicators.** A frozen coolant temp reads as "fine" while the engine cooks.
@@ -55,20 +64,21 @@
 - **LED global current cap lives in one function** with a compile-time ceiling per variant
   (CAR 450 mA, SIM 350 mA). Any pattern code goes through it; no direct strip writes.
 - **CAN termination is an installation decision** (DNP footprints both boards) — document per-car in
-  the harness drawing which node is terminated. Two terminations at one end = reflections = 
+  the harness drawing which node is terminated. Two terminations at one end = reflections =
   intermittent bus errors that look like firmware bugs.
 
 ## 4. Staged bring-up procedure (per board; log everything)
 
 1. **Visual + meter:** solder inspection under magnification; continuity: all GNDs; resistance rail-to-GND (expect >100 Ω) *before* first power.
-2. **Power-only:** bench supply, current-limited (wheel: 5 V @ 100 mA limit first; dash: 12 V @ 200 mA). Check rails ±3%, thermal camera / finger sweep.
+2. **Power-only:** bench supply, current-limited (**both boards now 12 V**; wheel @ 150 mA limit first, dash @ 200 mA). Check every rail ±3% — on the wheel that is `+12V_P`, `+5V`, `+3V3`; thermal camera / finger sweep, paying attention to the buck inductor.
 3. **SWD:** Tag-Connect attach, read MCU ID, flash blinky, verify 3.3 V under load.
 4. **CAN loopback:** FDCAN external-loopback + sniffer; then two-node bench bus with USB-CAN at 1 Mbit/s; verify bit timing with scope (sample point ~80%).
 5. **Protocol close-out:** emulated keypad against NSP/bench ECU (closes A1); IO12 frames visible in NSP as AVI values (A2 for Box B); broadcast decode against known ECU values.
 6. **HMI:** every encoder detent count CW/CCW ×20 fast/slow, every switch 100 presses, sense lines' voltages in both paddle states.
 7. **LEDs/display:** current at 100% white measured (closes A3); sunlight test outdoors (wheel LCD, dash panel behind its lens — closes L7 risk).
-8. **Environment:** 1 h thermal soak at 60 °C running; vibration shake (attach to a shaker or, minimum, the actual car at idle + rev sweeps) while logging CAN for dropouts.
-9. **In-car:** full harness, ECU mapping session with tuner, driver gloves-on usability pass.
+8. **Servos (dash only):** the five-step bench procedure in `dash-pcb-altium-instructions.md` §3 — endstops proven *before* the servo touches a linkage.
+9. **Environment:** 1 h thermal soak at 60 °C running; vibration shake (attach to a shaker or, minimum, the actual car at idle + rev sweeps) while logging CAN for dropouts.
+10. **In-car:** full harness, ECU mapping session with tuner, driver gloves-on usability pass.
 
 ## 5. Lessons learned (append-only)
 
@@ -92,6 +102,49 @@
 - **L8 (2026-07, architecture):** Stating the interface as a connector pinout table *first*
   ("5 lines only") caught the wheel-power-source problem before any schematic existed. Keep writing
   interface contracts before drawing.
+- **L9 (2026-07, Rev A→B):** *A requirement stated as a voltage was really a requirement about wire
+  count.* "The wheel only needs 5 V, ground, paddles, and CAN" was honoured literally in Rev A, which
+  forced the dash to become the wheel's power supply and coupled two otherwise independent products.
+  Changing the pin to 12 V kept the actual requirement (five functions, one small connector) and
+  deleted the coupling. **Ask what a requirement is protecting before designing to its literal text** —
+  and when the existing harness already carries what you need, that is evidence about the real constraint.
+- **L10 (2026-07, Rev B):** The right question for a rail is not "what voltage do the parts want" but
+  "what does the *connection* have to survive." The wheel's power crosses slip rings and a quick-release
+  — wearing contacts. At 5 V, 500 mΩ of contact degradation eats half the regulator headroom; at 12 V
+  it is unmeasurable. **Pick the distribution voltage from the connector's ageing behaviour, then
+  regulate locally.** A useful side effect: 12 V made reverse-polarity protection affordable (P-FET at
+  ~20 mV) where at 5 V a diode drop was rejected as too costly, so robustness improved twice over.
+- **L11 (2026-07, ARB):** Before adding an output, compute its worst-case power *at the connector*.
+  Two ARB servos looked like "two more pins" and are actually ~74 W / ~10 A against a 7.5 A pin rating.
+  The design collapsed to something simple (buffered signal only, power external) the moment the
+  arithmetic was done. **Do the wattage before drawing the connector.**
+- **L12 (2026-07, ARB):** New features are cheapest when they ride existing traffic. ARB control needed
+  no new CAN IDs because the wheel already broadcasts encoder positions as IO12 AVI frames and CAN is
+  multi-master — the dash just listens. Driver adjustment, wheel-display readout, and ECU logging all
+  came free. **Look for what the bus already carries before defining a new message.**
+- **L13 (2026-07, ARB — caught in self-review, kept as a warning):** The first J2 allocation put the two
+  servo PWM signals on the DAQ connector, leaving one ground pin shared between eight analog returns and
+  two digital signal returns. Current in a shared return becomes **offset on every DAQ channel**, and a
+  PWM signal must reference the ground its *receiver* uses (the servo BEC stars to power ground, not
+  sensor ground). Moving the signals to J1 — onto the pins the 12 V change had just freed — fixed both.
+  **Ground allocation is a signal-integrity decision, not a pin-count exercise: count returns, not just
+  conductors, and ask what each ground is referencing.** Note also that this error survived the first
+  write-up and was only caught on a re-read — which is exactly what gate G4 exists for.
+
+## 5A. Planned future work (do not lose track of these)
+
+| Item | Status | Where specified |
+|---|---|---|
+| **Servo power conditioning board** (4th board in the family) | Planned — servo power is a harness BEC for now | `system-architecture-and-can.md` §3A.4 |
+| IO12 Box B emulation for DAQ re-broadcast | Blocked on assumption A2 | `system-architecture-and-can.md` §2.2, §5 |
+| SimHub output-report support (game-driven shift lights) | Stretch | `sim-variant-instructions.md` §4 |
+| PLCC-3535 + constant-current LED fallback | Contingency if WS2812 sunlight performance disappoints | `hardware-selections.md` §5 |
+
+**Rule for the servo BEC in the interim:** "temporary" must not mean "unreviewed." Until the
+conditioning board exists, BEC selection, its fusing, and its grounding are harness design
+deliverables and pass the same gates (G1–G6) as a PCB. The single biggest reason to build the board
+is transient isolation — servos are the dirtiest load on the car, and today they share a battery rail
+with a display and an analog front end.
 
 ## 6. Memory-file maintenance
 
