@@ -55,11 +55,13 @@ object, then apply only the specific edits below.
 - Add the `+5V_SENS` branch (covered in §5 below — this is the fused 5 V feed the DAQ connector
   supplies to sensors).
 
-Everything else on that sheet — the reverse-polarity protection FET `Q1`/`R1`/`D5`/`D1`, the LMR36015
-switching regulator (a "buck converter" — it steps 12 V down to 5 V efficiently) and its passive
-components, the `AP2112K` linear regulator (5 V → 3.3 V), `FB1`, and the rail-monitor voltage dividers
-— is identical to the wheel. The LMR36015's sizing still holds for the dash too: its total load here
-is about 1.0 A against a 1.5 A rating (see the power budget in §6).
+Everything else on that sheet — the reverse-polarity protection FET `Q1`/`R1`/`D5`/`D1` and the
+LMR36015 switching regulator (a "buck converter" — it steps 12 V down to 5 V efficiently) and its
+passive components — is identical to the wheel. The one deliberate exception is the 3.3 V rail: the
+dash uses the `AP63203WU-7` buck converter (5 V → 3.3 V) here instead of the wheel's `AP2112K` LDO,
+because of the higher current draw (see §7 for why). `FB1` and the rail-monitor voltage dividers are
+identical to the wheel. The LMR36015's sizing still holds for the dash too: its total load here is
+about 1.0 A against a 1.5 A rating (see the power budget in §7).
 
 **`dash-mcu.SchDoc`** — copy from the wheel's MCU sheet, identical, with two things called out
 explicitly because they're easy to get wrong on any STM32G4 board:
@@ -124,16 +126,17 @@ Do the math: 2 µA × 5 kΩ = 10 mV of offset error when cool, but 100 µA × 5 
 and this is a dash board specified to sit in direct sunlight, where 100 °C at the board is a real
 possibility, not a stretch. On a 0–2.5 V signal, 500 mV is a **20% error**, and it's the worst kind of
 error because it doesn't look like an error — it looks like a plausible sensor reading. The BAV199 is
-a low-leakage silicon diode built for exactly this job: it leaks about 3 picoamps (millions of times
+a low-leakage silicon diode built for exactly this job: it leaks about 3 picoamps (about 667,000x
 less), so the same math gives an offset too small to matter. Its one downside — a slightly higher
 forward voltage drop when it's actually conducting during a fault — doesn't cost anything, because it
 only conducts when something has already gone wrong.
 
 **Scaling:** the resistor divider is a divide-by-2, so a 0–5 V sensor signal becomes 0–2.5 V at the
 ADC pin, leaving 0.8 V of headroom below the MCU's 3.3 V reference in case a sensor slightly
-overshoots. The RC filter formed by `Rg` and `Cf` has a corner frequency of about 1/(2π × 5 kΩ ×
-100 nF) ≈ **320 Hz** — plenty fast for temperature and pressure signals, which change slowly; if a
-future channel needs to track something fast, `Cf` is the value to retune, per channel.
+overshoots. The RC filter formed by `Cf` and the 5 kΩ Thévenin resistance of the divider (`Rs` in
+parallel with `Rg`) gives a corner of about 1/(2π × 5 kΩ × 100 nF) ≈ **320 Hz** — plenty fast for
+temperature and pressure signals, which change slowly; if a future channel needs to track something
+fast, `Cf` is the value to retune, per channel.
 
 **Fault behaviour:** if a sensor wire is accidentally shorted to the car's 12 V rail, the current that
 flows into the ADC pin works out to (12 − 3.3 − 0.7) / 10 kΩ ≈ **0.8 mA** — comfortably inside the
@@ -285,7 +288,7 @@ clamps a flat cable in place rather than requiring pins to be pushed in), using 
 | `C34` | 1 µF, 0603 | `+3V3` → `GND` at J4 |
 | `C35` | 100 nF, 0402 | `+3V3` → `GND` at J4 |
 | `C35b` | 22 µF, 16 V, 0805 | `+5V` → `GND` at pins 17/18 — the backlight is the switching load here, so it needs its own bulk capacitance separate from the logic supply's |
-| `R27`, `R28` | 22 Ω, 0402 | in series on `EVE_SCK` and `EVE_MOSI`, placed at the MCU end, to control signal ringing on that trace |
+| `R27`, `R28` | 22 Ω, 0402 | in series on `EVE_SCK` and `EVE_MOSI`, placed at the MCU end, to control signal ringing on that trace. These are series termination: the MCU's output impedance is well below the trace's characteristic impedance, so a fast edge reflects off the far end and rings; about 22 Ω brings the source closer to the trace impedance and damps that reflection. The 30 MHz is the BT817's maximum SPI clock — the dash display's own ceiling, not to be confused with the wheel memory LCD's 2 MHz limit. Place them at the driver, not the receiver; at the far end they do nothing. |
 
 **Why the backlight is powered from the 5 V rail and not 3.3 V:** unlike the display's logic supply
 (`VDD`, on 3.3 V), the backlight (`BLVDD`) is a completely separate power input, specified at
@@ -381,7 +384,7 @@ reference for which pin can do which job).
 | PA4 / PA5 / PA6 / PA7 | `EVE_CS` / `EVE_SCK` / `EVE_MISO` / `EVE_MOSI` | a complete, genuine SPI1 hardware peripheral set (chip-select / clock / data-in / data-out) |
 | PB3 / PB4 | `EVE_PDN` / `EVE_INT` | plain digital I/O pins |
 | PA0–PA3, PC0–PC3 | `AIN1_ADC` … `AIN8_ADC` | all eight are reachable by ADC1 and/or ADC2, so one scan sequence (or ADC1+ADC2 running together) covers all eight — no channel is stuck on an ADC instance that can't be used together with the rest. Exact channel numbers are a CubeMX (ST's chip-configuration tool) detail, not a schematic one |
-| PB0 / PB1 | `V12_SENSE` / `V5_SENSE` | both ADC1/ADC2 capable |
+| PB0 / PB1 | `V12_SENSE` / `V5_SENSE` | both ADC1/ADC2 capable. Not on PA1/PA2 as on the wheel because PA0–PA3 are all consumed here by DAQ channels `AIN1`–`AIN4` — pure pin pressure, no electrical reason, which is exactly why the two boards' pin maps must never be assumed identical |
 | **PB6 / PB7** | `SERVO1_PWM_3V3` / `SERVO2_PWM_3V3` | **TIM4_CH1 / TIM4_CH2** — both servo channels share one hardware timer, keeping their timebases in sync |
 | PA8 | `LED_DATA_3V3` | TIM1_CH1 — nothing else on this board competes for TIM1 |
 | PC8–PC10 | `BTN1`–`BTN3` | plain digital input |
@@ -393,10 +396,11 @@ reference for which pin can do which job).
 
 **One cross-board note worth remembering:** PB6/PB7 carry the servo signals on the dash, but on the
 wheel board those same pin numbers are used for `ENC3_A`/`ENC3_B` (an encoder input). Likewise PB3/PB4
-are display control here but `ENC4_B`/`PADDLE_UP_SNS` on the wheel. This is not a conflict — they're
-different boards — but because both boards share one firmware codebase, the code must select behaviour
-based on a board-personality setting (a compile-time `#define`) and must never assume a given pin
-number means the same thing on both boards.
+are display control here, while on the wheel PB3 is `ENC4_B` and PB4 is spare (the wheel's
+paddle-sense taps are on PB0/PB1). This is not a conflict — they're different boards — but because
+both boards share one firmware codebase, the code must select behaviour based on a board-personality
+setting (a compile-time `#define`) and must never assume a given pin number means the same thing on
+both boards.
 
 ---
 
@@ -414,13 +418,5 @@ finalized, not because the design can't move forward.
 
 ## Things I could not explain simply
 
-- The exact reasoning for why the rail-monitor signals land on PB0/PB1 on the dash instead of the
-  wheel's PA1/PA2 is stated as a fact (source §2) but the underlying "why this specific pin swap" isn't
-  spelled out in the source material beyond "see §8" (the pin table) — the pin table confirms both are
-  valid ADC-capable pins, but doesn't say what made PB0/PB1 the better choice on this particular board
-  layout.
-- The note that R27/R28 (the 22 Ω series resistors on the display's SPI clock and data lines) control
-  ringing "at 30 MHz" is stated in the source without saying whether that's the SPI clock's actual
-  operating frequency or a signal-edge/trace-length calculation — the display's real SPI ceiling is
-  much lower (2 MHz, per the datasheet-verification notes), so 30 MHz likely refers to a signal-edge
-  rate rather than the clock frequency itself, but the source doesn't spell out which.
+None remaining — the two items previously listed here (why the rail monitors land on PB0/PB1, and
+what the R27/R28 30 MHz figure refers to) are now explained inline in §8 and §5 above.

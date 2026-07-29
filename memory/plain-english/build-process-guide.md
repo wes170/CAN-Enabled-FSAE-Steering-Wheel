@@ -8,9 +8,10 @@
 > introduce or change any technical fact found in those documents.
 >
 > **What this file is not.** It is not a claim that the project is ready to order. As of this writing
-> there are nine tracked open assumptions (A1–A8, plus A6 called out specially for the dash) and a
-> provisional MCU pin map on both boards that is explicitly marked "DO NOT FREEZE." Read the "What's
-> still open" section near the end before you touch a distributor cart.
+> there are nine tracked open assumptions, A1 through A9 in `PROJECT-LOG.md` §1 (A6 must be closed
+> before dash layout — see §2 below). The MCU pin maps themselves are now verified; what's still open
+> is the `[OPEN]` items in the two schematic-definition files. Read the "What's still open" section
+> near the end before you touch a distributor cart.
 
 ## Who this is for
 
@@ -26,7 +27,8 @@ Buy the slow part first, build a shared parts library, draw the schematic and ch
 lay out the copper and check it physically, get a second human to look at all of it, order the boards
 and the assembly, then power each one up in small deliberate steps before it goes anywhere near the
 car. Every step in that sentence exists because skipping it has already cost this project real
-mistakes — ten of them, found so far, several of which slipped past the person who wrote them.
+mistakes — eleven of them, found so far (lesson L19 in `engineering-rigor.md`), several of which
+slipped past the person who wrote them.
 
 ## 1. Buy the long-lead part before you touch Altium at all
 
@@ -49,7 +51,7 @@ ECU). More on why in the next section.
 
 ## 2. Close the cheap assumptions before you spend on board money
 
-This project tracks its open technical assumptions by number (A1 through A8 currently, in
+This project tracks its open technical assumptions by number (A1 through A9 currently, in
 `PROJECT-LOG.md` §1, cross-referenced from `system-architecture-and-can.md` §5) so that nobody has to
 remember which parts of the design are still "we think" rather than "we verified." Two of them, A1
 and A2, are called out specifically as **closable for the price of the sniffer, with no PCB spend at
@@ -124,11 +126,17 @@ encoders (through-hole — check the body sits flat and the shaft exits parallel
 intended edge, and check shaft length 15/20/25 mm against the actual faceplate depth before
 committing to one), the PEC11H encoders (bushing hole diameter and anti-rotation slot, checked against
 the faceplate drawing too, not just the part datasheet), the WS2812B-2020 addressable LEDs (2.2×2.0
-mm, watch the pin-1 dot orientation), the Sharp memory LCD's 10-pin FPC connector (flexible printed
-circuit connector — a bottom-contact ZIF type; picking a top-contact part by mistake flips the
-contacts and the display won't work), the USB-C connector, the tactile switches, the JST-GH connectors,
-the Tag-Connect TC2030 programming footprint (no actual part sits here — it's copper pads plus three
-locating holes for a pogo-pin programming clip), and the two buck regulators with their inductors.
+mm, watch the pin-1 dot orientation), the wheel display's 10-pin FPC connector — now the JDI
+LPM013M126A colour memory-in-pixel part, with the Sharp LS013B7DH05 mono display kept as a
+pin-compatible fallback (flexible printed circuit connector — a bottom-contact ZIF type; picking a
+top-contact part by mistake flips the contacts and the display won't work), the USB-C connector, the
+tactile switches, the JST-GH connectors, the Tag-Connect TC2030 programming footprint (no actual part
+sits here — it's copper pads plus three locating holes for a pogo-pin programming clip), and the buck
+regulator (LMR36015) and the LDO (AP2112K) with their inductors and passives. The wheel has one buck
+(the LMR36015) plus one LDO (the AP2112K) — not two bucks; an earlier candidate, the AP63205, was
+considered and rejected. The LMR36015's footprint check matters more than most: it's a VQFN-HR-12
+"HotRod" package, which is PCBA-only (not hand-solderable), so a wrong footprint isn't something you
+can fix with an iron later the way you could with a TSOT-26 part.
 
 For every part that JLCPCB will assemble onto the board (as opposed to something you hand-solder
 later), you also add two parameters to the library part: `LCSC` (their catalog part number, format
@@ -144,7 +152,7 @@ renaming for convenience. Ports connect sheets to each other; the only net allow
 
 This is where the "precise reference doc, not this file" rule really applies: the wheel doc walks
 through `wheel-power.SchDoc` (the 12V entry stage — polyfuse, reverse-polarity protection FET, buck
-converters), `wheel-mcu.SchDoc`, `wheel-can-io.SchDoc`, `wheel-hmi.SchDoc` (human-machine interface —
+converter, and LDO), `wheel-mcu.SchDoc`, `wheel-can-io.SchDoc`, `wheel-hmi.SchDoc` (human-machine interface —
 the encoders and buttons), `wheel-leds.SchDoc`, and `wheel-display.SchDoc`. The dash doc names its own
 sheet set and tells you explicitly which wheel sheets to copy-and-edit versus draw fresh. Rather than
 restate every value here (that's what those files are for), the process point is this: **draw sheets
@@ -155,13 +163,14 @@ instructions say so explicitly so you don't reinvent it slightly differently by 
 A few things worth flagging here because they're the kind of mistake the process is specifically
 built to catch:
 
-The **MCU pin maps on both boards are marked provisional — "DO NOT FREEZE"** in bold in the source
-files. They were originally written from memory rather than the STM32G474 datasheet, and a separate
-verification pass (`memory/datasheet-verification.md`) is still working through them. The instructions
-are explicit: do not capture a schematic, order a board, or write firmware configuration against
-these tables until that verification file marks them VERIFIED. This connects directly to a lesson the
-project already learned the hard way (lesson L16, discussed below) — a pin map that looks internally
-consistent isn't the same thing as a pin map that was checked against the actual chip.
+The **MCU pin maps have been verified** against STM32G474 datasheet Table 13 and live in
+`wheel-schematic-complete.md` §9 and `dash-schematic-complete.md` §8 — capture from those. The older
+tables in the two Altium instruction files are marked superseded; those files remain authoritative for
+PROCESS (project setup, libraries, layout, DRC, outputs) but not for what to draw. This connects
+directly to a lesson the project already learned the hard way (lesson L16, discussed below) — a pin
+map that looks internally consistent isn't the same thing as a pin map that was checked against the
+actual chip, which is exactly why the verified tables now live in the schematic-definition files
+rather than being re-derived from memory each time.
 
 The **BOOT0 pin gets no pulldown and no strap**, on both boards, because on this specific package
 `PB8`, which is normally a safe place to add a pulldown resistor, is *also* `FDCAN1_RX` — the CAN
@@ -173,10 +182,12 @@ every single time it's powered up with a live bus attached — while working per
 the bus unplugged. That gap between bench behavior and installed behavior is exactly why this note
 exists in bold in the source file.
 
-The Sharp LCD's **EXTMODE pin must not float.** It selects how the display's internal charge-balancing
-scheme (COM inversion, which prevents a DC bias building up across the liquid crystal and permanently
-damaging it) is triggered — by a hardware pin toggling, or by a software command. Leave it floating
-and that behavior is undefined, risking permanent image sticking. The fix is a direct strap to 3.3V.
+The wheel display's (now the JDI LPM013M126A colour part, with the Sharp LS013B7DH05 mono part kept as
+a pin-compatible fallback) **EXTMODE pin must not float.** It selects how the display's internal
+charge-balancing scheme (COM inversion, which prevents a DC bias building up across the liquid crystal
+and permanently damaging it) is triggered — by a hardware pin toggling, or by a software command. Leave
+it floating and that behavior is undefined, risking permanent image sticking. The fix is a 0 Ω link
+strapping EXTMODE to +3V3, with a DNP 0 Ω pulldown alternative on the footprint.
 
 Once every sheet is wired and the sheet symbols connect on the top sheet, you run **Project ▸
 Validate**, which executes the ERC you configured back in step 3. The bar is zero errors and zero
@@ -311,8 +322,8 @@ the first write-up and was only caught on a re-read" — which the project's own
 the project log. This is the gate that exists because, plainly, **the author of a design cannot see
 their own blind spots.** It is not a formality layered on top of the other four gates — it's the
 recognition that a design can be self-consistent and still wrong in a way that only becomes visible to
-someone who didn't write it. This project's own defect history backs that up directly: ten defects have
-been found across this design so far, and multiple of them — the BOOT0/CAN conflict, the missing
+someone who didn't write it. This project's own defect history backs that up directly: eleven defects
+have been found across this design so far (lesson L19 in `engineering-rigor.md`), and multiple of them — the BOOT0/CAN conflict, the missing
 EXTMODE strap, three errors in one supposedly-frozen pin table — passed an initial self-review by the
 person who wrote the section, and were only caught on a later, harder look. "Plausible-sounding detail
 is the most dangerous kind of wrong, because it survives review — a reviewer checks whether the pin
@@ -356,9 +367,11 @@ anything more active.
 "blinky" program, confirm 3.3V holds up under load) — proving the microcontroller itself is alive and
 programmable before asking it to do anything specific.
 
-**Step 4 tests CAN in isolation** — first an internal loopback test inside the chip itself, then a
-real two-node bench bus using the USB-CAN sniffer from step 2 of the whole build, checking bit timing
-on a scope. This proves the CAN hardware works *before* it's asked to talk to a real ECU.
+**Step 4 tests CAN in isolation** — first an external loopback test — the MCU transmits through the
+real transceiver and reads its own frames back, which proves the transceiver and its wiring rather
+than just the peripheral — then a real two-node bench bus using the USB-CAN sniffer from step 2 of
+the whole build, checking bit timing on a scope, where the scope check confirms the sample point lands
+at roughly 80%. This proves the CAN hardware works *before* it's asked to talk to a real ECU.
 
 **Step 5 closes out the protocol assumptions** — the emulated keypad against a bench ECU (closing A1),
 IO12 frames checked in the ECU software (closing A2 for Box B), broadcast data checked against known
@@ -388,20 +401,19 @@ every test result attributable to a single cause.
 This project's own documentation is explicit that it is not ready to order boards, and the honest
 picture as of today looks like this:
 
-Nine numbered assumptions are open — A1 through A8 in the project log, plus a note that A6 (the ARB
-servo's actual torque and stall current, and whether it's even a PWM servo or a serial-bus one) must
-specifically be closed before dash layout, because the answer could change the servo output stage from
-analog PWM to a half-duplex UART interface entirely — a change that would ripple into the schematic,
-not just the BOM.
+Nine tracked open assumptions, A1 through A9 in `PROJECT-LOG.md` §1, are open — with a note that A6
+(the ARB servo's actual torque and stall current, and whether it's even a PWM servo or a serial-bus
+one) must specifically be closed before dash layout, because the answer could change the servo output
+stage from analog PWM to a half-duplex UART interface entirely — a change that would ripple into the
+schematic, not just the BOM.
 
-The MCU pin maps on **both** boards are marked provisional and explicitly must not be frozen until a
-separate datasheet-verification pass confirms them — the wheel's has already had three real defects
-found in it by that process, and the dash's pin map "has not yet had the same treatment" and is known
-to inherit at least one of the same defects (the BOOT0/CAN conflict) by similarity.
+The MCU pin maps on **both** boards are closed — verified against the STM32G474 datasheet and captured
+in `wheel-schematic-complete.md` §9 and `dash-schematic-complete.md` §8. What remains open are the
+`[OPEN]` items still listed in those two schematic-definition files.
 
-Two footprint details on the Sharp LCD display — which side of the FPC connector the contacts are on,
-and the exact SCS chip-select polarity and timing — are called out as still unverified and need
-confirming from the spec sheet before the footprint and firmware are frozen.
+Two footprint details on the wheel display — which side of the FPC connector the contacts are on, and
+the exact SCS chip-select polarity and timing — are called out as still unverified and need confirming
+from the spec sheet before the footprint and firmware are frozen.
 
 None of the six review gates (G1–G6) have been signed off yet on either board — the project log's
 gate tables are still blank checkboxes with no names or dates.
@@ -423,11 +435,13 @@ flagging them here rather than guessing:
   gets a calculated impedance target) is a signal-integrity judgment tied to rise time versus trace
   length that the source states as a conclusion rather than deriving — I did not want to invent the
   underlying math.
-- The specific numeric derating logic behind the TVS clamp voltage selection (SMBJ33A versus SMBJ26A,
-  chosen by scoping the actual clamp behavior against the buck converter's absolute maximum rating) is
-  a real engineering procedure described in the source but requires a scope reading that doesn't exist
-  yet — I described the *procedure* but did not attempt to explain why one specific TVS part over
-  another beyond what the source states.
+- **TVS versus buck absolute maximum — settled, do not reopen.** The SMBJ33A clamps at 53.3 V. The
+  original 35 V-class buck could not survive that, so the converter was changed, not the TVS. The
+  LMR36015's 66 V absolute maximum leaves 12.7 V of margin, and the SMBJ33A's 33 V standoff is what
+  clears a 24 V jump start. Do NOT substitute an SMBJ26A or any lower-standoff TVS: no SMBJ part fits
+  between jump-start standoff and a 35–42 V absolute maximum, which is precisely why the buck moved
+  instead. What IS still open is assumption A8 — scope the wheel's real 12 V transient environment to
+  confirm clamp behaviour in the car.
 - The finer mechanics of hardware quadrature decoding (why an encoder's A/B channels specifically need
   to be "both channels of the same timer with the correct alternate function," as opposed to any two
   GPIO pins) is referenced as the reason for one of the project's real defects, but the underlying
