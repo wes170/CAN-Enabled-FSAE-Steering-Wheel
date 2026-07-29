@@ -9,23 +9,30 @@
 graph LR
     subgraph Car
         ECU[Haltech Nexus R5<br/>1 Mbit/s CAN]
-        DASH[Dash PCB<br/>STM32G474<br/>5in 1000nit EVE display<br/>8x DAQ analog in]
+        DASH[Dash PCB<br/>STM32G474<br/>5in 1000nit EVE display<br/>8x DAQ analog in<br/>2x ARB servo PWM out]
         BATT[12V vehicle power]
+        BEC[Servo BEC 12V-7.4V<br/>separately fused]
+        ARB[Front + rear ARB servos]
     end
     subgraph "Steering wheel (5 lines only)"
         WHEEL[Wheel PCB<br/>STM32G474<br/>6 encoders, 6 buttons<br/>24 RGB LEDs, 1.26in memory LCD]
         PADDLES[Paddle switches]
     end
     BATT -->|12V| DASH
-    DASH -->|5V AUX 1.5A fused| WHEEL
+    BATT -->|12V| WHEEL
+    BATT -->|12V| BEC
+    BEC -->|7.4V power| ARB
+    DASH -->|2x PWM signal + GND ref| ARB
     ECU ---|CAN H/L| DASH
     ECU ---|CAN H/L| WHEEL
     PADDLES -->|direct copper passthrough| ECU
 ```
 
 - **One CAN bus**, Haltech's, at **1 Mbit/s, 11-bit IDs, big-endian data** (Haltech Broadcast Protocol spec §2).
-- The wheel is powered **from the dash's fused 5V AUX output** (never from an ECU sensor supply — see hardware-selections.md §0.2).
+- **Both boards are powered from vehicle 12V and regulate locally.** The wheel is standalone: it does
+  not depend on the dash existing. Never take power from an ECU sensor supply (hardware-selections.md §0.2).
 - Paddles are copper from wheel connector to Nexus digital inputs. The wheel PCB only adds TVS + a 100k sense tap.
+- **Servo power never touches the dash PCB** — signal and ground reference only (hardware-selections.md §9.1).
 
 ### CAN termination policy
 A CAN bus needs exactly two 120Ω terminations at the physical extremes. The Nexus provides one (via
@@ -112,28 +119,40 @@ dedicated broadcast the tuner enables; firmware makes the source IDs a config ta
 
 ## 3. Power budgets (worst case, shown work)
 
-### Wheel (5V input, dash-fed through 1.5A polyfuse)
+### Wheel (12V input from harness, 1A polyfuse) — **Rev B**
+Loads on the local **5V rail** (downstream of the on-board buck):
+
 | Load | Worst case | Basis |
 |---|---|---|
 | 24 × WS2812B-2020, all full white | 0.86 A | 24 × 36 mA (datasheet class max; **verify by measurement — assumption A3**) |
 | Firmware global LED cap | **≤ 0.45 A** | cap aggregate duty ≤50% in driver |
-| STM32G474 @ 170 MHz + I/O | 0.10 A | datasheet run current + GPIO loads |
+| STM32G474 @ 170 MHz + I/O (via 3.3V LDO) | 0.10 A | datasheet run current + GPIO loads |
 | TJA1051 transmitting | 0.07 A | dominant-state supply spec |
 | Memory LCD + misc | < 0.01 A | ~µW-class panel |
-| **Total (capped)** | **≈ 0.63 A** | < 1.1 A polyfuse hold, < 1.5 A feed rating ✔ |
-| **Total (fault: cap fails)** | ≈ 1.04 A | still under connector/cord rating (DTM pin: 7.5 A) ✔; polyfuse may warm-trip → acceptable fail-safe |
+| **5V rail total (capped)** | **≈ 0.63 A → 3.15 W** | buck output; 1.5A buck rating ✔ (2.4× margin) |
 
-Voltage-drop check: coiled cord + connectors ≈ 150 mΩ loop × 0.63 A ≈ **95 mV** — 5V rail arrives ≥4.9 V;
-AMS1117 needs ≥4.4 V for 3.3V out ✔; WS2812 minimum supply 3.7 V ✔ with 1.2 V margin.
+**Reflected to the 12V input** (buck ≈ 90% efficient): 3.15 W / 0.90 / 12 V ≈ **0.29 A**
+→ under the 1A polyfuse hold ✔, and **2.2× less current than the 5V-fed Rev A** through the
+slip-ring / quick-release contacts.
 
-### Dash (12V input)
+Contact-degradation check (the reason for 12V — see hardware-selections.md §0.2):
+
+| Contact + cord loop resistance | Drop @ 12V, 0.29 A | Drop @ 5V, 0.63 A (Rev A) |
+|---|---|---|
+| 150 mΩ (new) | 44 mV — irrelevant | 95 mV of ~600 mV headroom |
+| 500 mΩ (worn/oxidised) | **145 mV** of ~7 V headroom — still irrelevant | **315 mV — half the headroom gone** |
+
+Buck needs ≥ ~5.5 V in for 5 V out; arriving voltage stays >11.5 V under any plausible contact wear ✔.
+
+### Dash (12V input) — **Rev B**
 | Load | Worst case |
 |---|---|
 | Display @ 3.3V, 100% backlight | 1.2 A → 4.0 W |
 | MCU + CAN + analog | 0.2 A @ 3.3V |
-| 5V AUX to wheel | 1.0 A (capped 1.5 A fuse) |
+| ~~5V AUX to wheel~~ | **removed — wheel is now 12V-fed and standalone** |
 | 5V sensors (DAQ excitation) | 0.2 A |
-| **12V input draw** | ≈ (4.6 W + 6 W)/0.85 eff / 12 V ≈ **1.0 A** → 2 A polyfuse ✔ |
+| Servo signal buffers @ 5V | < 0.01 A (logic only — servo *power* is external, §3A.2) |
+| **12V input draw** | ≈ (4.6 W + 1.0 W)/0.85 eff / 12 V ≈ **0.55 A** → 2 A polyfuse ✔ (comfortable margin; 5V buck downsized 3A → 2A) |
 
 ### DAQ analog front end (dash, 8 channels)
 `AIN → 10k series → [node: 10k to GND ∥ 100nF ∥ BAT54S clamp to 3V3/GND] → ADC pin`
@@ -144,6 +163,60 @@ AMS1117 needs ≥4.4 V for 3.3V out ✔; WS2812 minimum supply 3.7 V ✔ with 1.
   (STM32 ADC max external impedance table) — **this is why no op-amp buffer is needed**; TLV9004 DNP
   footprints exist if a fast/low-impedance channel is ever required.
 - 5V sensor excitation output: polyfused (200 mA) + SMBJ5.0A.
+
+## 3A. Adjustable anti-roll bar (2 servo channels on the dash)
+
+### 3A.1 Control path — reuses existing traffic, no new protocol
+The wheel already broadcasts encoder positions as IO12-emulated **AVI voltages on `0x2C1`** (§2.2),
+and CAN is multi-master — **the dash hears those frames exactly as the ECU does**. So:
+
+```
+Wheel encoder 3 ──┐                                    ┌── AVI3 → front ARB setpoint
+                  ├─→ 0x2C1 @ 20 ms ─→ (heard by both) ─┤
+Wheel encoder 4 ──┘         ├─→ Nexus: logs as trim ch. └── AVI4 → rear ARB setpoint
+                            └─→ Dash: maps to servo PWM
+```
+
+Consequences, all free: the driver adjusts ARB from the wheel; the wheel's memory LCD already shows
+the value (it renders encoder values by design); the Nexus logs both settings as trim channels
+without any extra configuration. **No new CAN IDs, no new firmware protocol.**
+
+Mapping: `pulse_us = PULSE_MIN + (avi_raw / 4095) × (PULSE_MAX − PULSE_MIN)`, with `PULSE_MIN/MAX`
+per-channel config constants that *are* the firmware endstops (§3A.3 item 2).
+
+### 3A.2 Electrical summary
+Signal-only from the dash: `TIM4_CH1/CH2 (PB6/PB7) → 74AHCT2G125 @5V → 100 Ω → SMAJ5.0A → J1.5/J1.6`
+(the power connector, reusing the pins freed by deleting the Rev A 5V AUX feed — **not** the DAQ
+connector, whose shared analog returns must stay free of servo signal current).
+Servo **power** is a separate 12V→7.4V BEC branch in the harness, independently fused, grounds
+starred back to dash GND. Full justification and the 74W arithmetic: hardware-selections.md §9.
+Position feedback returns on **AIN7/AIN8** of the existing DAQ front end (no new parts).
+
+### 3A.3 Firmware safety requirements (mandatory)
+1. **Hold last position on CAN loss** — never spring to a default. Fail-frozen, not fail-centred.
+2. **Endstops** — clamp commanded pulse to per-channel min/max. A servo held against a mechanical
+   stop draws stall current until it burns; this is the most likely way to destroy one.
+3. **Slew limit** — full travel no faster than ~2 s, so a knob spin cannot slam the linkage.
+4. **Divergence alarm** — |commanded − measured| beyond threshold for >500 ms ⇒ dash warning + log.
+   This is how a seized linkage, stripped spline, or dead servo announces itself.
+5. Servo supply independently fused and killable without taking the dash down.
+
+### 3A.4 Planned follow-on: servo power conditioning board (Rev B+)
+The external BEC is deliberately a **harness component for now**, but the intended end state is a
+small dedicated **servo power conditioning PCB** — a fourth board in this family. Scope when built:
+
+- 12V → 7.4V (or servo-appropriate) buck sized for **2 × stall current** (~10A class, per A6).
+- Bulk capacitance to absorb servo inrush and stall transients so they never reach the dash's
+  12V rail or the ECU's — **this is the main reason the board is worth building**: servos are the
+  dirtiest load on the car and today they share a battery rail with a display and an analog front end.
+- Per-channel fusing/current sense, ideally with current telemetry onto CAN (stall detection in
+  hardware, complementing the firmware divergence alarm in §3A.3).
+- Reverse/transient protection matching the dash input stage; single-point ground star for the
+  servo branch, tied to dash GND (the reference rule in hardware-selections.md §9.1).
+- Same STM32G474 platform if it needs intelligence, so it inherits the existing codebase and toolchain.
+
+Until it exists, treat BEC selection, its fusing, and its grounding as **harness design deliverables**,
+reviewed under the same gates as the PCBs. Do not let "temporary" mean "unreviewed".
 
 ## 4. Firmware architecture notes (both boards, one codebase)
 
@@ -157,7 +230,8 @@ AMS1117 needs ≥4.4 V for 3.3V out ✔; WS2812 minimum supply 3.7 V ✔ with 1.
   without data, never a frozen value — a frozen gauge is a lie), EVE display list render at 20 Hz,
   ADC scan (8 ch, oversampled ×16), **DAQ re-broadcast**: dash transmits its 8 analog channels on CAN
   as an emulated IO12 **Box B** (assumption A2) or logs via NSP generic-sensor mapping — so the Nexus
-  can log the DAQ channels too.
+  can log the DAQ channels too. **ARB servo task:** 50 Hz PWM update from the `0x2C1` setpoints with
+  endstop clamp, slew limit, CAN-loss hold, and the feedback divergence alarm (§3A.3).
 - **Sim variant:** same board; USB HID gamepad descriptor (buttons 1–16 = buttons + encoder
   detent pulses + paddles, encoders also as absolute axes); CAN stack compiled out; LED/display still
   driven (RPM from SimHub custom serial or HID output report — stretch goal).
@@ -173,6 +247,9 @@ AMS1117 needs ≥4.4 V for 3.3V out ✔; WS2812 minimum supply 3.7 V ✔ with 1.
 | A3 | WS2812B-2020 worst-case current 36 mA/LED | Measure a 24-LED strip at full white, update budget |
 | A4 | TC / lockup status source on broadcast bus | Decide with tuner in NSP; bind config table |
 | A5 | Riverdi 3.3V rail peak (backlight inrush) | Scope at power-on; verify AP63203 soft-start covers it |
+| A6 | ARB servo torque/stall current unknown (assumed ~5A stall @7.4V per channel) | Get the actual servo part number from the vehicle dynamics/mechanical team; it sizes the BEC now and the servo power conditioning board later (§3A.4). If the team instead picks **serial-bus servos** (Dynamixel/Herkulex class), the dash output stage changes from PWM to half-duplex UART — decide before layout |
+| A7 | Does the ARB mechanism back-drive when servo power is lost? | Mechanical-team answer. Self-locking worm drive ⇒ setting holds, power loss is a non-event. Direct lever ⇒ setting is lost mid-session; may require holding torque or a locking mechanism |
+| A8 | Wheel 12V transient environment (now seen directly, not filtered by the dash) | Scope the wheel's 12V feed during crank, alternator load steps, and fan/solenoid switching; confirm SMBJ33A clamp vs. buck abs-max |
 
 ## Sources
 
