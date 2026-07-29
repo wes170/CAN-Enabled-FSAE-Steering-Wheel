@@ -7,9 +7,14 @@ D5,1,Zener gate clamp,12V 500mW,SOD-323,spec,Commodity,Stock,
 D1,1,TVS unidirectional,SMBJ33A 33V standoff / VC 53.3V @ 11.26A,SMB,SMBJ33A,Active,Stock,"KEEP -- the BUCK changes, not the TVS. 53.3V clamp requires a 60V-class U1. See datasheet-verification.md section 5"
 C1,1,Input decoupling,100nF 50V,0603,spec,Commodity,Stock,
 U1,1,Synchronous buck 12V->5V,"5V / >=1.2A / **60V-class input**",TBD,"TI LMR36015FBRNXR (VQFN-HR-12 RNX) -- FPWM yes / 1MHz. Same part as the wheel. NOTE LCSC C2863325 is the 400kHz non-FPWM AQ variant",Active,Stock,"*** LMR33630 REJECTED: 42V abs max vs 53.3V SMBJ33A clamp. Load re-derived after reading the Riverdi datasheet: backlight is on BLVDD/5V (353mA) not 3.3V, so 5V rail = ~1.0A total. 1.5A part now fits."
-L1,1,Buck inductor,10uH / Isat >=2A / shielded,1210 or 4x4mm,spec,Commodity,Stock,"TI Table 10-1, 1MHz variant, 5V out"
-C2;C3,2,Buck input capacitor,22uF 50V X7R,1210,spec,Commodity,Stock,50V for load-dump margin
-C4;C5,2,Buck output capacitor,47uF 16V X7R,1210,spec,Commodity,Stock,
+L1,1,Buck inductor,10uH / Isat >=2A / shielded,1210 or 4x4mm,spec,Commodity,Stock,"TI Table 10-1 1MHz row (for LMR36015FB). *** If you buy the 400kHz LMR36015A/AQ instead: L1=15uH and COUT=3x22uF ***"
+C2;C3,3,Buck input capacitor,4.7uF 50V X7R (x1) + 220nF 50V (x2),1206/0402,spec,Commodity,Stock,"*** CORRECTED (defect 8.5): was 2x22uF, which were the REJECTED LMR33630's values. LMR36015 datasheet 10.2.1.2.6 requires >=4.7uF ceramic AND says a 220nF small-case part 'must be used' at each of the two VIN-PGND pairs for HF bypass of the internal control circuits. Identical to the wheel"
+C4;C5;C_O3,3,Buck output capacitor,15uF 16V X7R,0805,spec,Commodity,Stock,"*** CORRECTED (defect 8.5): was 2x47uF, the LMR33630 400kHz values. TI Table 10-1 nominal for the LMR36015 1MHz 5V row. Identical to the wheel"
+C_BOOT,1,Buck bootstrap capacitor,100nF 25V X7R,0402,spec,Commodity,Stock,"REQUIRED -- LMR36015 datasheet 10.2.1.2.7. Was missing entirely; without it the high-side FET cannot be driven at all"
+C_VCC,1,Buck VCC capacitor,1uF 16V X7R,0603,spec,Commodity,Stock,"REQUIRED -- datasheet 10.2.1.2.8. Was missing entirely. Do NOT load VCC externally"
+R_FBT,1,Buck feedback divider top,100k 1%,0402,spec,Commodity,Stock,"Was missing entirely -- with no FB divider the buck has no output setpoint. Never float or ground FB"
+R_FBB,1,Buck feedback divider bottom,24.9k 1%,0402,spec,Commodity,Stock,"Was missing entirely. 100k/24.9k = 5.0V"
+C_FF,1,Buck feed-forward capacitor,20pF C0G,0402,spec,Commodity,Stock,"Across R_FBT. TI tabulated value for the 100k/24.9k pair specifically"
 U2,1,Synchronous buck **5V**->3.3V,3.3V / 2A / 3.8-32Vin (35V abs max),TSOT-26,AP63203WU-7,Active,Stock,"*** RE-SOURCED FROM +5V not +12V_P (35V abs max must never face the battery). Real 3.3V load is only ~0.5A (MCU + module VDD 98mA typ) -- the 1.2A backlight is NOT on this rail. 2A part is now heavily oversized but harmless."
 L2,1,Buck inductor,4.7uH / Isat >=3A,shielded,spec — select at capture,Commodity,Stock,CONFIRM against AP63203 datasheet
 C6;C7,2,3V3 buck input cap,10uF 50V X7R,1206,spec,Commodity,Stock,

@@ -62,7 +62,7 @@
    - Altium **Manufacturer Part Search** panel (place directly, then *right-click ▸ Add to library*),
    - SnapEDA / Ultra Librarian import (run **IPC-compliance check**: Reports ▸ Footprint comparison),
    - IPC Footprint Wizard (Tools menu in PcbLib) for anything missing — use datasheet nominal dims, density level **N**.
-3. Mandatory footprint checks (print datasheet page, tick off): STM32G474RET6 LQFP-64 (0.5 mm pitch — verify pad 0.28×1.5 mm class), TJA1051 SO-8, **PEC09 right-angle** (THT — verify the body sits flat against the board and the shaft exits *parallel* to the PCB at the intended edge; check shaft length 15/20/25 mm against the faceplate depth before committing), PEC11H (bushing hole Ø9.5 mm + anti-rotation slot **on the faceplate drawing too**), WS2812B-2020 (2.2×2.0 mm, pin-1 dot orientation), Sharp LCD 10-pin FPC 0.5 mm bottom-contact ZIF (contacts flip if you pick top-contact — check twice), USB-C 16-pin, KSC4 tactiles, JST-GH horizontal, TC2030 footprint (no part, copper+3 locating holes), AP63205 TSOT-26 and its inductor.
+3. Mandatory footprint checks (print datasheet page, tick off): STM32G474RET6 LQFP-64 (0.5 mm pitch — verify pad 0.28×1.5 mm class), TJA1051 SO-8, **PEC09 right-angle** (THT — verify the body sits flat against the board and the shaft exits *parallel* to the PCB at the intended edge; check shaft length 15/20/25 mm against the faceplate depth before committing), PEC11H (bushing hole Ø9.5 mm + anti-rotation slot **on the faceplate drawing too**), WS2812B-2020 (2.2×2.0 mm, pin-1 dot orientation), Sharp LCD 10-pin FPC 0.5 mm bottom-contact ZIF (contacts flip if you pick top-contact — check twice), USB-C 16-pin, KSC4 tactiles, JST-GH horizontal, TC2030 footprint (no part, copper+3 locating holes), **LMR36015 VQFN-HR-12 (RNX)** — 12 pads incl. the large SW/PGND thermal pads; verify against the datasheet package drawing, *not* a generic QFN-12 (defect 5.1 replaced the AP63205 TSOT-26 here), plus its inductor. AP2112K SOT-25.
 4. For every JLC-assembled part, add parameters `LCSC = Cxxxxxx` and `JLC-Rotation` (fill after §7 check). Key numbers already verified: MCU `C521608`, LEDs `C965555`.
 
 ## 3. Schematic capture — ⚠ SUPERSEDED BY THE SCHEMATIC-DEFINITION FILE ⚠
@@ -88,9 +88,8 @@ This is now the *same input stage as the dash* (§1.1 of the dash doc). Copy tha
    gate→GND via 10k, gate zener 12V) → net `+12V_P`.
 2. At the J1 side: **SMBJ33A** to GND + 100 nF. (Scope the clamp during the A8 transient test; drop to
    SMBJ26A if the measured clamp threatens the buck's abs-max.)
-3. **AP63205WU-7** sync buck `+12V_P` → net `+5V` @ 1.5 A: follow the datasheet reference layout exactly
-   (inductor ≥2 A sat, 2×10 µF in, 2×22 µF out). This rail feeds the LED bars and the CAN transceiver.
-4. **AMS1117-3.3** from `+5V`: 10 µF in / 22 µF out (X7R ≥10V), net `+3V3`.
+3. **LMR36015FBRNXR** sync buck `+12V_P` → net `+5V`, 1 MHz, VQFN-HR-12 (RNX). ***Not* the AP63205** — its 35 V absolute maximum cannot face a vehicle battery behind a TVS that clamps at 53.3 V (defect 5.1, the most expensive defect in this project). Full pinout and every passive value: `wheel-schematic-complete.md` §2.2. Summary: L1 = 10 µH (I_sat ≥ 2 A), C_IN = 4.7 µF 50 V **+ 2 × 220 nF 50 V, one at each VIN–PGND pair** (the datasheet says these *must* be fitted), C_OUT = 3 × 15 µF 16 V, C_BOOT = 100 nF, C_VCC = 1 µF, R_FBT = 100 kΩ, R_FBB = 24.9 kΩ, C_FF = 20 pF. Tie NC (pin 3) to `NET_SW`; EN straight to `+12V_P`. This rail feeds the LED bars and the CAN transceiver.
+4. **AP2112K-3.3TRG1** LDO (SOT-25) from `+5V`: 1 µF in / 1 µF + 100 nF out, net `+3V3`. ***Not* the AMS1117** — that part requires a *tantalum* output capacitor for stability and is unstable on the ceramics specified here (defect 5.4). The AP2112K is explicitly ceramic-stable.
 5. `+3V3` → ferrite bead (600Ω@100MHz) → `+3V3A` (VDDA/VREF+) with 1 µF + 100 nF.
 6. Dividers: 47k/10k from `+12V_P` → `V12_SENSE`; 10k/10k from `+5V` → `V5_SENSE`; 100 nF at each ADC pin.
 7. Test points: `+12V_P`, `+5V`, `+3V3`, `GND` ×2 (loop for scope ground spring).
@@ -113,7 +112,10 @@ This is now the *same input stage as the dash* (§1.1 of the dash doc). Copy tha
 ### 3.3 `wheel-can-io.SchDoc`
 1. **TJA1051T/3**: VCC=`+5V` (100 nF), VIO=`+3V3` (100 nF), TXD←PB9, RXD→PB8, S → GND.
 2. CANH/CANL → **PESD2CAN** to GND; DNP split termination: `R_T1`,`R_T2` = 60.4Ω 1% in series CANH→CANL, midpoint → 4.7 nF → GND. Mark all three **DNP** with a bold schematic note: *populate only if wheel is the physical end of bus*.
-3. Paddles: J1.4 → `PADDLE_UP` → **SMAJ24CA** to GND (at connector); tap 100 kΩ → `PADDLE_UP_SNS` → 1 nF to GND at MCU pin. Mirror for DOWN. The through-path is just copper — the wheel works with the MCU dead (requirement).
+3. Paddles: J1.4 → `PADDLE_UP` → **SMAJ24CA** to GND (at connector). Sense tap is a **divider, not a single resistor**: `R6` **150 kΩ** from `PADDLE_UP` → `PADDLE_UP_SNS`, `R6b` **39 kΩ** from `PADDLE_UP_SNS` → GND, `C14` 1 nF to GND at the MCU pin, and `D14` **BAV199** from `PADDLE_UP_SNS` → `+3V3`. Mirror for DOWN (`R7`/`R7b`/`C15`/`D15`).
+   - **Do not fit the 100 kΩ single-resistor tap shown in earlier revisions of this file** — with no lower leg the pin sits at the full paddle-line voltage (defect 1.8), and without `D14`/`D15` a TVS clamp event puts 8 V on a 4.0 V `TT_a` pin (defect 8.7). Both are required.
+   - These are **ADC inputs, not GPIO** — no single divider gives a valid logic high for both the 5 V and 12 V ECU pull-up options, so threshold in firmware. Full derivation in `wheel-schematic-complete.md` §4.3.
+   - The through-path is just copper — the wheel works with the MCU dead (requirement).
 
 ### 3.4 `wheel-hmi.SchDoc`
 Repeat this conditioning cell for **every** encoder A/B/SW and button line (make it a snippet/device sheet so it's identical 24 times):
@@ -169,7 +171,7 @@ Wire sheet symbols, then **Project ▸ Validate**. Zero errors, zero *unsuppress
 
 1. **Board shape:** import the wheel chassis/faceplate DXF (**File ▸ Import ▸ DXF**) onto a mech layer; draw outline; place mounting holes (M3, plated, GND-stitched) per the mechanical design. Keep the quick-release hub keep-out (no parts within the hub boss circle + 2 mm).
 2. **Layer stack manager:** 4-layer, pick **JLC7628** preset; L2 = uninterrupted GND (rule: no routing on L2, period).
-2b. **Buck placement (new in Rev B):** put the AP63205 hot loop in the J1 connector corner, loop area
+2b. **Buck placement (new in Rev B):** put the LMR36015 hot loop in the J1 connector corner, loop area
    <20 mm², inductor and input caps tight, output ferrite before the LED bulk caps. Keep it outside the
    quick-release hub keep-out and ≥10 mm from the memory-LCD FPC and encoder conditioning cells. The
    800 kHz WS2812 data line remains the board's worst aggressor — do not route it over the buck.

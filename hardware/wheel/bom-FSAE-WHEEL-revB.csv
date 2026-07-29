@@ -10,6 +10,11 @@ L1,1,Power inductor,10uH / Isat >=2A / shielded,1210 or 4x4mm,spec,Commodity,Sto
 C1;C2,3,Buck input capacitor,4.7uF 50V X7R (x1) + 220nF 50V (x2),1206/0402,spec,Commodity,Stock,"TI Table 10-1 CIN. 50V rating deliberate for load-dump margin"
 C3;C4;C_O3,3,Buck output capacitor,15uF 16V X7R,0805,spec,Commodity,Stock,"TI Table 10-1 nominal for 1MHz 5V out (2x15uF minimum rated)"
 C5,1,Input bulk / TVS decoupling,100nF 50V X7R,0603,spec,Commodity,Stock,At J1 side of protection
+C_BOOT,1,Buck bootstrap capacitor,100nF 25V X7R,0402,spec,Commodity,Stock,"REQUIRED -- LMR36015 datasheet 10.2.1.2.7: 100nF / >=16V between BOOT and SW. Without it the high-side FET cannot be driven at all"
+C_VCC,1,Buck VCC capacitor,1uF 16V X7R,0603,spec,Commodity,Stock,"REQUIRED -- datasheet 10.2.1.2.8: 1uF/16V VCC to GND for proper operation. Do NOT load VCC externally"
+R_FBT,1,Buck feedback divider top,100k 1%,0402,spec,Commodity,Stock,"Sets Vout. TI Table 10-1 1MHz 5V row. Never float or ground FB"
+R_FBB,1,Buck feedback divider bottom,24.9k 1%,0402,spec,Commodity,Stock,"Sets Vout with R_FBT. 100k/24.9k = 5.0V"
+C_FF,1,Buck feed-forward capacitor,20pF C0G,0402,spec,Commodity,Stock,"Across R_FBT. TI tabulated value for the 100k/24.9k pair specifically -- if you change the divider go back to the table, do not keep 20pF"
 U2,1,LDO 5V->3.3V,3.3V / 600mA / ceramic-stable,SOT-25,AP2112K-3.3TRG1 (LCSC C51118),Active,Stock,"VERIFIED ceramic-stable (1uF X7R/X5R in and out) -- replaces AMS1117 which requires tantalum. Dropout 0.25V at 600mA. ~$0.083"
 C6,1,LDO input cap,1uF 16V X7R,0603,spec,Commodity,Stock,Per AP2112K datasheet
 C7,1,LDO output cap,1uF 16V X7R + 100nF,0603/0402,spec,Commodity,Stock,"Ceramic is CORRECT for AP2112K (unlike AMS1117)"
@@ -30,6 +35,7 @@ D3;D4,2,Paddle line TVS bidirectional,SMAJ24CA,SMA (DO-214AC),SMAJ24CA,Active,St
 R6;R7,2,Paddle sense divider TOP,150k 1%,0402,spec,Commodity,Stock,"Was 100k. See datasheet-verification.md defect 1.8"
 R6b;R7b,2,Paddle sense divider BOTTOM **NEW**,39k 1%,0402,spec,Commodity,Stock,"*** MISSING IN REV B DRAFT: without this the TT_a pin (4.0V abs max) sits at the FULL paddle-line voltage. 150k/39k holds a 16V charging system to 3.30V. Read as ADC, threshold in firmware"
 C14;C15,2,Paddle sense filter,1nF,0402,spec,Commodity,Stock,At MCU pin
+D14;D15,2,Paddle sense clamp to +3V3 **NEW**,BAV199 dual low-leakage silicon,SOT-23,BAV199,Active,Stock,"*** DEFECT 8.7: the divider alone is not enough. SMAJ24CA clamps at 38.9V; 38.9 x 39/189 = 8.03V at a TT_a pin rated 4.0V abs max. DS12288 Table 15 note 3 says positive injection is NOT possible on these I/Os = no internal clamp to VDD to save it. 150k limits diode current to 0.23mA. BAV199 not Schottky -- leakage into a high-Z node is signal error (defect 5.2)"
 ,,=== MCU (3.2) ===,,,,,,
 U4,1,Microcontroller,STM32G474RET6 170MHz FDCAN USB,LQFP-64,LCSC C521608,Active,Stock,~$3.93. JLCPCB-assemblable
 C16-C21,6,MCU decoupling,100nF,0402,spec,Commodity,Stock,One per VDD pin — place under/adjacent to each pin

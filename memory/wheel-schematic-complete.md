@@ -254,6 +254,17 @@ Per line (UP and DOWN):
 | `R6` / `R7` | **150 kΩ** 1 %, 0402 | `PADDLE_UP` → `PADDLE_UP_SNS` / `PADDLE_DOWN` → `PADDLE_DN_SNS` |
 | **`R6b` / `R7b`** | **39 kΩ** 1 %, 0402 | **`PADDLE_UP_SNS` → `GND` / `PADDLE_DN_SNS` → `GND`** — the lower half of the divider. **Without this the pin sits at the full paddle-line voltage** (defect 1.8) |
 | `C14` / `C15` | 1 nF, 0402 | each `*_SNS` net → `GND`, at the MCU pin |
+| **`D14` / `D15`** | **BAV199** dual low-leakage silicon, SOT-23 | **`PADDLE_UP_SNS` → `+3V3` / `PADDLE_DN_SNS` → `+3V3`** (anode to the net, cathode to the rail). **Load-bearing, not belt-and-braces** — see the transient box below (defect 8.7). Same part and same reasoning as the dash DAQ clamps |
+
+> ⚠ **The divider alone does not survive a paddle-line transient (defect 8.7).** `D3`/`D4` are
+> SMAJ24CA parts that clamp at **38.9 V**. The divider passes 38.9 × 39/189 = **8.03 V** to the pin —
+> **twice the 4.0 V `TT_a` absolute maximum** (DS12288 Table 14). And there is no self-rescue: Table 15
+> note 3 states *"positive injection (when V_IN > V_DD) is not possible on these I/Os"*, i.e. these pins
+> have **no upper clamp diode to VDD**, so the overvoltage appears across the pin structure instead of
+> being shunted. `D14`/`D15` supply the missing clamp, holding the pin near 3.9 V while the 150 kΩ
+> upper leg limits the diode current to (38.9 − 3.9)/150 kΩ = **0.23 mA** — trivial for a BAV199.
+> BAV199 rather than a Schottky for the same reason as the DAQ front end: leakage into a high-impedance
+> node *is* signal error (defect 5.2).
 
 `PADDLE_UP` and `PADDLE_DOWN` run **as copper** from J1 pins 4 and 5 straight out — they are not
 switched or buffered by this board. The taps are observation only: 189 kΩ total means **63 µA** of
@@ -409,29 +420,61 @@ zero unsuppressed warnings before moving to layout.
 |---|---|---|
 | PC0 / PC1 | `ENC1_A` / `ENC1_B` | TIM1_CH1 / TIM1_CH2 |
 | PC6 / PC7 | `ENC2_A` / `ENC2_B` | TIM3_CH1 / TIM3_CH2 |
-| PB6 / PB7 | `ENC3_A` / `ENC3_B` | TIM4_CH1 / TIM4_CH2 |
+| PB6 / PB7 | `ENC3_A` / `ENC3_B` | TIM4_CH1 / TIM4_CH2. ⚠ **PB6 is also `UCPD1_CC1`** — firmware *must* set `PWR_CR3.UCPD1_DBDIS`, or a 5.1 kΩ dead-battery pull-down kills this input (defect 8.2 below) |
 | PA15 / PB3 | `ENC4_A` / `ENC4_B` | TIM2_CH1 / TIM2_CH2 |
-| PB14 / PB15 | `ENC5_A` / `ENC5_B` | TIM15_CH1 / TIM15_CH2 |
+| PB2 / PC2 | `ENC5_A` / `ENC5_B` | **TIM20_CH1 / TIM20_CH2** — TIM20 is an advanced-control timer and *does* implement encoder mode. (Was PB14/PB15 on TIM15, which has channels but **no quadrature decoder** — defect 1.5.) |
 | PA0 / PC12 | `ENC6_A` / `ENC6_B` | TIM5_CH1 / TIM5_CH2 |
 | PC4, PC5, PC8, PC9, PC10, PC11 | `ENC1_SW`…`ENC6_SW` | GPIO input |
 | PC13, PD2, PA3, PB10, PB11, PB12 | `BTN1`…`BTN6` | GPIO input |
 | PA6 | `LED_DATA_3V3` | TIM16_CH1 + DMA |
 | PA5 / PA7 / PA4 | `LCD_SCLK` / `LCD_SI` / `LCD_SCS` | SPI1_SCK / SPI1_MOSI / GPIO |
-| PC2 / PC3 | `LCD_DISP` / `LCD_EXTCOMIN` | GPIO (EXTCOMIN is a ~1 Hz software toggle) |
+| PB13 / PC3 | `LCD_DISP` / `LCD_EXTCOMIN` | GPIO (EXTCOMIN is a ~1 Hz software toggle). **`LCD_DISP` moved off PC2**, which is now `ENC5_B` on TIM20_CH2 (defect 1.5) |
 | PB8 / PB9 | `CAN_RX` / `CAN_TX` | FDCAN1 — only option once USB claims PA11/PA12 |
 | PA11 / PA12 | `USB_DM` / `USB_DP` | USB FS |
 | PA13 / PA14 | `SWDIO` / `SWCLK` | debug |
-| PA9 / PA10 | `DBG_TX` / `DBG_RX` | USART1 |
-| PA1 / PA2 | `V12_SENSE` / `V5_SENSE` | ADC1_IN3 / ADC1_IN4 |
-| PB0 / PB1 | `PADDLE_UP_SNS` / `PADDLE_DN_SNS` | GPIO input |
+| PA9 / PA10 | `DBG_TX` / `DBG_RX` | USART1. ⚠ **Also `UCPD1_DBCC1` / `UCPD1_DBCC2`** — a high level here arms the dead-battery pull-down on PB6 / PB4. See defect 8.2 |
+| PA1 / PA2 | `V12_SENSE` / `V5_SENSE` | **ADC12_IN2 / ADC1_IN3** — channel *numbers*, verified in DS12288 Table 12. PA0 is IN1, so the sequence PA0→PA3 is IN1, IN2, IN3, IN4; it is **not** indexed from the pin number (defect 8.3) |
+| PB0 / PB1 | `PADDLE_UP_SNS` / `PADDLE_DN_SNS` | **ADC1_IN15 / ADC1_IN12 — read as ADC, never as GPIO** (defect 1.8). `TT_a` pins: 4.0 V absolute max, and a BAV199 clamp to `+3V3` is **required** (defect 8.7) |
 | **PF0 / PF1** | `OSC_IN` / `OSC_OUT` | **HSE crystal — LQFP-64 pins 5 and 6.** Mandatory for 1 Mbit CAN (§3.2) |
-| PA8, PB2, PB4, PB5, PB13 | spare | bring to test points if convenient |
+| PA8, PB4, PB5, **PB14, PB15** | spare — PB14/PB15 freed when ENC5 moved off TIM15 | bring to test points if convenient |
 
 **Every encoder pair is CH1+CH2 of one timer, *and that timer supports encoder mode*.** Both halves
 matter. Four of six pairs were wrong in the first draft for failing the first test, and a fifth was
 wrong for failing the second — TIM15 has two channels but no quadrature decoder. The timers that
 **do** support encoder mode on this part are **TIM1, TIM2, TIM3, TIM4, TIM5, TIM8, TIM20** (and
 LPTIM1). TIM15/16/17 do **not**. Do not substitute encoder pins without checking both properties.
+
+### ⚠ 9.1 The UCPD dead-battery trap (defect 8.2) — a firmware requirement, not a layout one
+
+This board does **not** use the USB Type-C Power Delivery peripheral. That does not matter: the
+dead-battery pull-downs are armed by *pin voltage*, not by enabling UCPD. DS12288 Table 12, note 6:
+
+> "After reset, a pull-down resistor (Rd = 5.1 kΩ from UCPD peripheral) can be activated on PB6, PB4
+> (UCPD1_CC1, UCPD1_CC2). The pull-down on PB6 (UCPD1_CC1) is activated by high level on PA9
+> (UCPD1_DBCC1). The pull-down on PB4 (UCPD1_CC2) is activated by high level on PA10 (UCPD1_DBCC2).
+> This pull-down control … can be disabled by setting bit UCPD1_DBDIS = 1 in the PWR_CR3 register."
+
+`PA9` is `DBG_TX` (USART1_TX), and **an idle UART line sits high**. So the instant the debug UART is
+initialised, the MCU arms a 5.1 kΩ pull-down on its own `PB6` = `ENC3_A`. Against that pin's 10 kΩ
+conditioning pull-up the idle level becomes 3.3 × 5.1 / 15.1 = **1.11 V**, below the 2.31 V `FT_c`
+V_IH (Table 54, 0.7 × VDD). **ENC3_A can then never read high and TIM4 quadrature decode stops.**
+
+The failure mode is deliberately cruel: encoder 3 works in a production build with the debug UART
+off, and breaks the moment you attach a debug cable to find out why — it fails only while observed.
+
+**Required in firmware on both boards, before any GPIO setup:**
+
+```c
+RCC->APB1ENR1 |= RCC_APB1ENR1_PWREN;
+PWR->CR3      |= PWR_CR3_UCPD1_DBDIS;   /* release Rd on PB4/PB6 — DS12288 Table 12 note 6 */
+```
+
+Treat this as provisioning-class, exactly like `nSWBOOT0`. **There is no hardware fix**: every
+encoder-capable timer pair on LQFP-64 is already allocated, so `ENC3` cannot move, and shrinking the
+10 kΩ pull-up to beat the 5.1 kΩ Rd lands on V_IH with no margin while breaking the low level
+against the 1 kΩ series resistor. The firmware bit is the fix; this box is what keeps it.
+
+**Bring-up gate:** with a debug adapter attached, confirm ENC3 counts in both directions.
 
 ---
 

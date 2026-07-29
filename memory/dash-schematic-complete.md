@@ -222,8 +222,8 @@ its receiver uses, and the servo BEC stars to power ground. Do not "tidy" the se
 | Pin | Net | Justification |
 |---|---|---|
 | PA4 / PA5 / PA6 / PA7 | `EVE_CS` / `EVE_SCK` / `EVE_MISO` / `EVE_MOSI` | SPI1_NSS / SCK / MISO / MOSI — a complete SPI1 set |
-| PB3 / PB4 | `EVE_PDN` / `EVE_INT` | GPIO |
-| PA0–PA3, PC0–PC3 | `AIN1_ADC` … `AIN8_ADC` | **All eight are reachable by ADC1 and/or ADC2**, so one scan sequence (or ADC1+ADC2 dual mode) covers them — no channel is stranded on ADC3/4/5. Exact channel numbers come from CubeMX; the schematic does not need them |
+| PB3 / PB4 | `EVE_PDN` / `EVE_INT` | GPIO. ⚠ **PB4 is also `UCPD1_CC2`** — firmware must set `PWR_CR3.UCPD1_DBDIS` or `EVE_INT` reads permanently asserted with a debug adapter attached (defect 8.2, §8.1) |
+| PA0–PA3, PC0–PC3 | `AIN1_ADC` … `AIN8_ADC` | **All eight reach ADC1**, so one scan sequence covers them — nothing stranded on ADC3/4/5. Channels, verified in DS12288 Table 12: **PA0–PA3 = IN1, IN2, IN3, IN4; PC0–PC3 = IN6, IN7, IN8, IN9.** Do **not** derive these from pin numbers and do not leave them to CubeMX — that assumption was defect 8.3 on the wheel |
 | PB0 / PB1 | `V12_SENSE` / `V5_SENSE` | ADC1/ADC2 capable. **Why not PA1/PA2 as on the wheel:** on the dash, PA0–PA3 are all consumed by DAQ channels `AIN1`–`AIN4`, so the rail monitors had to move. Pure pin pressure, no electrical reason — which is exactly why the two boards' pin maps must never be assumed identical |
 | **PB6 / PB7** | `SERVO1_PWM_3V3` / `SERVO2_PWM_3V3` | **TIM4_CH1 / TIM4_CH2** — one timer, so both servos share a timebase |
 | PA8 | `LED_DATA_3V3` | TIM1_CH1 (no encoder competes for TIM1 on this board) |
@@ -231,8 +231,22 @@ its receiver uses, and the servo BEC stars to power ground. Do not "tidy" the se
 | PB8 / PB9 | `CAN_RX` / `CAN_TX` | FDCAN1 — **fit nothing on BOOT0** |
 | PA11 / PA12 | `USB_DM` / `USB_DP` | USB FS |
 | PA13 / PA14 | `SWDIO` / `SWCLK` | debug |
-| PA9 / PA10 | `DBG_TX` / `DBG_RX` | USART1 |
+| PA9 / PA10 | `DBG_TX` / `DBG_RX` | USART1. ⚠ **Also `UCPD1_DBCC1` / `UCPD1_DBCC2`** — see §8.1 |
 | **PF0 / PF1** | `OSC_IN` / `OSC_OUT` | **HSE crystal, LQFP-64 pins 5/6 — required for CAN bit timing** |
+
+### ⚠ 8.1 The UCPD dead-battery trap (defect 8.2)
+
+Identical mechanism to the wheel — see `wheel-schematic-complete.md` §9.1 for the datasheet quote and
+the full derivation. On **this** board the affected pins are:
+
+- **PB4 = `EVE_INT`**, armed by a high on PA10 (`DBG_RX` — a debug adapter's TX idles high). The
+  Riverdi module pulls INT up with 47 kΩ internally; 5.1 kΩ against that gives **0.32 V**, so the
+  active-low display interrupt reads permanently asserted.
+- **PB6 = `SERVO1_PWM_3V3`**, armed by a high on PA9 (`DBG_TX`). This one is benign — a push-pull
+  output overpowers 5.1 kΩ, costing 0.65 mA — but it is the same coupling and worth knowing about.
+
+Same fix, same place, both boards: `PWR->CR3 |= PWR_CR3_UCPD1_DBDIS;` before any GPIO setup.
+**Bring-up gate:** with a debug adapter attached, confirm `EVE_INT` reads high while the display idles.
 
 **Cross-board note:** PB6/PB7 are the servo pair here and `ENC3_A/B` on the wheel; PB3/PB4 are display
 control here and `ENC4_B`/`PADDLE_UP_SNS` there. Different boards, no conflict — but the shared

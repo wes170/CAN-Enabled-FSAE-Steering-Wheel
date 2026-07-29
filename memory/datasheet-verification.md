@@ -12,7 +12,7 @@
 
 | Part | Status | Outcome |
 |---|---|---|
-| STM32G474RET6 | **PARTIAL — see §1.4b** | **6 defects found** (4 pin-map, missing clock source, wrong BOOT0 option-bit name). See §1 |
+| STM32G474RET6 | **PARTIAL — see §1.4b** | **6 defects found** (4 pin-map, missing clock source, wrong BOOT0 option-bit name). See §1. **Step 2 found 4 more: UCPD dead-battery pull-down on PB6/PB4, ADC channels off by one, paddle pins over abs-max on a TVS clamp, stale authoritative pin table. See §9** |
 | Sharp LS013B7DH05 | **PARTIAL** | **1 defect found (EXTMODE omitted).** See §2 |
 | TJA1051T/3 | **VERIFIED** | Compliant as designed. See §3 |
 | Haltech CAN broadcast protocol | VERIFIED | Read in full; §2.3 table transcribed from it |
@@ -20,7 +20,7 @@
 | WS2812B-2020 | **UNVERIFIED** | Datasheet is image-only, not text-extractable. See §4 |
 | AP63205 / AP63203 | **VERIFIED** | **CRITICAL defect — 35 V abs max cannot face a vehicle battery.** See §5 |
 | SMBJ33A vs buck abs-max | **VERIFIED** | **CRITICAL — TVS clamps 18 V above what the wheel buck survives.** See §5 |
-| LMR33630 | **PARTIAL** | Rejected on abs-max grounds anyway (§5) |
+| LMR33630 | **PARTIAL** | **REJECTED** on abs-max grounds (§5). Step 2 found it still specified as live in the dash capture instructions — see §9 defect 8.4 |
 | **AMS1117-3.3** | **VERIFIED** | **Defect — datasheet requires a tantalum output cap; BOM specifies ceramic.** See §5C |
 | **DMP3056L** | **VERIFIED** | Adequate; −30 V V_DSS is thin against a reverse jump start. See §5D |
 | **BAT54S → BAV199** | **VERIFIED** | **Defect — Schottky leakage corrupts the DAQ channels.** See §5A |
@@ -798,3 +798,186 @@ New standing rule (added to `engineering-rigor.md` as rule 1a): **no pin number,
 pin count, or component value enters a document until it has been read out of the datasheet.** Where
 a value is genuinely a placeholder, it must say so in the text — "spec, select at capture" — rather
 than appearing as a decision.
+
+---
+
+## 9. Step 2 — second full design pass, **six further defects**
+
+> The Step 2 pass deliberately used *different activities* rather than re-reading: a scripted
+> cross-document sweep, a signal-chain trace asking "what does the other end of this net do at
+> power-on?", and a peripheral-instance audit asking for the *channel number* rather than "is this
+> pin an ADC pin?". Every defect below was passed by earlier prose reviews.
+
+### Defect 8.1 — the authoritative pin table still held the pre-1.5 assignments (MAJOR)
+
+`wheel-schematic-complete.md` **§9** — the table `board_config.h` names as authoritative — still read
+`PB14 / PB15 | ENC5_A / ENC5_B | TIM15_CH1 / TIM15_CH2` and `PC2 / PC3 | LCD_DISP / LCD_EXTCOMIN`,
+eight lines above its own footnote explaining that TIM15 has no quadrature decoder.
+
+**Root cause, and the reason this matters more than the defect itself:** the defect-1.5 fix was
+applied by matching the string `| ENC5 A / B | PB14 / PB15 |`, which is the format used in *this*
+file's tables. §9 writes the same fact as `` | PB14 / PB15 | `ENC5_A` / `ENC5_B` | `` — different
+column order, backticks, underscores. The edit reported success and silently missed the one table
+that mattered.
+
+Worse, `board_config.h:9` says *"if this file and the schematic definition ever disagree, the
+schematic definition is right and this file is a bug."* Followed literally, that rule instructed the
+next engineer to **revert the fix** — restoring TIM15 and the double-booked PC2.
+
+**Fix:** §9 corrected. `scripts/check-consistency.py` written so the check is mechanical, not
+attentional — it parses §9 for double-booked pins and for encoder rows naming a timer that cannot
+decode quadrature, and cross-checks `board_config.h` against it.
+
+### Defect 8.2 — the debug UART disables encoder 3 (MAJOR)
+
+`PA9`/`PA10` (`DBG_TX`/`DBG_RX`) are also `UCPD1_DBCC1`/`UCPD1_DBCC2`, the USB Type-C **dead-battery**
+sense inputs. DS12288 Table 12 note 6:
+
+> "After reset, a pull-down resistor (Rd = 5.1 kΩ from UCPD peripheral) can be activated on PB6, PB4
+> (UCPD1_CC1, UCPD1_CC2). The pull-down on PB6 (UCPD1_CC1) is activated by high level on PA9
+> (UCPD1_DBCC1). The pull-down on PB4 (UCPD1_CC2) is activated by high level on PA10 (UCPD1_DBCC2).
+> This pull-down control … can be disabled by setting bit UCPD1_DBDIS = 1 in the PWR_CR3 register."
+
+An idle UART line sits high, so initialising the debug UART arms Rd on the MCU's own `PB6`:
+
+| Board | PB6 / PB4 net | Idle level with 5.1 kΩ Rd | Result |
+|---|---|---|---|
+| Wheel | `ENC3_A`, 10 kΩ pull-up | 3.3 × 5.1/15.1 = **1.11 V** | Below the 2.31 V `FT_c` V_IH (Table 54) — **ENC3_A can never read high; TIM4 decode fails** |
+| Dash | `EVE_INT`, 47 kΩ internal pull-up | 3.3 × 5.1/52.1 = **0.32 V** | Active-low display interrupt **stuck asserted** |
+| Dash | `SERVO1_PWM_3V3`, push-pull output | — | Benign; 0.65 mA of wasted drive |
+
+**Why it hid.** Three layers. (1) Neither board uses UCPD — the wheel's CC pins are terminated with
+*discrete* 5.1 kΩ resistors — so "UCPD is not in this design" was true and misleading at once; this is
+a default-on peripheral function that fires without being instantiated. (2) The coupling is between
+two pins nobody would trace together; the AF table correctly says PB6 is TIM4_CH1 and PA9 is
+USART1_TX, and the hazard lives only in a footnote linking them. (3) The debug UART is the one
+interface everyone assumes is inert — here it is an actuator that shifts the DC operating point of a
+pin two ports away. The symptom is maximally hostile: **encoder 3 fails only while you are watching
+it**, working in a production build and breaking when the debug harness is attached to diagnose it.
+
+**Fix:** `PWR->CR3 |= PWR_CR3_UCPD1_DBDIS;` before any GPIO configuration, both boards — provisioning
+class, like `nSWBOOT0`. Documented in `wheel-schematic-complete.md` §9.1, `dash-schematic-complete.md`
+§8.1, and `board_config.h`. **No hardware fix exists**: every encoder-capable timer pair on LQFP-64 is
+allocated, so ENC3 cannot move, and shrinking the pull-up to beat Rd lands on V_IH with zero margin.
+Bring-up gate: with a debug adapter attached, confirm ENC3 counts both directions.
+
+### Defect 8.3 — wheel rail-monitor ADC channels off by one (MAJOR)
+
+`board_config.h` had `V12_SENSE_CH = 3` and `V5_SENSE_CH = 4`. Verified in DS12288 Table 12:
+
+| Pin | Channel | Pin | Channel |
+|---|---|---|---|
+| PA0 | ADC12_IN1 | PC0 | ADC12_IN6 |
+| **PA1** | **ADC12_IN2** | PC1 | ADC12_IN7 |
+| **PA2** | **ADC1_IN3** | PC2 | ADC12_IN8 |
+| PA3 | ADC1_IN4 | PC3 | ADC12_IN9 |
+
+`PA1` is IN**2**, not IN3. So channel 3 sampled `PA2` (the 5 V divider) as the 12 V monitor, and
+channel 4 sampled `PA3` — which on the wheel is **`BTN3`**. Both failures are quiet:
+
+- 12 V monitor reads 2.5 × 5.7 = **14.25 V** — a perfectly plausible charging voltage, so it never
+  looks wrong.
+- 5 V monitor reads 6.6 V idle and **0 V whenever a driver presses button 3** — a phantom rail
+  collapse correlated with a button.
+
+**Why it hid.** §1.4b recorded "ADC instance availability per pin" as checked, and it *was*: the
+question asked was "can ADC1 reach PA1?", which is true. The channel *index* was never the question.
+The numbering is off-by-one-trappy in both directions — PA0 = IN1, so counting from either PA0 = IN0
+or PA0 = IN1 produces a self-consistent-looking answer.
+
+**Fix:** channels corrected to 2 and 3. The verified table above is now written into `board_config.h`
+for both boards, including `AIN_CHANNELS` for the eight dash DAQ pins, so Step 3 cannot re-derive them
+from pin numbers.
+
+### Defect 8.4 — capture instructions still specified rejected parts (MODERATE — see the severity note)
+
+> **Severity, honestly stated.** The sheet-by-sheet sections of *both* Altium instruction files sit
+> under a `⚠ SUPERSEDED BY THE SCHEMATIC-DEFINITION FILE ⚠` banner that already warns they "still name
+> parts that have since been rejected". So this is a second line of defence failing, not the first —
+> lower severity than it first appeared, and it is recorded that way rather than inflated. It is still
+> worth fixing: a banner is weaker than correct text, and readers skim. **`PROJECT-LOG.md` gate G2 and
+> the dash BOM carried no banner at all.**
+
+`dash-pcb-altium-instructions.md` §1.1 still said:
+
+1. *"**LMR33630ADDAR** buck → +5V @ 2 A, 400 kHz … 2×22 µF in, 2×47 µF out"*. The LMR33630 was
+   **rejected** in §5: its 42 V absolute maximum is 11 V *below* the SMBJ33A's 53.3 V clamp. The BOM
+   and `dash-schematic-complete.md` had both moved to the LMR36015; this file had not.
+2. *"**AP63203WU-7** buck fed from `+12V_P`"*. The BOM explicitly re-sourced this from `+5V` because
+   its 35 V absolute maximum must never face the battery — the *exact* failure mode of defect 5.1.
+
+The **wheel** file had the identical problem: §3.1 step 3 specified the rejected **AP63205WU-7**
+(the original 35 V-abs-max part from defect 5.1) and step 4 the rejected **AMS1117-3.3** (the
+tantalum-required LDO from defect 5.4); §2 still listed an AP63205 TSOT-26 footprint check and §4 an
+"AP63205 hot loop" placement rule. `PROJECT-LOG.md` gate G2 — **not** under any banner — still named
+the LMR33630 hot loop.
+
+All corrected, and each now says explicitly which part is *not* to be fitted and why, so the stale
+version cannot be followed from memory.
+
+### Defect 8.5 — both BOMs omitted components the buck datasheet calls *required* (MAJOR)
+
+Reversing the BOM (lens 4) rather than reading it forward: the LMR36015's mandatory support parts
+were described in prose inside `U1`'s notes cell but **were not orderable line items**.
+
+| Part | Datasheet | Consequence if absent |
+|---|---|---|
+| `C_BOOT` 100 nF | §10.2.1.2.7 "requires" | High-side FET cannot be driven — **buck does not switch at all** |
+| `C_VCC` 1 µF | §10.2.1.2.8 "requires … for proper operation" | Internal LDO unstable |
+| `R_FBT` / `R_FBB` | Table 10-1 | **No output setpoint** — FB floating |
+| `C_FF` 20 pF | §10.2.1.2.9 | Degraded phase margin |
+| 2 × 220 nF at VIN | §10.2.1.2.6 "**must** be used … place two 220-nF ceramic capacitors at each VIN-PGND location" | No HF bypass for the internal control circuits |
+
+The dash was worse: its `C2;C3` (2 × 22 µF in) and `C4;C5` (2 × 47 µF out) were the **LMR33630
+400 kHz** values, left behind when only the MPN cell was updated — while
+`dash-schematic-complete.md` asserted the passives were "identical" to the wheel's. They were not.
+
+**Fix:** all six parts added as line items to both BOMs; dash input/output capacitors corrected to
+the wheel-identical TI Table 10-1 1 MHz values. The two documents now actually agree.
+
+### Defect 8.6 — wheel capture instructions still showed the pre-1.8 paddle tap (MODERATE)
+
+`wheel-pcb-altium-instructions.md` §3.3 step 3 still read *"tap 100 kΩ → `PADDLE_UP_SNS` → 1 nF to
+GND at MCU pin"* — a single series resistor with **no lower divider leg**, which is defect 1.8
+verbatim. Capturing from it puts the full paddle-line voltage on a 4.0 V pin.
+
+Same severity caveat as 8.4: this sits under the superseded banner, so it is a backup layer failing
+rather than the primary instruction. Corrected anyway to the 150 kΩ / 39 kΩ divider plus the 8.7
+clamp, with an explicit "do not fit the 100 kΩ single-resistor tap shown in earlier revisions".
+
+### Defect 8.7 — paddle sense pins exceed their absolute maximum during a TVS clamp (MAJOR)
+
+Traced end-to-end (lens 1): `D3`/`D4` are **SMAJ24CA**, clamping at **38.9 V**. Through the
+150 kΩ/39 kΩ divider that is 38.9 × 39/189 = **8.03 V** at `PB0`/`PB1` — pins whose absolute maximum
+is **4.0 V** (DS12288 Table 14, `TT_xx`). Defect 1.8 fixed the *steady-state* case (16 V charging
+system → 3.30 V); the *transient* case was never checked.
+
+There is no self-rescue. Table 15 note 3: *"Positive injection (when V_IN > V_DD) is **not possible**
+on these I/Os"* — meaning these pins have **no upper clamp diode to VDD**, so the overvoltage appears
+across the pin structure rather than being shunted into the rail. The absence of an injection *number*
+here is not permission; it is the statement that the mechanism which would have saved the pin does not
+exist.
+
+**Fix:** `D14`/`D15`, **BAV199** from each sense net to `+3V3`. The clamp holds the pin near 3.9 V
+while the 150 kΩ upper leg limits diode current to (38.9 − 3.9)/150 kΩ = **0.23 mA**, trivial for a
+BAV199. BAV199 rather than a Schottky for the same reason as the DAQ front end — leakage into a
+high-impedance node *is* signal error (defect 5.2). This makes the wheel consistent with the dash,
+where the equivalent clamp was already declared load-bearing (defect 1.7).
+
+### Recorded, not counted — one suspicion needing hardware
+
+`LED_DATA_3V3` (PA6) has no pull-down, and the 74AHCT1G125 buffer has `/OE` hard-tied to GND, so the
+buffer drives the WS2812 chain from a **floating CMOS input** between power-on and firmware init. A
+10 kΩ pull-down on PA6 is free and removes the question, but the 74AHCT1G125 datasheet has not been
+read locally, so no number is asserted here. **SUSPECTED, MINOR** — carried into the bring-up plan.
+
+### Coverage — audited this pass and found clean
+
+Every encoder pair re-checked pin-by-pin against Table 12 (ENC1 PC0/PC1 TIM1 · ENC2 PC6/PC7 TIM3 ·
+ENC3 PB6/PB7 TIM4 · ENC4 PA15/PB3 TIM2 · ENC5 PB2/PC2 TIM20 · ENC6 PA0/PC12 TIM5), the
+encoder-capable timer list (TIM1/2/3/4/5/8/20 + LPTIM1 per §3.24.3), LED on TIM16_CH1 + DMA via
+DMAMUX, SPI1 sets on both boards, FDCAN1 forced to PB8/PB9 by USB, USB FS on PA11/PA12, all eight dash
+DAQ pins reaching ADC1, paddle pin class `TT_a` confirmed, PC13 as an *input* (note 2 restricts PC13–15
+in output mode only), and the crystal on PF0/PF1 (both bonded on LQFP-64). Power chain re-derived:
+53.3 V clamp vs 66 V abs max = 12.7 V margin. CAN chain: PESD2CAN 41 V clamp vs ±58 V bus tolerance,
+VIO/VCC split, S to GND, TXD idling recessive with no firmware.

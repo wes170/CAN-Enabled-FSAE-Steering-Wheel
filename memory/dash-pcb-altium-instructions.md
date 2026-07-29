@@ -86,8 +86,8 @@ behind the board-personality `#define`, not assume a pin means the same thing ev
 ### 1.1 `dash-power.SchDoc` — 12 V automotive entry
 1. `+12V_IN` → **2 A polyfuse** → reverse-polarity **P-FET** (DMP3056L class: source→board, gate→GND via 10k, gate zener 12V) → net `+12V_P`.
 2. At the connector side: **SMBJ33A** to GND + 100 nF. (Verify clamp vs. buck abs-max with a scope during load-dump-simulation — rigor assumption; drop to SMBJ26A if measurements demand.)
-3. **LMR33630ADDAR** buck → `+5V` @ 2 A, 400 kHz: follow the datasheet reference layout *exactly* (inductor 10 µH ≥3 A sat, 2×22 µF in, 2×47 µF out, RT/FB per 5 V table). Feeds: `+5V_SENS` (through 200 mA polyfuse + SMBJ5.0A at J2), the servo-signal buffers, and on-board 5V loads. **Rev B: the `+5V_AUX` wheel feed, its 1.5 A polyfuse and TVS are deleted** — the wheel is 12V-fed and standalone, which is why this buck drops from 3 A to 2 A.
-4. **AP63203WU-7** buck fed from `+12V_P` (per its 3.8–32 V rating, which unloads the 5V buck) → `+3V3` @ 2 A for MCU + display.
+3. **LMR36015FBRNXR** buck → `+5V`, 1 MHz, VQFN-HR-12 (RNX). ***Not* the LMR33630** — that part was rejected because its 42 V absolute maximum sits below the SMBJ33A's 53.3 V clamp (defect 5.1); the LMR36015's 66 V rating is what makes the protection chain work. **Same part and same passives as the wheel: copy `wheel-power.SchDoc` rather than re-entering values.** L1 = 10 µH (I_sat ≥ 2 A), C_IN = 4.7 µF 50 V + **2 × 220 nF 50 V, one at each VIN–PGND pair** (the datasheet says these *must* be fitted — §10.2.1.2.6), C_OUT = 3 × 15 µF 16 V, C_BOOT = 100 nF, C_VCC = 1 µF, R_FBT = 100 kΩ, R_FBB = 24.9 kΩ, C_FF = 20 pF. Feeds: `+5V_SENS` (through 200 mA polyfuse + SMBJ5.0A at J2), the servo-signal buffers, the Riverdi backlight on BLVDD, and on-board 5 V loads — ~1.0 A against a 1.5 A rating. **Rev B: the `+5V_AUX` wheel feed, its 1.5 A polyfuse and TVS are deleted** — the wheel is 12 V-fed and standalone.
+4. **AP63203WU-7** buck → `+3V3`. ⚠ **Fed from `+5V`, NOT from `+12V_P`.** Its 35 V absolute maximum must never face the battery: the SMBJ33A clamps at 53.3 V, so a part on the raw rail dies exactly as the original AP63205 selection would have (defect 5.1). Cascading it behind the 5 V buck also means it only ever sees a regulated 5 V. Real 3.3 V load is ~0.5 A (MCU + module VDD) — the backlight is on `+5V`/BLVDD, not this rail — so the 2 A part is heavily oversized but harmless.
 5. Ferrite → `+3V3A` for VDDA + dividers' filter caps as on wheel.
 6. Test points on every rail; rail monitor dividers to PB0/PB1 with 100 nF.
 
@@ -157,7 +157,7 @@ where the switching load lives).
 ## 2. PCB layout deltas
 
 1. Board shape from the dash enclosure/panel DXF; display module mounts *over* the PCB on standoffs with the FPC folding once — place the ZIF within 40 mm of the module's tail exit, contacts facing per the fold direction (mock the fold in paper first — FPC folds are where dashes die).
-2. **Power entry corner:** J1 → fuse → FET → TVS → buck, in that physical order, no crossing nets. Buck loops (SW node, input cap loop) minimized per datasheet — the LMR33630 hot loop must be < 20 mm².
+2. **Power entry corner:** J1 → fuse → FET → TVS → buck, in that physical order, no crossing nets. Buck loops (SW node, input cap loop) minimized per datasheet — the LMR36015 hot loop must be < 20 mm².
 3. **Analog zone:** J2 + AFE on the opposite board edge from the bucks; analog pour under AFE; no switching traces within 5 mm; route AINx_ADC on L3 over the analog pour.
 4. SPI to display: length < 80 mm, GND-referenced, series 22 Ω at MCU on SCK/MOSI (ringing control at 30 MHz).
 5. Same rules/stackup/DRC/outputs as wheel §4–§7 (JLC7628, impedance calc for USB pair; SPI at 30 MHz doesn't need impedance control at these lengths, just referencing).

@@ -58,6 +58,33 @@
  *   belongs to other STM32 families, not G4. Defect 1.6.)
  */
 
+/*  ⚠ UCPD DEAD-BATTERY HAZARD — PA9/PA10 silently sabotage PB6/PB4.
+ *
+ *  Neither board uses USB Type-C Power Delivery. It does not matter: the
+ *  dead-battery pull-downs are armed by PIN VOLTAGE, not by enabling UCPD.
+ *
+ *  DS12288 Table 12 note 6: a 5.1 kohm pull-down (Rd) is activated on
+ *      PB6 (UCPD1_CC1) by a high level on PA9  (UCPD1_DBCC1)
+ *      PB4 (UCPD1_CC2) by a high level on PA10 (UCPD1_DBCC2)
+ *
+ *  PA9 is DBG_TX and an idle UART line sits HIGH, so initialising the debug
+ *  UART arms Rd on PB6 -- which is ENC3_A on the wheel. Against its 10 kohm
+ *  conditioning pull-up that gives 3.3 * 5.1/15.1 = 1.11 V, under the 2.31 V
+ *  FT_c V_IH, so ENC3_A never reads high and TIM4 decode dies. On the dash
+ *  PB4 is EVE_INT (47 kohm internal pull-up) -> 0.32 V, i.e. the active-low
+ *  display interrupt is stuck asserted whenever a debug adapter is attached.
+ *
+ *  So the bug appears only while you are watching it. Clear it FIRST, before
+ *  any GPIO configuration, in system_init():
+ *
+ *      RCC->APB1ENR1 |= RCC_APB1ENR1_PWREN;
+ *      PWR->CR3      |= PWR_CR3_UCPD1_DBDIS;
+ *
+ *  No hardware fix exists: every encoder-capable timer pair on LQFP-64 is
+ *  already allocated, so ENC3 cannot move off PB6. Defect 8.2.
+ */
+#define UCPD_DEAD_BATTERY_MUST_BE_DISABLED  1
+
 /* HSE crystal — mandatory. HSI16 is -1%/+1% over 0..85 C; CAN needs roughly
  * ±0.5% per node and that budget is shared with every other node. */
 #define HSE_FREQ_HZ   16000000u         /* confirm against the fitted crystal */
@@ -163,9 +190,16 @@
 #define PADDLE_DIVIDER_DEN  39u
 #define PADDLE_THRESH_MV    500u        /* above this = line high (pulled up) */
 
-/* Rail monitors */
-#define V12_SENSE_CH  3u                /* PA1 = ADC1_IN3, 47k/10k divider */
-#define V5_SENSE_CH   4u                /* PA2 = ADC1_IN4, 10k/10k divider */
+/* Rail monitors.
+ *
+ * CHANNEL NUMBERS, NOT PIN NUMBERS. PA0 is IN1, so PA0..PA3 are IN1..IN4 --
+ * the index is offset by one from the pin number and it is easy to land one
+ * either side and have both feel right. Verified in DS12288 Table 12.
+ * These were previously 3 and 4 (defect 8.3): the 12 V monitor actually
+ * sampled PA2 and read a plausible-looking 14.25 V, and the 5 V monitor
+ * sampled PA3 = BTN3, so pressing button 3 faked a 5 V rail collapse. */
+#define V12_SENSE_CH  2u                /* PA1 = ADC12_IN2, 47k/10k divider */
+#define V5_SENSE_CH   3u                /* PA2 = ADC1_IN3,  10k/10k divider */
 
 #endif /* BOARD_WHEEL */
 
@@ -197,6 +231,16 @@
  * them. Divider is /2, so 0-5 V in maps to 0-2.5 V at the pin. */
 #define AIN_PINS  { {GPIOA,0}, {GPIOA,1}, {GPIOA,2}, {GPIOA,3}, \
                     {GPIOC,0}, {GPIOC,1}, {GPIOC,2}, {GPIOC,3} }
+
+/* ADC CHANNEL numbers for the pins above, in the same order. Do NOT derive
+ * these from the pin numbers -- PA0 is IN1 and PC0 is IN6, so neither port
+ * maps one-to-one. Read from DS12288 Table 12; getting this wrong on the
+ * wheel rail monitors was defect 8.3. */
+#define AIN_CHANNELS  { 1u, 2u, 3u, 4u, 6u, 7u, 8u, 9u }
+/*                     PA0 PA1 PA2 PA3 PC0 PC1 PC2 PC3
+ * PA0 ADC12_IN1 · PA1 ADC12_IN2 · PA2 ADC1_IN3  · PA3 ADC1_IN4
+ * PC0 ADC12_IN6 · PC1 ADC12_IN7 · PC2 ADC12_IN8 · PC3 ADC12_IN9
+ * All eight reach ADC1, so a single scan sequence covers the set. */
 #define AIN_COUNT        8u
 #define AIN_DIVIDER_NUM  2u             /* Vin = Vadc * 2 */
 #define AIN_ARB_FB_FRONT 6u             /* index of AIN7 */

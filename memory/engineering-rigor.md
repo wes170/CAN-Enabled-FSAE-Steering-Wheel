@@ -88,6 +88,13 @@
    Without this the board boots to the system bootloader whenever the CAN bus is live (defect 1.3),
    and it cannot be fixed in firmware because boot mode latches during reset. **Re-verify after any
    mass erase** — an erase restores `nSWBOOT0 = 1` and silently re-arms the fault.
+3a. **UCPD dead-battery release — do this with the debug adapter ATTACHED** (defect 8.2). Confirm the
+   firmware sets `PWR_CR3.UCPD1_DBDIS` before any GPIO setup, then, *with the debug cable plugged in*,
+   check the affected pin on each board: **wheel — ENC3 counts cleanly in both directions**;
+   **dash — `EVE_INT` reads high while the display idles.** These pins carry a 5.1 kΩ pull-down armed
+   by the idle-high debug UART, so this failure is invisible unless the debug harness is connected —
+   which is the opposite of every other bug's behaviour. Test in the failing configuration, not the
+   convenient one.
 4. **CAN loopback:** FDCAN external-loopback + sniffer; then two-node bench bus with USB-CAN at 1 Mbit/s; verify bit timing with scope (sample point ~80%).
 5. **Protocol close-out:** emulated keypad against NSP/bench ECU (closes A1); IO12 frames visible in NSP as AVI values (A2 for Box B); broadcast decode against known ECU values.
 6. **HMI:** every encoder detent count CW/CCW ×20 fast/slow, every switch 100 presses, sense lines' voltages in both paddle states.
@@ -200,7 +207,7 @@
   60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
   covers both boards. **Verification is not only a hunt for defects — unverified numbers are
   padded numbers, and padding costs parts.**
-- **L19 (2026-07, updated):** **Fifteen defects so far** (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+- **L19 (2026-07, updated):** **Twenty-two defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and seven more in the Step 2 design pass (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
   were both **interactions between two correct-looking choices**, not errors in either one alone.
   PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
   combination. **Review pairs, not parts:** for every component, ask what else touches its net and
@@ -253,6 +260,60 @@
   divider was first sized so a 12 V line landed safely — then the arithmetic for a 16 V charging
   system gave 4.35 V against a 4.0 V limit. A "12 V" automotive system is 14.4 V running and higher
   in transient. **Rigor rule 3 says worst case; a rail's *name* is not its worst case.**
+
+- **L26 (2026-07, Step 2 pass):** **A search-and-replace fix is only as good as its weakest format
+  match.** The defect-1.5 correction was applied by matching a string in one table's layout; the
+  *authoritative* pin table wrote the same fact with different column order, backticks and
+  underscores, so it kept the wrong timer and a double-booked pin through several commits. The edit
+  reported success. **After any correction, verify the fact is now right everywhere by searching for
+  the OLD value, not by confirming the new one appears.** If `TIM15` still returns hits, the fix is
+  not finished — regardless of how many places `TIM20` now appears.
+
+- **L27 (2026-07, Step 2 pass):** **"This file is authoritative" is a hazard unless it is enforced
+  mechanically.** `board_config.h` correctly said "if this file and the schematic disagree, the
+  schematic is right and this file is a bug." Because the schematic's §9 table was the stale one,
+  that rule instructed the next engineer to *revert a fix*. A pointer to a source of truth is only
+  safe if something checks that the source is actually true. Hence `scripts/check-consistency.py`,
+  which is now a commit gate: **prose review cannot detect format-divergent duplication; a parser
+  can.** Every defect the script was written to catch, humans had already reviewed past.
+
+- **L28 (2026-07, Step 2 pass):** **A peripheral you never enable can still be wired to your pins.**
+  The UCPD dead-battery pull-downs (defect 8.2) are armed by *pin voltage*, not by initialising UCPD
+  — so "we don't use USB-PD" was true and completely beside the point. Worse, the trigger was the
+  debug UART, the one interface everybody treats as inert, which meant the fault appeared *only while
+  being observed*. **For every pin, read the whole alternate-function list including the footnote
+  markers, and ask which of those functions are ON BY DEFAULT rather than which you intend to use.**
+
+- **L29 (2026-07, Step 2 pass):** **Verifying that a resource is *reachable* is not verifying its
+  *index*.** The audit recorded "all these pins reach ADC1" — true, checked, and useless against
+  defect 8.3, where the channel *numbers* were off by one and the 12 V monitor silently read a
+  plausible 14.25 V while the 5 V monitor sampled a button. **Write the question down before
+  answering it.** "Is PA1 an ADC pin?" and "which channel is PA1?" are different questions, and the
+  first one passing feels exactly like the second one passing.
+
+- **L30 (2026-07, Step 2 pass):** **Absence of a rating is not permission.** The paddle pins had no
+  positive-injection limit to violate (defect 8.7) — because the datasheet states positive injection
+  is *not possible* on those I/Os, i.e. there is **no internal clamp to VDD at all**. The missing
+  number was the warning, not the all-clear. When a limit table omits your case, find out whether it
+  is omitted because it is safe or because the protecting mechanism does not exist.
+
+- **L31 (2026-07, Step 2 pass):** **Part substitutions must be chased through the passives, not just
+  the part number.** Swapping the dash buck LMR33630 → LMR36015 updated the MPN cell and left the old
+  inductor/capacitor values behind (defect 8.5), while a sibling document asserted the passives were
+  "identical to the wheel". Separately, five components the datasheet calls *required* — C_BOOT,
+  C_VCC, both feedback resistors, C_FF — existed only as prose inside a notes cell and were never
+  orderable lines; a board built from that BOM would not have switched at all. **A BOM line is a
+  procurement promise: if a part is needed to make the circuit function, it gets its own row with a
+  quantity, never a mention in someone else's comment field.**
+
+- **L32 (2026-07, Step 2 pass):** **Capture instructions rot faster than the documents they cite,
+  because nobody re-reads them until build day.** Two rejected parts (defect 8.4) and one superseded
+  circuit (defect 8.6) were still specified as live steps in the Altium instruction files long after
+  the BOMs and schematic definitions had moved on. These are the *last* documents a person reads and
+  the *first* they act on. **When a decision changes, the step-by-step build instructions are the
+  highest-priority place to update, not the lowest** — and say explicitly what NOT to fit, since the
+  stale version may already be in someone's head.
+
 
 ## 5A. Planned future work (do not lose track of these)
 
