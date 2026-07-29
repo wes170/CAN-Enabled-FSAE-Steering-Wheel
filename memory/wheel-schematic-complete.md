@@ -184,7 +184,7 @@ with `C_stray ≈ 3–5 pF` for this geometry. Do not carry over the 18 pF figur
 |---|---|---|
 | `C23` | 100 nF, 0402 | `NRST` → `GND` |
 | — | — | `NRST` also to Tag-Connect pin |
-| **BOOT0** | **no component** | ⚠ **Fit nothing.** `PB8-BOOT0` is also `FDCAN1_RX`; a pulldown fights the transceiver output. BOOT0 comes from the **`nBOOT0` option bit (`nBOOT_SEL = 1`)**, set at first flash and re-checked after any mass erase. See `datasheet-verification.md` defect 1.3 |
+| **BOOT0** | **no component** | ⚠ **Fit nothing.** `PB8-BOOT0` is also `FDCAN1_RX`; a pulldown fights the transceiver output. BOOT0 comes from the **`nBOOT0` option bit (**`nSWBOOT0 = 0` + `nBOOT0 = 1`, via STM32CubeProgrammer**)**, set at first flash and re-checked after any mass erase. See `datasheet-verification.md` defect 1.3 |
 | `J_SWD` | Tag-Connect **TC2030-CTX** footprint (copper + 3 locating holes, no part) | pin 1 `+3V3`, 2 `SWDIO`(PA13), 3 `NRST`, 4 `SWCLK`(PA14), 5 `GND`, 6 NC |
 | `J4` | JST-GH 3-pin, `SM03B-GHS-TB` | 1 `DBG_TX`(PA9), 2 `DBG_RX`(PA10), 3 `GND` |
 

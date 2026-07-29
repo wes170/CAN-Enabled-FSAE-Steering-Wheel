@@ -291,7 +291,7 @@ chip samples at power-up to decide whether to run your program or drop into the 
 — but on this chip's pinout, `PB8` is *also* `FDCAN1_RX`, the CAN receive line. Do not fit a pulldown
 resistor here. A pulldown would fight against the CAN transceiver's own output driving that same
 pin, which is actively harmful, not just redundant. Instead, BOOT0's behavior comes from the chip's
-`nBOOT0` option bit (with `nBOOT_SEL = 1`) — a setting stored in the chip's non-volatile
+`nBOOT0` option bit (set `nSWBOOT0 = 0` so BOOT0 comes from the option bit, and `nBOOT0 = 1` to boot main flash) — a setting stored in the chip's non-volatile
 configuration memory, not a voltage on a pin. This must be set the first time the board is flashed,
 and **re-checked after any full chip erase**, because a mass erase can restore the factory default
 and silently undo it. (See `datasheet-verification.md` §1 defect 1.3 for the full failure story: an

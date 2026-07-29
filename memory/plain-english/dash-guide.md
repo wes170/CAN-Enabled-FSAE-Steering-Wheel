@@ -74,7 +74,7 @@ explicitly because they're easy to get wrong on any STM32G4 board:
     merely redundant. And if BOOT0 is ever taken from the pin, an idle CAN bus sits recessive, which
     is logic HIGH — so the MCU samples BOOT0 = 1 and jumps into the system bootloader at every
     power-on with a live bus, while booting perfectly on the bench with the bus unplugged. BOOT0 must
-    come from the `nBOOT0` option bit with `nBOOT_SEL = 1`, set at first flash, verified on every
+    come from the `nBOOT0` option bit with **`nSWBOOT0 = 0` and `nBOOT0 = 1`**, set at first flash, verified on every
     board, and re-checked after any mass erase, because a full chip erase can restore the factory
     option-bit state. DFU entry uses USB DFU or an SWD-triggered jump — never a BOOT0 strap.
 - One placement difference from the wheel: the rail-voltage monitor signals land on **PB0/PB1** here

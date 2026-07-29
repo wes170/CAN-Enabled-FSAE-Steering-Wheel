@@ -101,8 +101,8 @@ This is now the *same input stage as the dash* (§1.1 of the dash doc). Copy tha
 1. STM32G474RET6: 100 nF at **every** VDD pin + one 4.7 µF bulk; VDDA from `+3V3A`.
 2. NRST: 100 nF to GND (+ pin to TC2030).
    **BOOT0: DO NOT fit a pulldown or strap.** `PB8-BOOT0` is also `FDCAN1_RX` on this package, and a
-   pulldown would fight the transceiver's RXD output. BOOT0 must come from the **`nBOOT0` option bit
-   (`nBOOT_SEL = 1`)**, set at first flash and re-checked after any mass erase — otherwise an idle
+   pulldown would fight the transceiver's RXD output. BOOT0 must come from the option bytes: **`nSWBOOT0` (FLASH_OPTR[26]) = 0** and
+   **`nBOOT0` (FLASH_OPTR[27]) = 1**, set with **STM32CubeProgrammer** and re-checked after any mass erase — otherwise an idle
    (recessive-high) CAN bus makes the MCU boot into the system bootloader every power-on. Full
    analysis: `memory/datasheet-verification.md` §1 defect 1.3. DFU entry is via USB DFU or an
    SWD-triggered jump, never a BOOT0 strap.

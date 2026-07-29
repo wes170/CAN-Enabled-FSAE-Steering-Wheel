@@ -12,7 +12,7 @@
 
 | Part | Status | Outcome |
 |---|---|---|
-| STM32G474RET6 | **PARTIAL — see §1.4b for what was *not* read** | **5 defects found** (4 pin-map + missing clock source). See §1 |
+| STM32G474RET6 | **PARTIAL — see §1.4b** | **6 defects found** (4 pin-map, missing clock source, wrong BOOT0 option-bit name). See §1 |
 | Sharp LS013B7DH05 | **PARTIAL** | **1 defect found (EXTMODE omitted).** See §2 |
 | TJA1051T/3 | **VERIFIED** | Compliant as designed. See §3 |
 | Haltech CAN broadcast protocol | VERIFIED | Read in full; §2.3 table transcribed from it |
@@ -74,13 +74,45 @@ the application. The wheel would simply never start in the car, while working pe
 with the bus unplugged — one of the nastiest failure signatures possible.
 
 **Required mitigation (must be in the build procedure, not just the schematic):**
-1. Set the option bits so BOOT0 comes from the **`nBOOT0` option bit, not the pin** (`nBOOT_SEL = 1`),
+1. Set the option bits so BOOT0 comes from the **option bits, not the pin**: on STM32G4 that is **`nSWBOOT0` (FLASH_OPTR[26]) = 0** so BOOT0 is taken from the option bit rather than PB8, **and `nBOOT0` (FLASH_OPTR[27]) = 1** to boot main flash. Set them with **STM32CubeProgrammer** — boot mode is latched during the reset sequence, so firmware cannot fix this after the fact,
    as part of first flashing. Verify it on every board.
 2. **Delete the "10 kΩ BOOT0 pulldown + test point" from the original instructions** — that circuit
    fights the CAN transceiver's RXD output and is actively harmful here.
 3. DFU entry uses the USB DFU path or an SWD-triggered jump, **not** a BOOT0 strap.
-4. A full chip erase can restore the factory option-bit state, so **re-check `nBOOT_SEL` after any
+4. A full chip erase can restore the factory option-bit state, so **re-check `nSWBOOT0`/`nBOOT0` after any
    mass erase.** Put it in the bring-up log.
+
+### Defect 1.6 — the BOOT0 mitigation named a bit that does not exist on this family (CRITICAL)
+
+The mitigation for defect 1.3 said: *"set the option bits so BOOT0 comes from the `nBOOT0` option
+bit, not the pin (`nBOOT_SEL = 1`)."* **`nBOOT_SEL` is not an STM32G4 bit.** It belongs to other
+families (G0, U0, L5). I wrote it from memory and flagged it in §1.4b as *"the one that matters,
+because the whole BOOT0 fix rests on them"* — that flag was correct, and the claim was wrong.
+
+**The actual STM32G4 option bytes**, confirmed by an ST staff answer on the identical case
+(STM32G431, PB8 wanted as a normal pin):
+
+| Bit | Register | Set to | Effect |
+|---|---|---|---|
+| **`nSWBOOT0`** | FLASH_OPTR[26] | **0** | BOOT0 is taken from the option bit, **not** from the PB8 pin |
+| **`nBOOT0`** | FLASH_OPTR[27] | **1** | Boot from main flash |
+
+Two further points the original text missed entirely:
+
+- **These must be set with STM32CubeProgrammer.** Boot mode is latched during the reset sequence,
+  so there is **no firmware workaround** for a mis-provisioned board — you cannot fix it in `main()`.
+- A **mass erase restores `nSWBOOT0 = 1`**, silently re-arming the failure. The re-check after erase
+  was already in the docs; now it names the right bit to re-check.
+
+**Why this was the worst possible place for a wrong name.** Defect 1.3 is unavoidable on this
+package — CAN *must* live on PB8/PB9 once USB claims PA11/PA12 — so the option-byte setting is not a
+nicety, it is the entire reason the board boots in a car. A student following the old instruction
+would have searched CubeProgrammer for `nBOOT_SEL` on a G4, not found it, and either guessed or given
+up. The failure would then present exactly as defect 1.3 describes: perfect on the bench, dead on
+a live bus.
+
+Corrected in all seven places it appeared: the verification record, both schematic definitions, both
+Altium instruction files, `board_config.h`, and all three plain-English guides.
 
 ### Defect 1.5 — ENC5 was on a timer that cannot decode encoders (found during firmware work)
 
@@ -175,11 +207,10 @@ instance availability per pin, HSI16 accuracy (Table 43), and OSC pin availabili
 | ~0.10 A MCU run current at 170 MHz | Both boards' power budgets | Budgets have large margin; low risk |
 | ADC max external source impedance / sample-time table | Justifies omitting the op-amp buffer at 5 kΩ | Could force the DNP TLV9004 to be fitted |
 | Six VDD pins on LQFP-64 → six 100 nF caps | Decoupling count | Cosmetic; add caps to match the real pin count |
-| `nBOOT_SEL = 1` selects the option bit over the pin | The BOOT0 mitigation (defect 1.3) | **Must be confirmed** — the mitigation depends on it |
+| ~~`nSWBOOT0 = 0` **and** `nBOOT0 = 1`~~ | The BOOT0 mitigation (defect 1.3) | ✅ **CLOSED — and it was WRONG. See defect 1.6.** The G4 bits are `nSWBOOT0 = 0` + `nBOOT0 = 1` |
 | Absolute maximum ratings, VDDA sequencing | General | Standard practice covers it |
 
-The `nBOOT_SEL` semantics are the one that matters, because the whole BOOT0 fix rests on them.
-Confirm in the reference manual (RM0440) before first flash.
+**That flag was justified — the claim was wrong. See defect 1.6.**
 
 ---
 

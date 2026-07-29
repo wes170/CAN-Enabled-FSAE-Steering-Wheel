@@ -175,7 +175,7 @@ rather than being re-derived from memory each time.
 The **BOOT0 pin gets no pulldown and no strap**, on both boards, because on this specific package
 `PB8`, which is normally a safe place to add a pulldown resistor, is *also* `FDCAN1_RX` — the CAN
 receive line. A pulldown there would fight against the CAN transceiver's own output. Instead, BOOT0
-behavior is controlled by an option bit (`nBOOT_SEL = 1`) set at first flash and re-checked after any
+behavior is controlled by an option bit (**`nSWBOOT0 = 0` and `nBOOT0 = 1`**, set with STM32CubeProgrammer) set at first flash and re-checked after any
 mass erase. Miss this and the failure mode is nasty and intermittent: an idle CAN bus sits
 "recessive," which reads as high, and a board with a strap would boot into its system bootloader
 every single time it's powered up with a live bus attached — while working perfectly on a bench with

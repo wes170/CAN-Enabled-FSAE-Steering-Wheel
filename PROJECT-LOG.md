@@ -13,17 +13,17 @@ removes the check everyone downstream assumes happened.
 
 Close these before trusting the design. **A1 and A2 are closable for the price of a ~$30 USB-CAN
 sniffer, with no PCB spend** — do them first, because they are the two that could force a respin.
-**A6 must be closed before dash layout**, because a serial-bus servo changes the output stage from
-PWM to half-duplex UART.
+~~A6 must be closed before dash layout~~ — **closed 2026-07: standard PWM servos confirmed**, so the
+dash output stage is correct as drawn and layout is unblocked. Only BEC sizing remains under A6.
 
 | # | Assumption | Blocks | How to close | Status | Closed by / date |
 |---|---|---|---|---|---|
-| A1 | NSP detects an emulated keypad at node `0x15`, 1 Mbit/s | Wheel firmware | Sniff a real Haltech keypad / NSP discovery on bench CAN | OPEN | |
-| A2 | IO12 **Box B** CAN ID set (Box A verified) | Dash DAQ re-broadcast | Request write protocol from Haltech support (supplied to owners), or sniff a Box B | OPEN | |
+| A1 | NSP detects an emulated keypad at node `0x15`, 1 Mbit/s | Wheel firmware | Sniff a real Haltech keypad / NSP discovery on bench CAN | **OPEN — deferred by choice** (user, 2026-07): not a blocker for schematic/layout work. Kept as a one-line constant so it is cheap to change | |
+| A2 | IO12 **Box B** CAN ID set (Box A verified) | Dash DAQ re-broadcast | Request write protocol from Haltech support (supplied to owners), or sniff a Box B | **OPEN — deferred by choice** (user, 2026-07) | |
 | A3 | WS2812B-2020 worst case 36 mA/LED | Wheel power budget | Measure a 24-LED strip at full white | OPEN | |
 | A4 | TC / lockup status source on the broadcast bus | Wheel LED firmware | Decide with the tuner in NSP; bind the config table | OPEN | |
 | A5 | Riverdi 3.3 V backlight inrush | Dash 3V3 buck | Scope at power-on; verify AP63203 soft-start covers it | OPEN | |
-| A6 | ARB servo torque / stall current (assumed ~5 A @ 7.4 V/ch) | **Dash layout** + BEC sizing | Get the part number from vehicle dynamics. **If serial-bus servos, the output stage changes** | OPEN | |
+| A6 | ARB servo **stall current** (assumed ~5 A @ 7.4 V/ch) | **BEC sizing only — no longer blocks dash layout** | Get the part number from vehicle dynamics | **PARTIALLY CLOSED** — user confirmed **standard PWM servos** (2026-07), so the dash output stage (TIM4 → 74AHCT2G125 → 100 Ω → SMAJ5.0A) is correct as drawn. Only the harness BEC sizing remains | PWM confirmed 2026-07 |
 | A7 | Does the ARB mechanism back-drive on power loss? | ARB safety strategy | Mechanical team. Worm drive holds; direct lever does not | OPEN | |
 | A8 | Wheel 12 V transient environment (now seen raw) | Wheel input protection | Scope the feed during crank, alternator steps, fan/solenoid switching | OPEN | |
 | A9 | Wheel colour display rated −20…+70 °C, tighter than the rest of the BOM | Wheel display longevity | Measure panel surface temperature on a summer track day; faceplate shade/recess if exceeded | OPEN | |
@@ -50,7 +50,7 @@ report file, a photo, a scope capture) — not a memory of having looked.
 
 | Gate | Content | Evidence | Passed | Signed / date |
 |---|---|---|---|---|
-| G1 | Schematic review (as above; **A6 must be closed first** — it can change the servo output stage) | | ☐ | |
+| G1 | Schematic review (as above). A6's layout risk is closed — PWM servos confirmed | | ☐ | |
 | G2 | Layout review (+ LMR33630 hot loop, analog zone separation from the servo PWM traces) | | ☐ | |
 | G3 | Paper build — 1:1 print in the real dash panel, FPC fold mocked in paper | | ☐ | |
 | G4 | Netlist cross-check — J1 **and** J2 pinouts, and the servo ground reference path | | ☐ | |

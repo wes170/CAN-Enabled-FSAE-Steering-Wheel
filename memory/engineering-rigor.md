@@ -17,7 +17,7 @@
    than presenting it as a decision. Status is tracked per part in `datasheet-verification.md`.
    (Origin: lesson L16 — four defects, three of them in one table.)
 2. **Assumptions are tracked, numbered, and closed.** Open assumptions live in
-   `system-architecture-and-can.md` §5 (A1–A8 currently). No board order while an assumption that
+   `system-architecture-and-can.md` §5 (A1–A9 currently). No board order while an assumption that
    could force a respin is open — protocol assumptions (A1, A2) can be closed with a $30 USB-CAN
    sniffer *before* spending board money.
 3. **Worst case, not typical.** Budgets (current, voltage drop, temperature, timing) use datasheet
@@ -53,7 +53,7 @@
 | **G3 — Paper build** | 1:1 print taped to the real wheel/panel; hands on it; encoder/button reach test with gloves |
 | **G4 — Netlist cross-check** | Independent re-derivation of J1/J2 pinouts from the schematic vs. §0 tables vs. harness drawing — **including which ground each signal references** (see L13) |
 | **G5 — Peer sign-off** | A second person reviews G1–G4 evidence; their name goes in the log |
-| **G6 — Pre-order** | BOM availability re-checked same-day; variants' fitted lists diffed; gerbers visually inspected in a third-party viewer (not Altium) |
+| **G6 — Pre-order** | BOM availability **and lifecycle** re-checked same-day; variants' fitted lists diffed; gerbers visually inspected in a third-party viewer (not Altium); **Q1 source/drain confirmed against the DMP3056L pinout on the drawn schematic** (defect 5.5) |
 
 ## 3. Design-for-safety specifics of this project (do not lose these)
 
@@ -83,7 +83,11 @@
 
 1. **Visual + meter:** solder inspection under magnification; continuity: all GNDs; resistance rail-to-GND (expect >100 Ω) *before* first power.
 2. **Power-only:** bench supply, current-limited (**both boards now 12 V**; wheel @ 150 mA limit first, dash @ 200 mA). Check every rail ±3% — on the wheel that is `+12V_P`, `+5V`, `+3V3`; thermal camera / finger sweep, paying attention to the buck inductor.
-3. **SWD:** Tag-Connect attach, read MCU ID, flash blinky, verify 3.3 V under load.
+3. **SWD + option bytes:** Tag-Connect attach, read MCU ID, flash blinky, verify 3.3 V under load.
+   **Then set and verify the boot option bytes with STM32CubeProgrammer: `nSWBOOT0` = 0, `nBOOT0` = 1.**
+   Without this the board boots to the system bootloader whenever the CAN bus is live (defect 1.3),
+   and it cannot be fixed in firmware because boot mode latches during reset. **Re-verify after any
+   mass erase** — an erase restores `nSWBOOT0 = 1` and silently re-arms the fault.
 4. **CAN loopback:** FDCAN external-loopback + sniffer; then two-node bench bus with USB-CAN at 1 Mbit/s; verify bit timing with scope (sample point ~80%).
 5. **Protocol close-out:** emulated keypad against NSP/bench ECU (closes A1); IO12 frames visible in NSP as AVI values (A2 for Box B); broadcast decode against known ECU values.
 6. **HMI:** every encoder detent count CW/CCW ×20 fast/slow, every switch 100 presses, sense lines' voltages in both paddle states.
@@ -196,7 +200,7 @@
   60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
   covers both boards. **Verification is not only a hunt for defects — unverified numbers are
   padded numbers, and padding costs parts.**
-- **L19 (2026-07, updated):** **Twelve defects so far** (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+- **L19 (2026-07, updated):** **Thirteen defects so far** (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
   were both **interactions between two correct-looking choices**, not errors in either one alone.
   PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
   combination. **Review pairs, not parts:** for every component, ask what else touches its net and
@@ -228,6 +232,15 @@
   Second lesson from the same find: **writing the firmware is a design review.** Nothing else forced
   the question "which timers actually have an encoder interface", because on a schematic a timer
   channel is just a pin name.
+
+- **L23 (2026-07, closing open items):** I flagged `nBOOT_SEL` in the "not read" table as *"the one
+  that matters, because the whole BOOT0 fix rests on them"* — and then left it unread for several
+  work sessions while doing lower-value verification. **When you write down that an item is the
+  critical one, that is a queue instruction, not a comment.** Close flagged-critical items first,
+  before the easy ones. It was wrong, and the design carried an unusable instruction the whole time.
+  Second point: the wrong name came from **family drift** — `nBOOT_SEL` is real, just not on G4.
+  Plausible-because-half-remembered is the most dangerous kind of wrong, because it survives a
+  reader's sanity check.
 
 ## 5A. Planned future work (do not lose track of these)
 

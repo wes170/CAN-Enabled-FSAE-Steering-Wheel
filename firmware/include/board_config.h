@@ -37,11 +37,25 @@
  *  BOOT0 = 1 at every power-on with a live bus and jumps into the system
  *  bootloader — while booting perfectly on the bench with the bus unplugged.
  *
- *  Mitigation is an option-bit setting, not code: set nBOOT_SEL = 1 so BOOT0
- *  comes from the nBOOT0 option bit. Verify on every board, and RE-CHECK
- *  AFTER ANY MASS ERASE — a full chip erase can restore the factory state.
- *  boot_guard_check() in system_init.c reports the bit at startup so a
- *  mis-provisioned board is loud rather than mysterious.
+ *  Mitigation is an OPTION-BYTE setting, not code. On STM32G4 the two bits are:
+ *      nSWBOOT0 (FLASH_OPTR[26]) = 0   -> BOOT0 comes from the option bit,
+ *                                         NOT from the PB8 pin
+ *      nBOOT0   (FLASH_OPTR[27]) = 1   -> boot from main flash
+ *
+ *  Set them with STM32CubeProgrammer. Boot mode is latched during the reset
+ *  sequence, so firmware CANNOT fix this after the fact — there is no code
+ *  workaround for a mis-provisioned board.
+ *
+ *  Verify on every board, and RE-CHECK AFTER ANY MASS ERASE: a full chip
+ *  erase can restore the factory option-byte state (nSWBOOT0 = 1), which
+ *  silently re-arms the failure.
+ *
+ *  boot_guard_check() in system_init.c reads these bits back at startup and
+ *  complains loudly, so a mis-provisioned board announces itself instead of
+ *  mysteriously refusing to run in the car.
+ *
+ *  (An earlier revision of these docs said "nBOOT_SEL = 1" — that bit name
+ *   belongs to other STM32 families, not G4. Defect 1.6.)
  */
 
 /* HSE crystal — mandatory. HSI16 is -1%/+1% over 0..85 C; CAN needs roughly
