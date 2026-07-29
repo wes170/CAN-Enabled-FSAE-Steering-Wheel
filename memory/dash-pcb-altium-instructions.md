@@ -103,6 +103,9 @@ Per channel (values from `system-architecture-and-can.md` §3):
 - All 8 GND legs to a quiet analog pour tied at one point to L2 GND.
 - **TLV9004 buffer footprints DNP** between N1 and ADC (jumpered by 0Ω default) — populate only if a future sensor needs low-impedance drive.
 - Silkscreen at J2: “0–5 V MAX, 12 V tolerant (fault)”.
+- **`D6`–`D13` are primary protection, not optional.** Positive injection is not permitted on these
+  pins (`IINJ` = −5/0 mA) and TT-pin input absolute max is 4.0 V, so the clamp is the only thing
+  holding a faulted channel below that. See `datasheet-verification.md` defect 1.7.
 - Channels 7 and 8 are the ARB position feedback inputs — electrically identical, so no special handling.
 
 ### 1.2b `dash-servo.SchDoc` — ARB servo outputs (×2)

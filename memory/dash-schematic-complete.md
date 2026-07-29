@@ -69,8 +69,15 @@ specified for direct sun. BAV199 leaks ~3 pA. Its higher forward drop costs noth
 below the 3.3 V reference. Filter corner ≈ 1/(2π · 5 kΩ · 100 nF) ≈ **320 Hz**, right for
 temperatures and pressures; retune `Cf` per channel if a fast signal is ever needed.
 
-**Fault behaviour:** a sensor line shorted to 12 V injects (12 − 3.3 − 0.7)/10 kΩ ≈ **0.8 mA**, well
-inside the STM32's ±5 mA pin injection limit, so the MCU survives even before the clamp acts.
+**Fault behaviour — the clamp is PRIMARY protection, not a backup.** The STM32G474 datasheet
+(Table 15) gives `IINJ(PIN)` as **−5 / 0 mA**: the −5 mA applies to *negative* injection only, and
+note 3 states positive injection "is not possible on these I/Os". There is therefore **no sanctioned
+path for the MCU to absorb a positive overvoltage** — Table 14 simply caps TT-pin input voltage at
+**4.0 V absolute maximum**. So `D6`–`D13` are load-bearing: **never depopulate them.**
+A 12 V fault gives `(12 − 3.3 − Vf)/10 kΩ ≈ 0.8 mA`; at that current a small-signal silicon diode
+drops ~0.55–0.6 V, holding the pin near **3.9 V** against the 4.0 V limit. That passes with only
+~0.1 V of margin — **flagged for the Step 2 design pass** (`datasheet-verification.md` defect 1.7),
+along with the fact that the `AIN` lines currently have **no TVS at the connector**.
 
 **Grounding:** all eight `Rg` and `Cf` returns go to a dedicated analog pour, tied to the main ground
 at **one point**. Do not let servo or digital return current share it.

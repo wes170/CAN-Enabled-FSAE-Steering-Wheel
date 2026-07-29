@@ -139,10 +139,7 @@ temperature and pressure signals, which change slowly; if a future channel needs
 fast, `Cf` is the value to retune, per channel.
 
 **Fault behaviour:** if a sensor wire is accidentally shorted to the car's 12 V rail, the current that
-flows into the ADC pin works out to (12 − 3.3 − 0.7) / 10 kΩ ≈ **0.8 mA** — comfortably inside the
-STM32's own internal protection-diode limit of ±5 mA. In other words, the 10 kΩ series resistor alone
-already protects the MCU; the external BAV199 clamp is a second layer of protection ("belt and
-braces"), which is exactly why it must not be allowed to cost accuracy the way a leakier part would.
+flows into the ADC pin works out to (12 − 3.3 − 0.7) / 10 kΩ ≈ **0.the STM32 does **not** have a sanctioned way to absorb a positive overvoltage: the datasheet permits only *negative* injection (−5 mA), and caps these pins at a **4.0 V absolute maximum input**. So the clamp diodes are not a backup — they are the primary protection, and must never be left off the board. The 10 kΩ resistor's job is to keep the fault current low enough (about 0.8 mA) that the clamp can hold the pin under that 4.0 V limit.
 
 **Grounding:** all eight channels' `Rg` and `Cf` return paths go to a dedicated analog ground pour
 (a solid copper fill reserved for these returns), which ties back to the main board ground at **one

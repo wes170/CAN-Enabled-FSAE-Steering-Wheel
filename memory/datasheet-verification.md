@@ -82,6 +82,50 @@ with the bus unplugged — one of the nastiest failure signatures possible.
 4. A full chip erase can restore the factory option-bit state, so **re-check `nSWBOOT0`/`nBOOT0` after any
    mass erase.** Put it in the bring-up log.
 
+### Defect 1.7 — the DAQ clamp is primary protection, not "belt-and-braces" (MAJOR)
+
+Closing the injected-current item produced a worse answer than expected. Read from the STM32G474
+datasheet, **Table 15 (current characteristics)** and **Table 14 (voltage characteristics)**:
+
+| Spec | Actual value | What the docs claimed |
+|---|---|---|
+| `IINJ(PIN)` on FT/TT/NRST | **−5 / 0 mA** | "±5 mA" ❌ |
+| Positive injection | *"**not possible** on these I/Os"* (note 3) | assumed an internal clamp would absorb 0.8 mA ❌ |
+| `Σ\|IINJ(PIN)\|` | ±25 mA total | not stated |
+| **Input voltage, TT_xx pins** | **VSS−0.3 to 4.0 V** absolute max | assumed VDD+0.3 = 3.6 V |
+
+**The injection limit is asymmetric.** −5 mA applies to *negative* injection (pin driven below VSS).
+For positive overvoltage the datasheet does not offer an injection allowance at all — it simply
+states the input voltage must not exceed **4.0 V**.
+
+**Consequence: the AFE reasoning was wrong in a way that matters.** The docs said a 12 V sensor fault
+injects 0.8 mA into the MCU's internal diodes, "comfortably inside the ±5 mA limit", and concluded
+the external clamp was *belt-and-braces*. There is no sanctioned positive-injection path, so:
+
+> **The BAV199 clamp is the primary and only protection against a positive overvoltage fault on a
+> DAQ channel.** It is load-bearing. It must never be depopulated, and it must hold the pin below
+> 4.0 V.
+
+**Does it? — marginally, yes.** The 10 kΩ series resistor limits fault current to
+`(12 − 3.3 − Vf)/10 kΩ ≈ 0.8 mA`. At **0.8 mA**, a small-signal silicon diode's forward drop is about
+**0.55–0.6 V**, not the 0.7–1.0 V quoted at rated current — so the pin sits near **3.9 V** against a
+**4.0 V** absolute maximum. It passes, with roughly **0.1 V of margin**, which is far thinner than
+rigor rule 5 wants.
+
+**[OPEN — resolve in the Step 2 design pass, do not hack a value now].** The tension is real and
+deserves proper treatment rather than a quick substitution:
+- A Schottky clamp (≈0.3 V at this current) would give 3.6 V and comfortable margin, but that is the
+  BAT54S whose leakage corrupts the measurement (§5A) — though note §5A used the 100 µA figure
+  specified at V_R = 30 V, and Schottky leakage falls steeply with reverse voltage, so the real
+  penalty at V_R ≈ 3.3 V needs reading off the curve rather than the headline number.
+- Raising the series resistor lowers fault current and V_f further, but raises the Thévenin source
+  impedance the ADC has to settle against.
+- Changing the divider ratio bounds the fault inherently but costs ADC resolution.
+
+Related gap noticed while doing this: **the `AIN` lines have no TVS at the connector**, unlike every
+other line that leaves a board. Sensor wiring runs the length of the car. Worth deciding deliberately
+in Step 2 rather than by omission.
+
 ### Defect 1.6 — the BOOT0 mitigation named a bit that does not exist on this family (CRITICAL)
 
 The mitigation for defect 1.3 said: *"set the option bits so BOOT0 comes from the `nBOOT0` option
@@ -203,10 +247,10 @@ instance availability per pin, HSI16 accuracy (Table 43), and OSC pin availabili
 
 | Claim | Where it is used | Risk if wrong |
 |---|---|---|
-| ±5 mA pin injection current limit | The DAQ fault analysis (0.8 mA is "safe") | Would change the AFE series resistor |
+| ~~±5 mA pin injection limit~~ | The DAQ fault analysis | ✅ **CLOSED — and it was WRONG.** Actual: **−5/0 mA**, positive injection not permitted; TT pin input abs max **4.0 V**. See defect 1.7 |
 | ~0.10 A MCU run current at 170 MHz | Both boards' power budgets | Budgets have large margin; low risk |
 | ADC max external source impedance / sample-time table | Justifies omitting the op-amp buffer at 5 kΩ | Could force the DNP TLV9004 to be fitted |
-| Six VDD pins on LQFP-64 → six 100 nF caps | Decoupling count | Cosmetic; add caps to match the real pin count |
+| ~~Six VDD pins on LQFP-64~~ | Decoupling count | ✅ **CLOSED.** LQFP-64 power pins are **VBAT 1, VSS 15/31/47, VDD 16/32/48, VSSA 27, VREF+ 28, VDDA 29** — so **three** VDD pins, not six. Place 100 nF at each of VDD 16/32/48, at VDDA, and at VBAT, plus the bulk cap |
 | ~~`nSWBOOT0 = 0` **and** `nBOOT0 = 1`~~ | The BOOT0 mitigation (defect 1.3) | ✅ **CLOSED — and it was WRONG. See defect 1.6.** The G4 bits are `nSWBOOT0 = 0` + `nBOOT0 = 1` |
 | Absolute maximum ratings, VDDA sequencing | General | Standard practice covers it |
 
@@ -365,10 +409,13 @@ looks like data.
 **Correction:** replace BAT54S with **BAV199** (same SOT-23 dual, ~667,000× lower leakage). Its higher
 forward drop is irrelevant here — the clamp is a fault-path device, not a signal-path one.
 
-**Worth noting:** the 10 kΩ series resistor already does the real protection work. A 12 V fault on a
-sensor line injects (12 − 3.3 − 0.7)/10 kΩ ≈ **0.8 mA** into the MCU's internal protection diodes,
-comfortably inside the STM32's ±5 mA injection limit. The external clamp is belt-and-braces, which is
-exactly why it must not cost accuracy. Keep it, but keep it low-leakage.
+**Correction (defect 1.7):** an earlier version of this section said the 10 kΩ resistor "does the
+real protection work" and called the clamp belt-and-braces. **That was wrong.** The datasheet gives
+`IINJ(PIN)` as **−5/0 mA** — negative injection only — and states positive injection "is not possible
+on these I/Os"; the governing limit is the **4.0 V absolute-maximum input voltage** (Table 14). So the
+clamp is the *primary* protection against a positive fault, and the series resistor's job is to keep
+the current low enough that the clamp holds the pin under 4.0 V. That makes low leakage **and** low
+forward drop both matter — see defect 1.7 for the resulting open design question.
 
 ---
 
