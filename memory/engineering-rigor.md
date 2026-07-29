@@ -196,11 +196,28 @@
   60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
   covers both boards. **Verification is not only a hunt for defects — unverified numbers are
   padded numbers, and padding costs parts.**
-- **L19 (2026-07):** Six defects so far, and the two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+- **L19 (2026-07, updated):** **Eleven defects so far** (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
   were both **interactions between two correct-looking choices**, not errors in either one alone.
   PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
   combination. **Review pairs, not parts:** for every component, ask what else touches its net and
   what the other end of that net does at power-on, at fault, and when hot.
+
+- **L20 (2026-07, independent audit):** An independent technical review of the *plain-English*
+  guides found a **critical error in the source document they were written from** — the P-FET
+  reverse-protection orientation was specified backwards in `wheel-schematic-complete.md` while the
+  other three source files had it right. Two things follow.
+  **(a)** *Explaining* a circuit is a stronger check than reviewing it. The reviewer had to state
+  *why* the orientation was correct, and the physics refused to line up — a plain read of the pin
+  assignment had passed repeatedly. **Make someone explain the mechanism, not confirm the netlist.**
+  **(b)** When one document disagrees with three others, the majority is not automatically right —
+  but the disagreement is always worth stopping for. Here the majority *was* right and the
+  self-contained file was the outlier, which is the worst case, because that file is the one people
+  are told they can build from without opening anything else.
+- **L21 (2026-07):** A stale number is a live hazard. The audit found the guides repeating figures
+  that were true two revisions ago — a "reflected current" computed for a buck that had become an
+  LDO, "provisional" banners on pin maps since verified, a TVS trade-off presented as open after it
+  had been closed in the *opposite* direction. Superseded text does not announce itself.
+  **When a decision changes, grep for every place the old one is stated — including the prose.**
 
 ## 5A. Planned future work (do not lose track of these)
 

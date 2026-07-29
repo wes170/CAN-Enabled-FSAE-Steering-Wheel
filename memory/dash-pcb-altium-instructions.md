@@ -43,14 +43,10 @@
 > **must** star back to dash `GND`, or the PWM reference floats. See `hardware-selections.md` §9.1 and
 > the planned servo power conditioning board in `system-architecture-and-can.md` §3A.4.
 
-- **MCU pin map (STM32G474RET6) — ⚠ PROVISIONAL, DO NOT FREEZE ⚠**
+- **MCU pin map (STM32G474RET6) — ⚠ SUPERSEDED — use the schematic-definition file ⚠**
 
-> The wheel's pin map was rebuilt against the real STM32G474 alternate-function table and **three
-> defects were found** (`memory/datasheet-verification.md` §1). **This dash map has not yet had the
-> same treatment.** It definitely inherits defect 1.3 — `PB8-BOOT0` is `FDCAN1_RX`, so this board
-> must also take BOOT0 from the `nBOOT0` option bit and must **not** have a BOOT0 strap. The servo
-> `PB6/PB7 = TIM4_CH1/CH2` assignment is confirmed valid by the AF table, but the ADC channel
-> assignments and the display SPI pins still need checking against the datasheet.
+> **Superseded — do not capture from this table.** The verified pin map now lives in
+> `memory/dash-schematic-complete.md §8`. (`datasheet-verification.md` §6.)
 
 Identical to wheel for CAN/USB/SWD/UART (PB8/PB9, PA11/PA12, PA13/PA14, PA9/PA10). Differences:
 
@@ -68,7 +64,20 @@ Identical to wheel for CAN/USB/SWD/UART (PB8/PB9, PA11/PA12, PA13/PA14, PA9/PA10
 (also TIM4_CH1). Different boards, no conflict — but firmware sharing one codebase must gate these
 behind the board-personality `#define`, not assume a pin means the same thing everywhere.
 
-## 1. Schematic sheets
+## 1. Schematic sheets — ⚠ SUPERSEDED BY THE SCHEMATIC-DEFINITION FILE ⚠
+
+> **Capture from `memory/dash-schematic-complete.md` instead.** That file is the authoritative, datasheet-verified
+> component-and-net definition; the sheet-by-sheet notes below are earlier working text and still
+> name parts that have since been **rejected** (AP63205, AMS1117, BAT54S) and values that have
+> changed.
+>
+> **This file remains authoritative for *process*** — project setup (§1), libraries (§2), layout
+> (§4), DRC and gates (§5), variants (§6) and manufacturing outputs (§7). Use it for how to work;
+> use the schematic-definition file for what to draw.
+>
+> *(Split introduced 2026-07 after an audit found stale values being repeated downstream — lesson L21.)*
+
+### 1-legacy. Earlier sheet notes (historical)
 
 `dash-power.SchDoc`, `dash-mcu.SchDoc` (copy wheel MCU sheet, edit nets), `dash-can.SchDoc`
 (copy wheel CAN sheet **minus paddle circuits**; same DNP split termination policy),

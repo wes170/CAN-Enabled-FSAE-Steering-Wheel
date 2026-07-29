@@ -439,7 +439,8 @@ instance question remain.
 | Role | **Final part** | Verified facts | Fit |
 |---|---|---|---|
 | 12 V→5 V buck (**both boards**) | **TI LMR36015** (VQFN-HR-12 "RNX") | **VIN abs max 66 V**; recommended 4.2–60 V; IOUT 0–1.5 A | SMBJ33A clamps at 53.3 V → **12.7 V margin** ✅ Resolves §5. Wheel 0.63 A, dash ~1.0 A, both inside 1.5 A ✅ |
-| 5 V→3.3 V LDO (**both**) | **AP2112K-3.3TRG1** (SOT-25), LCSC `C51118`, ~$0.083 | 600 mA min, dropout 0.25 V @ 600 mA, **explicitly specified for 1 µF X7R/X5R ceramic in and out** | Replaces AMS1117 and its tantalum requirement (§5C). Load ~100 mA ✅ |
+| 5 V→3.3 V, **WHEEL ONLY** | **AP2112K-3.3TRG1** (SOT-25), LCSC `C51118`, ~$0.083 | 600 mA min, dropout 0.25 V @ 600 mA, **specified for 1 µF X7R/X5R ceramic in and out** | Replaces the AMS1117 and its tantalum requirement (§5C). Wheel 3.3 V load is ~100 mA → 0.17 W ✅ |
+| 5 V→3.3 V, **DASH ONLY** | **AP63203WU-7** buck (TSOT-26), fed from `+5V` | 2 A, 3.8–32 V in, 35 V abs max | ⚠ **The dash must NOT use the LDO.** Its 3.3 V load is ~0.5 A, which in an LDO would dissipate 0.5 × 1.7 = **0.85 W in a SOT-25** — far too much. A buck keeps it under 0.2 W. An earlier revision of this table said "LDO (both)", which was wrong; the dash keeps the AP63203 (now sourced from `+5V`, not `+12V_P`) |
 | Reverse-polarity P-FET | **DMP3056L retained** — see analysis below | V_DSS −30 V, V_GSS ±20 V, I_D −4.3 A | ✅ for realistic FSAE reverse scenarios |
 | CAN bus TVS | **PESD2CAN** (SOT-23) | 24 V standoff, V_BR 26.2–30.3 V, **V_CL 41 V max @ 5 A**, 25 pF | TJA1051 bus pins tolerate ±58 V → **17 V margin** ✅. 24 V standoff clears CAN's −2…+7 V common mode ✅ |
 | USB ESD | **USBLC6-2SC6** (SOT-23-6), LCSC `C7519` | IEC 61000-4-2 level 4, 15 kV air / 8 kV contact, very low capacitance | ✅ suits USB 2.0 FS |
@@ -550,6 +551,31 @@ Every place two components talk to each other, checked against both datasheets:
 
 **One new firmware-facing constraint fell out of this:** the display's 2 MHz SCLK ceiling. It is not
 a schematic item, so it would have been easy to miss — recorded here and in the schematic file.
+
+## 6D. Defect 5.5 — P-FET orientation was backwards in the schematic file (CRITICAL)
+
+Found by an independent technical audit of the plain-English guides, which traced a contradiction
+back into the source documents.
+
+`wheel-schematic-complete.md` §2.1 specified **Source → `NET_FUSED`; Drain → `+12V_P`** — i.e. source
+to the battery. That is **backwards**, and the other three source documents were right all along
+(`hardware-selections.md` §3.2 "drain-to-battery orientation"; both Altium instruction files
+"source→board").
+
+**The physics.** A P-channel MOSFET's body diode conducts **drain → source**. Correct orientation
+(drain to battery) forward-biases that diode in normal operation and reverse-biases it on a reversed
+supply, while V_GS collapses to ~0 V so the channel is off too — both paths blocked. Reversed
+orientation (source to battery) **still works perfectly with correct polarity**, because the gate
+pull-down turns the channel on regardless — but on a reversed supply the body diode becomes
+forward-biased and conducts the fault straight into the board.
+
+**Why this one is nasty:** it cannot be caught by testing. The board behaves identically either way
+until the day someone connects a battery backwards — the single event the component exists to
+survive. It is invisible on the schematic unless you know which way a P-FET's body diode points.
+
+**Corrected** in `wheel-schematic-complete.md` §2.1, with the full reasoning written in place so it
+cannot be "tidied" back. **Add to gate G1: physically confirm Q1's source and drain against the
+DMP3056L pinout, on the drawn schematic.**
 
 ## 7. Everything else — UNVERIFIED
 

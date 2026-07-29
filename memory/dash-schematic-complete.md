@@ -197,9 +197,10 @@ its receiver uses, and the servo BEC stars to power ground. Do not "tidy" the se
 | Sensor excitation | 5 V | 0.20 A |
 | Servo buffers | 5 V | <0.01 A |
 
-- **3.3 V total ≈ 0.5 A** → AP2112K (600 mA) fits, though close; **[OPEN — check]** if you expect the
-  384 mA display maximum *and* full MCU load simultaneously, move the 3.3 V rail to a small buck
-  instead. With no speaker fitted the 98 mA typical applies and the LDO is comfortable.
+- **3.3 V total ≈ 0.5 A**, supplied by the **AP63203 buck** (`U2`), *not* an LDO. At 0.5 A an LDO from
+  5 V would burn 0.5 × 1.7 = **0.85 W in a SOT-25**, which is why the dash keeps a switcher here while
+  the wheel (≈100 mA, 0.17 W) uses the AP2112K LDO. **The two boards deliberately differ on this one
+  part** — do not "harmonise" them.
 - **5 V total ≈ 0.6 A direct + 0.37 A reflected from the 3.3 V LDO ≈ 1.0 A** → LMR36015 (1.5 A) ✅
 - **12 V input ≈ (1.65 W + 3.0 W)/0.85/12 V ≈ 0.46 A** → 2 A polyfuse ✅
 
@@ -237,7 +238,7 @@ thing on both.
 
 | Item | Impact | Closes by |
 |---|---|---|
-| 3.3 V LDO dissipation at worst-case display current | 0.85 W in SOT-25 if the 384 mA max is real | Measure the module's actual VDD draw; swap to a buck if needed |
+| ~~3.3 V LDO dissipation~~ | **Closed** — the dash uses the AP63203 *buck* on this rail, not an LDO, so the 0.85 W concern does not arise | — |
 | LMR36015 variant fSW | 400 kHz part needs L = 15 µH, C_OUT = 3 × 22 µF | Ordering-table lookup for the part you buy |
 | SMAJ5.0A / SMBJ5.0A parameters | Low risk — standoff clearly exceeds the 5 V rail | Quick check at G6 |
 

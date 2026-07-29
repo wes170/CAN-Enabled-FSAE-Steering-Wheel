@@ -44,14 +44,32 @@
 | Ref | Part | Value / spec | Connections |
 |---|---|---|---|
 | `F1` | Resettable polyfuse, 1206 | 1.1 A hold / 2.2 A trip / 30 V | `+12V_IN` → `NET_FUSED` |
-| `Q1` | **DMP3056L**, SOT-23, P-channel | V_DSS −30 V, V_GSS ±20 V, I_D −4.3 A | **Source** → `NET_FUSED`; **Drain** → `+12V_P`; **Gate** → `NET_QGATE` |
+| `Q1` | **DMP3056L**, SOT-23, P-channel | V_DSS −30 V, V_GSS ±20 V, I_D −4.3 A | **Drain** → `NET_FUSED` (battery side); **Source** → `+12V_P` (board side); **Gate** → `NET_QGATE` |
 | `R1` | Resistor 0402 | 10 kΩ 1 % | `NET_QGATE` → `GND` |
 | `D5` | Zener, SOD-323 | 12 V, 500 mW | Cathode → `NET_QGATE`; Anode → `GND` |
 | `D1` | **SMBJ33A** TVS unidirectional, SMB | 33 V standoff, V_CL 53.3 V @ 11.26 A | Cathode → `+12V_P`; Anode → `GND` |
 | `C5` | Ceramic 0603 | 100 nF, 50 V, X7R | `+12V_P` → `GND` |
 
-**Orientation matters on Q1:** source to the incoming supply, drain to the board. Reversed, the body
-diode conducts backwards and the protection does nothing.
+> ### ⚠ Q1 orientation — get this right or the protection does nothing
+>
+> **Drain faces the battery, source faces the board.** (Equivalently: "drain-to-battery", which is
+> how `hardware-selections.md` §3.2 words it, and "source→board" as the Altium instruction files
+> word it. All three phrasings mean the same thing.)
+>
+> **Why:** a P-channel MOSFET's body diode conducts **drain → source**. With the drain at the supply,
+> that diode is *forward*-biased in normal operation, so current reaches the board even before the
+> channel turns on; the source then sits near +12 V while the gate is held at ground, giving
+> V_GS ≈ −12 V, which turns the channel hard on and shorts out the diode drop. On a **reversed**
+> supply the body diode is *reverse*-biased and V_GS ≈ 0 V, so both paths are off and nothing gets through.
+>
+> **Wired the other way round** (source to the battery), the circuit still works perfectly on the
+> bench with correct polarity — the FET turns on and current flows. But on a reversed supply the body
+> diode becomes forward-biased and dumps the fault straight into the board, **with the schematic
+> looking entirely plausible.** That is what makes this error dangerous: it is invisible until the
+> day someone connects a battery backwards, which is the one day the part exists for.
+>
+> *(Corrected 2026-07. An earlier revision of this file had this backwards while the other three
+> source documents were right — recorded as defect 5.5 in `datasheet-verification.md`.)*
 
 **Why the zener:** with the gate pulled to ground, V_GS = −V_IN. A load dump clamped at 53 V would put
 −53 V on a ±20 V gate. D5 holds it at −12 V; zener current at clamp is (53 − 12)/10 kΩ = 4.1 mA.

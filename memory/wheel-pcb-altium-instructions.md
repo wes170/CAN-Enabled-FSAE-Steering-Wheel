@@ -22,14 +22,11 @@
 > operate. Rationale and the contact-resistance arithmetic: `hardware-selections.md` §0.2 and
 > `system-architecture-and-can.md` §3.
 
-- **MCU pin map (STM32G474RET6) — ⚠ PROVISIONAL, DO NOT FREEZE ⚠**
+- **MCU pin map (STM32G474RET6) — ⚠ SUPERSEDED — use the schematic-definition file ⚠**
 
-> This table was originally written from memory, **not** from the STM32G474 datasheet, and a
-> verification pass is in progress (see `memory/datasheet-verification.md`). Known suspect areas:
-> encoder A/B pairs must be **both channels of the same timer with the correct alternate function**
-> for hardware quadrature mode, and arbitrary GPIO pairs do not satisfy that. Do not capture a
-> schematic, order a board, or write CubeMX config against this table until the verification file
-> marks it VERIFIED. Origin: lesson L16.
+> **Superseded — do not capture from this table.** The verified pin map now lives in
+> `memory/wheel-schematic-complete.md §9`, rebuilt against STM32G474 datasheet Table 13. The table below is kept only
+> as revision history. (`datasheet-verification.md` §1 and §6.)
 
 | MCU pin | Net | Function |
 |---|---|---|
@@ -68,7 +65,20 @@
 3. Mandatory footprint checks (print datasheet page, tick off): STM32G474RET6 LQFP-64 (0.5 mm pitch — verify pad 0.28×1.5 mm class), TJA1051 SO-8, **PEC09 right-angle** (THT — verify the body sits flat against the board and the shaft exits *parallel* to the PCB at the intended edge; check shaft length 15/20/25 mm against the faceplate depth before committing), PEC11H (bushing hole Ø9.5 mm + anti-rotation slot **on the faceplate drawing too**), WS2812B-2020 (2.2×2.0 mm, pin-1 dot orientation), Sharp LCD 10-pin FPC 0.5 mm bottom-contact ZIF (contacts flip if you pick top-contact — check twice), USB-C 16-pin, KSC4 tactiles, JST-GH horizontal, TC2030 footprint (no part, copper+3 locating holes), AP63205 TSOT-26 and its inductor.
 4. For every JLC-assembled part, add parameters `LCSC = Cxxxxxx` and `JLC-Rotation` (fill after §7 check). Key numbers already verified: MCU `C521608`, LEDs `C965555`.
 
-## 3. Schematic capture (sheet by sheet)
+## 3. Schematic capture — ⚠ SUPERSEDED BY THE SCHEMATIC-DEFINITION FILE ⚠
+
+> **Capture from `memory/wheel-schematic-complete.md` instead.** That file is the authoritative, datasheet-verified
+> component-and-net definition; the sheet-by-sheet notes below are earlier working text and still
+> name parts that have since been **rejected** (AP63205, AMS1117, BAT54S) and values that have
+> changed.
+>
+> **This file remains authoritative for *process*** — project setup (§1), libraries (§2), layout
+> (§4), DRC and gates (§5), variants (§6) and manufacturing outputs (§7). Use it for how to work;
+> use the schematic-definition file for what to draw.
+>
+> *(Split introduced 2026-07 after an audit found stale values being repeated downstream — lesson L21.)*
+
+### 3-legacy. Earlier sheet notes (historical)
 
 Net naming: exactly the names in §0. Use ports between sheets; no hidden power-net magic except `GND`.
 
