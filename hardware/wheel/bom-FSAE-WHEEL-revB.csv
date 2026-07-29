@@ -63,8 +63,8 @@ D7;D8,2,Aux button clamp,BAV99 dual series diode,SOT-23,BAV99,Active,Stock,Lines
 J7-J10,4,Satellite encoder connectors,JST-GH 5-pin,SM05B-GHS-TB,spec,Commodity,Stock,"DNP. Populating these instead of ENC1-4 makes thumb encoders remote — assembly-time decision, no respin (hardware-selections 4.1b)"
 D9-D12,4,Satellite line clamp,BAV99,SOT-23,BAV99,Active,Stock,DNP — fit only if the matching satellite connector is fitted
 ,,=== DISPLAY (3.6) ===,,,,,,
-DS1,1,Wheel display,"Sharp memory-in-pixel LCD 1.26"" 144x168 reflective",FPC tail,LCSC C17500193 / LS013B7DH05,Active (materials PCN),Stock,"~$6.93 LCSC and JLC-assemblable. Re-verify optical spec of the delivered revision (lesson L6)"
-J3,1,Display FPC connector,10-pin 0.5mm ZIF bottom-contact,SMD,spec — select at capture,Commodity,Stock,"CHECK contact side: top-contact parts flip the pinout"
+DS1,1,Wheel display **COLOUR**,"JDI LPM013M126A 1.28"" 176x176 8-colour reflective memory-in-pixel. VDD/VDDA 2.7-3.3V (3.6V abs max), VIH=VDD-0.1V, SCLK 2MHz max, 115uW, -20..+70C",10-pin FPC,LPM013M126A (Switch-Science / Data Modul / Youritech),Active,SPECIALTY DISTRIBUTOR,"Pin-for-pin identical to the Sharp mono part, so this is a BOM change only. MONO FALLBACK with zero board change: Sharp LS013B7DH05, LCSC C17500193, JLC-assemblable. Keep both in the library"
+J3,1,Display FPC connector,10-pin 0.5mm ZIF,SMD,spec -- select at capture,Commodity,Stock,"Fits BOTH the JDI colour and Sharp mono parts (identical pinout). CHECK contact side against the panel mechanical drawing: a top-contact part mirrors the pinout"
 C75;C76,2,Display decoupling,100nF + 1uF,0402,spec,Commodity,Stock,At the connector
 ,,=== CONNECTOR / OFF-BOARD ===,,,,,,
 J1,1,Wheel-to-car connector,Deutsch DTM 6-way panel,DTM04-6P,DTM04-6P + DTM06-6S + wedges + gold sockets,Active,Stock,"Pin 1 = +12V_IN (Rev B). Pigtail to PCB. ~$8/pair"

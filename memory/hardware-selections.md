@@ -224,18 +224,29 @@ the fast edge), clamps third (bound the voltage). It appears identically on the 
 
 ## 7. Displays
 
-### 7.1 Wheel — Sharp LS013B7DH05 memory-in-pixel LCD (1.26", 144×168)
+### 7.1 Wheel — JDI LPM013M126A colour memory-in-pixel LCD (1.28", 176×176, 8 colours)
 
-Digi-Key stocked (~$15). Connects via 10-pin 0.5 mm FPC.
-- **Reflective = sunlight-proof by physics**: it modulates *reflected* ambient light, so direct sun
-  *increases* contrast. Every emissive option (OLED/TFT) at this size is invisible at noon or needs
-  a >600 cd/m² backlight that would dominate the wheel's power budget.
-- **~50 µW** typical power — rounding error in the wheel budget.
-- 3-wire SPI + EXTCOMIN toggle; trivial firmware; updates at any rate we like (encoder values don't
-  need video rates).
-- 1.26" matches the requested Moza-KS-class size.
-- Trade-off accepted: monochrome, no night backlight. Night running (FSAE runs in daylight) would
-  need the frontlight variant (Azumo laminated versions exist) — noted, not selected.
+**Selected** (replaces the Sharp LS013B7DH05 mono part on the same footprint).
+
+- **Reflective colour = sunlight-proof by physics, now in colour.** A memory-in-pixel LCD modulates
+  *reflected* ambient light, so direct sun *increases* contrast. That was the whole argument for the
+  mono part, and it survives intact — this simply adds 8 colours (3-bit RGB) and more pixels
+  (176×176 vs 144×168). Every emissive option at this size is either invisible at noon or needs a
+  backlight that dominates the wheel's power budget.
+- **115.5 µW** maximum — a rounding error in the budget.
+- **Pin-for-pin identical to the Sharp part** (10-pin FPC: SCLK, SI, SCS, EXTCOMIN, DISP, VDDA, VDD,
+  EXTMODE, VSS, VSSA), so the change costs nothing in board area, schematic or firmware structure.
+- 8 colours is limited, but for encoder values and channel status that is exactly enough — red for
+  a caution channel, green for armed, white for values.
+
+**Constraints the datasheet imposes:** VDD/VDDA both 2.7–3.3 V (3.6 V absolute max) with
+**VDDA ≤ VDD**, **V_IH = VDD − 0.1 V** so the display must share the MCU's `+3V3` rail, and
+**SCLK ≤ 2 MHz**.
+
+**Two honest downsides.** Operating range is **−20 … +70 °C**, tighter than the rest of the wheel
+BOM — a black wheel in direct sun may exceed it (assumption A9, measure it). And sourcing is
+specialty display distributors rather than Digi-Key/LCSC. **Mitigation is free:** the Sharp
+LS013B7DH05 is a zero-change drop-in fallback, JLC-assemblable at `C17500193`.
 
 ### 7.2 Dash — Riverdi RVT50HQBNWN00 (5.0", 800×480, **1000 cd/m² IPS**, EVE4 BT817)
 

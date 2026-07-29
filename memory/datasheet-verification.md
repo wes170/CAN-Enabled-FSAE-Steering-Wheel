@@ -467,6 +467,90 @@ Earlier I suggested moving to a −40/−60 V P-FET. **Retracted after working t
 No readily LCSC-stocked −40/−60 V logic-level SOT-23 P-FET was found, so mandating one would have
 made the design less buildable for a scenario that does not occur. **DMP3056L stands.**
 
+## 6B. Wheel display changed to colour — **JDI LPM013M126A** (VERIFIED)
+
+Source: **Japan Display Inc. LPM013M126A specification Ver.01**, read directly.
+
+Requirement: colour, while keeping sunlight performance. The answer is a **colour memory-in-pixel
+(MIP) reflective LCD** — same physics as the mono Sharp (ambient light *helps*), but with colour.
+
+### The pinout is identical to the Sharp part
+
+| Pin | JDI LPM013M126A | Sharp LS013B7DH05 |
+|---|---|---|
+| 1 | SCLK | SCLK |
+| 2 | SI | SI |
+| 3 | SCS | SCS |
+| 4 | EXTCOMIN | EXTCOMIN |
+| 5 | DISP | DISP |
+| 6 | VDDA | VDDA |
+| 7 | VDD | VDD |
+| 8 | EXTMODE | EXTMODE |
+| 9 | VSS | VSS |
+| 10 | VSSA | VSSA |
+
+**Pin-for-pin, signal-for-signal identical, both 10-pin FPC.** The display swap is a BOM change —
+the schematic sheet, footprint, net names and firmware structure are unchanged. `EXTMODE = H`
+enables the hardware EXTCOMIN path exactly as before ("connect to VDD" per JDI note *1-2).
+
+### Verified specifications
+
+| Parameter | Value |
+|---|---|
+| Resolution / colours | **176 × 176**, **8 colours** (3-bit, one bit each R/G/B) |
+| Size | 1.28" (Sharp was 1.26" at 144 × 168 mono — **more pixels and colour**) |
+| VDD | 2.7 / 3.0 / **3.3 V max**, **absolute max 3.6 V** |
+| VDDA | 2.7 / 3.0 / **≤ VDD** — analog rail must never exceed logic rail |
+| V_IH | **VDD − 0.1 V minimum** |
+| Power | **115.5 µW max** (data update), 105 µW idle |
+| SCLK | 1.00 MHz typ, **2.00 MHz max** |
+| Operating temp | **−20 … +70 °C** |
+| Reflective contrast | 30:1, viewing angle 65° all directions |
+
+### Three consequences for the design
+
+1. **V_IH = VDD − 0.1 V is tight.** With VDD = 3.3 V the display needs ≥3.2 V for a logic high.
+   **Run the display's VDD from the same `+3V3` rail as the MCU** so the MCU's V_OH tracks the
+   display's V_IH — at the light loading of a 2 MHz SPI line an STM32 output sits within ~0.1 V of
+   its rail, so this works, but do not power the display from a different or lower 3.3 V source.
+2. **VDDA must not exceed VDD.** Tie both to `+3V3`. Do not "improve" this by giving VDDA a
+   separately filtered higher rail.
+3. ⚠ **Operating temperature is −20 … +70 °C** — narrower than the rest of the wheel BOM. A black
+   steering wheel in direct sun can exceed 70 °C at the panel surface. **New assumption A9:** measure
+   panel surface temperature during a summer track session before trusting this part long-term.
+
+### Sourcing risk (be honest about this)
+The LPM013M126A is stocked by **specialty display distributors** (Switch-Science, Youritech,
+Data Modul, LCDs-Screen) rather than Digi-Key/Mouser/LCSC. That is a thinner supply line than the
+Sharp part, which is JLC-assemblable at `C17500193`. Because the two are pin-compatible, **keep the
+Sharp LS013B7DH05 documented as the drop-in mono fallback** — if colour stock fails, fit the mono
+part with no board change at all.
+
+## 6C. Interface-by-interface connection validation
+
+Every place two components talk to each other, checked against both datasheets:
+
+| Interface | Requirement | What we provide | Verdict |
+|---|---|---|---|
+| MCU → TJA1051 TXD | V_IH referenced to **VIO** (3.3 V) | STM32 3.3 V push-pull | ✅ |
+| TJA1051 RXD → MCU | Output referenced to VIO = 3.3 V | 3.3 V MCU input | ✅ — and this is *why* the `/3` VIO variant was chosen |
+| TJA1051 VCC | 4.5–5.5 V | 5.0 V rail | ✅ |
+| TJA1051 CANH/CANL | Bus fault tolerance ±58 V | PESD2CAN clamps at **41 V @ 5 A** | ✅ 17 V margin |
+| MCU → 74AHCT1G125 | AHCT TTL input **V_IH 2.0 V** | STM32 3.3 V | ✅ legal, not marginal |
+| 74AHCT1G125 → WS2812 DIN | WS2812 needs ≈0.7 × 5 V = **3.5 V** | AHCT output swings to ~5 V | ✅ — and 3.3 V direct would **not** have met it |
+| MCU → 74AHCT2G125 → servo | Servo expects ~5 V pulse | Same AHCT translation | ✅ |
+| MCU → display SPI | **V_IH = VDD − 0.1 V** | Same `+3V3` rail as MCU | ✅ *provided the rails are common* (see §6B.1) |
+| MCU SPI clock rate | Display max **2.00 MHz** | Firmware must cap SPI1 ≤2 MHz | ⚠ **firmware constraint — the STM32 will happily run 20 MHz** |
+| LMR36015 EN | Must not exceed VIN by >0.3 V; abs max 66.3 V | Tied directly to `+12V_P` (= VIN) | ✅ equal, so within spec |
+| LMR36015 VIN | Abs max 66 V | SMBJ33A clamps 53.3 V | ✅ 12.7 V margin |
+| AP2112K VIN | From 5 V rail | LMR36015 output | ✅ |
+| ADC inputs | 0–3.3 V | Divider gives 0–2.5 V from 0–5 V sensors | ✅ 0.8 V headroom |
+| Encoder/button lines | 3.3 V logic | 10 kΩ pull-up to `+3V3`, switch to GND | ✅ |
+| Paddle sense | ECU-driven line, unknown pull-up voltage | 100 kΩ series + 1 nF, and the MCU pins are **5 V-tolerant FT** | ✅ but confirm the Nexus DI pull-up voltage; if it pulls to 12 V, the 100 kΩ limits current but the pin still needs the clamp |
+
+**One new firmware-facing constraint fell out of this:** the display's 2 MHz SCLK ceiling. It is not
+a schematic item, so it would have been easy to miss — recorded here and in the schematic file.
+
 ## 7. Everything else — UNVERIFIED
 
 Not yet read, and every parameter quoted for them in the other memory files should be treated as

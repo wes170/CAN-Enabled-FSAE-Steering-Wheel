@@ -298,10 +298,14 @@ guarantee directly. A plain HC part would not work.
 
 ---
 
-## 7. Sheet `wheel-display.SchDoc`
+## 7. Sheet `wheel-display.SchDoc` — COLOUR display
 
-`DS1` = **Sharp LS013B7DH05** (LCSC C17500193), 10-pin FPC. `J3` = 10-pin 0.5 mm ZIF.
-Pinout verified against Sharp spec LD-27503A table 4-1:
+`DS1` = **JDI LPM013M126A** — 1.28", **176 × 176, 8 colours**, reflective memory-in-pixel.
+`J3` = 10-pin 0.5 mm FPC ZIF.
+
+**Pinout verified against JDI specification Ver.01 — and it is pin-for-pin identical to the Sharp
+mono part it replaces**, so this is a BOM change only: same footprint, same nets, same firmware
+structure.
 
 | Pin | Signal | Connect to |
 |---|---|---|
@@ -309,24 +313,42 @@ Pinout verified against Sharp spec LD-27503A table 4-1:
 | 2 | SI | `LCD_SI` (PA7) |
 | 3 | SCS | `LCD_SCS` (PA4) |
 | 4 | EXTCOMIN | `LCD_EXTCOMIN` (PC3) |
-| 5 | DISP | `LCD_DISP` (PC2) |
+| 5 | DISP | `LCD_DISP` (PC2) — H = show memory, L = black, memory retained either way |
 | 6 | VDDA | `+3V3` |
 | 7 | VDD | `+3V3` |
-| 8 | **EXTMODE** | **`+3V3` through `R_EXTMODE` 0 Ω**, plus `R_EXTMODE_L` 0 Ω to `GND` **DNP** |
+| 8 | **EXTMODE** | **`+3V3` via `R_EXTMODE` 0 Ω** (JDI: "H = enable EXTCOMIN, connect to VDD"); `R_EXTMODE_L` 0 Ω to `GND` **DNP** |
 | 9 | VSS | `GND` |
 | 10 | VSSA | `GND` |
 
-`C75` 100 nF + `C76` 1 µF at the connector, VDD/VDDA to GND.
+`C75` 100 nF + `C76` 1 µF at the connector, from `+3V3` to `GND`.
 
-**EXTMODE must not float.** High selects the hardware EXTCOMIN path this design uses. Floating leaves
-COM inversion undefined, which allows DC bias to build across the liquid crystal and permanently
-damage the panel.
+### Three rules this part imposes — none are optional
 
-**[OPEN — must close before ordering]** FPC **contact side** (top vs bottom) and **SCS polarity**.
-A top-contact connector mirrors the pinout. Both are on the Sharp spec sheet; check them when you
-choose `J3` and set them in firmware.
+1. **VDD and VDDA both come from the MCU's own `+3V3` rail.** The datasheet gives
+   **V_IH = VDD − 0.1 V**, so a logic high must be within 100 mV of the display's own supply. Sharing
+   the rail with the MCU makes its output high track the display's threshold. Powering the display
+   from a separate or lower 3.3 V source breaks this.
+2. **VDDA must never exceed VDD** (spec: VDDA max = VDD). Both tie to `+3V3`; do not give VDDA a
+   separate higher or filtered rail.
+3. **EXTMODE must not float**, exactly as on the Sharp part. High selects the hardware EXTCOMIN path
+   used here. Floating leaves COM inversion undefined, which lets DC bias build across the liquid
+   crystal and permanently damages the panel.
 
----
+### Firmware constraints (not visible on the schematic — do not lose these)
+- **SCLK maximum is 2.00 MHz** (1.00 MHz typical). The STM32 will happily clock SPI1 far faster;
+  cap it in firmware.
+- Toggle `LCD_EXTCOMIN` at ~1 Hz continuously whenever the panel is powered.
+
+### Ratings and risks
+Power is **115.5 µW max** — irrelevant in the wheel budget. Absolute max VDD 3.6 V.
+⚠ **Operating temperature is −20 … +70 °C**, narrower than the rest of the wheel BOM; a black wheel
+in direct sun can exceed that at the panel surface (**assumption A9** — measure it on a summer
+track day).
+
+**Mono fallback, zero board change:** if colour stock fails, fit the **Sharp LS013B7DH05**
+(144 × 168 mono, LCSC `C17500193`, JLC-assemblable). Identical 10-pin pinout. Keep both in the
+library. Sourcing for the JDI part is specialty distributors (Switch-Science, Data Modul, Youritech)
+rather than Digi-Key/LCSC, which is the one thing that is *worse* about the colour option.
 
 ## 8. Connector J1 and the top sheet
 
@@ -381,7 +403,7 @@ draft for exactly this reason.
 | Item | Why it is open | Closes by |
 |---|---|---|
 | LMR36015 variant fSW | Stocked variants are 1 MHz; a 400 kHz part needs `L=15 µH`, `COUT=3×22 µF` | Reading the ordering table for the part you actually buy |
-| Sharp FPC contact side + SCS polarity | Not yet read from the spec sheet | Reading it before selecting `J3` |
+| FPC contact side (top vs bottom) | Not stated in the extracted spec; a top-contact connector mirrors the pinout | Check the mechanical drawing before selecting `J3` |
 | HSE crystal part + load caps | Spec derived (≤50 ppm, CL 8–12 pF); exact part not chosen | Pick a part, then set `C_X1/2 = 2 × (CL − C_stray)` from **its** datasheet |
 | WS2812B-2020 exact current | Datasheet is image-only, no text layer | Bench measurement (assumption A3) — the 0.45 A firmware cap holds regardless |
 | SMAJ24CA / SMAJ5.0A / SMBJ5.0A parameters | Not read; low risk since standoff clearly exceeds their rails | Quick datasheet check at G6 |
