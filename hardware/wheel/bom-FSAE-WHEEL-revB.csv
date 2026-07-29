@@ -1,12 +1,12 @@
 Ref,Qty,Description,Value / Spec,Package,Source / PN,Status,Lead,Notes
 ,,=== POWER: 12V ENTRY (memory/wheel-pcb-altium-instructions.md 3.1) ===,,,,,,
 F1,1,Resettable fuse,1.1A hold / 2.2A trip / 30V,1206,spec — select at capture,Commodity,Stock,"Bourns MF-MSMF110 class. Hold >= 1.5x the 0.29A input draw with wide margin"
-Q1,1,P-channel MOSFET reverse-polarity protect,VDSS -30V / VGSS +/-20V / ID -4.3A logic level,SOT-23,DMP3056L,Active,Stock,"RETAINED after analysis: during load dump the FET is ON so VDS ~ 0; VGS is the stressed parameter and D5 clamps it to 12V. VDS only matters when reverse-connected = 14V realistic vs 30V = 2x margin. Assumes no -24V reverse jump start. See datasheet-verification.md 5D"
+Q1,1,P-channel MOSFET reverse-polarity protect,VDSS -30V / VGS(th) -2.1V / RDS(on) 35mohm @ -10V / ID -4.3A,SOT-23,DMP3056L,Active,Stock,"RETAINED after analysis: during load dump the FET is ON so VDS ~ 0; VGS is the stressed parameter and D5 clamps it to 12V. VDS only matters when reverse-connected = 14V realistic vs 30V = 2x margin. Assumes no -24V reverse jump start. See datasheet-verification.md 5D"
 R1,1,P-FET gate pulldown,10k 1%,0402,spec,Commodity,Stock,
 D5,1,Zener gate clamp,12V 500mW,SOD-323,spec,Commodity,Stock,Protects Q1 Vgs during load dump
 D1,1,TVS unidirectional,SMBJ33A 33V standoff / VC 53.3V @ 11.26A,SMB (DO-214AA),SMBJ33A,Active,Stock,"KEEP this TVS -- 33V standoff clears jump start. It is the BUCK that had to change: 53.3V clamp needs a 60V-class converter (U1). Do not downsize the TVS to chase a low-voltage buck; no SMBJ fits between jump-start standoff and a 35-42V abs max"
-U1,1,Synchronous buck 12V->5V,"5V out / >=1A / **60V-class input**",TBD,"TI LMR36015 (VQFN-HR-12 RNX) LCSC C2863325 -- VERIFIED, SELECTED",Active,Stock,"VERIFIED: VIN abs max 66V vs the 53.3V SMBJ33A clamp = 12.7V margin. Rec 4.2-60V, IOUT 1.5A. Same part on both boards. 1MHz variant: L=10uH, COUT=3x15uF, RFBT=100k, RFBB=24.9k, CBOOT=100nF, CVCC=1uF"
-L1,1,Power inductor,10uH / Isat >=2A / shielded,1210 or 4x4mm,spec,Commodity,Stock,"TI Table 10-1, 1MHz variant, 5V out. Use 15uH if you buy a 400kHz variant"
+U1,1,Synchronous buck 12V->5V,"5V out / >=1A / **60V-class input**",TBD,"TI LMR36015FBRNXR (VQFN-HR-12 RNX) -- FPWM yes / 1MHz. NOTE LCSC C2863325 is LMR36015AQRNXRQ1 = 400kHz non-FPWM",Active,Stock,"VERIFIED: VIN abs max 66V vs the 53.3V SMBJ33A clamp = 12.7V margin. Rec 4.2-60V, IOUT 1.5A. Same part on both boards. 1MHz variant: L=10uH, COUT=3x15uF, RFBT=100k, RFBB=24.9k, CBOOT=100nF, CVCC=1uF"
+L1,1,Power inductor,10uH / Isat >=2A / shielded,1210 or 4x4mm,spec,Commodity,Stock,"TI Table 10-1 1MHz row (for LMR36015FB). *** If you buy the 400kHz LMR36015A/AQ instead: L1=15uH and COUT=3x22uF ***"
 C1;C2,3,Buck input capacitor,4.7uF 50V X7R (x1) + 220nF 50V (x2),1206/0402,spec,Commodity,Stock,"TI Table 10-1 CIN. 50V rating deliberate for load-dump margin"
 C3;C4;C_O3,3,Buck output capacitor,15uF 16V X7R,0805,spec,Commodity,Stock,"TI Table 10-1 nominal for 1MHz 5V out (2x15uF minimum rated)"
 C5,1,Input bulk / TVS decoupling,100nF 50V X7R,0603,spec,Commodity,Stock,At J1 side of protection
@@ -27,7 +27,8 @@ R_T1;R_T2,2,Split termination,60.4 ohm 1% 0.25W,0805,spec,Commodity,Stock,DNP �
 C_T1,1,Split termination cap,4.7nF 50V,0603,spec,Commodity,Stock,DNP — see above
 ,,=== PADDLES (passthrough + sense) ===,,,,,,
 D3;D4,2,Paddle line TVS bidirectional,SMAJ24CA,SMA (DO-214AC),SMAJ24CA,Active,Stock,At the connector. Through-path is copper only
-R6;R7,2,Paddle sense tap,100k 1%,0402,spec,Commodity,Stock,<50uA influence on the ECU circuit
+R6;R7,2,Paddle sense divider TOP,150k 1%,0402,spec,Commodity,Stock,"Was 100k. See datasheet-verification.md defect 1.8"
+R6b;R7b,2,Paddle sense divider BOTTOM **NEW**,39k 1%,0402,spec,Commodity,Stock,"*** MISSING IN REV B DRAFT: without this the TT_a pin (4.0V abs max) sits at the FULL paddle-line voltage. 150k/39k holds a 16V charging system to 3.30V. Read as ADC, threshold in firmware"
 C14;C15,2,Paddle sense filter,1nF,0402,spec,Commodity,Stock,At MCU pin
 ,,=== MCU (3.2) ===,,,,,,
 U4,1,Microcontroller,STM32G474RET6 170MHz FDCAN USB,LQFP-64,LCSC C521608,Active,Stock,~$3.93. JLCPCB-assemblable

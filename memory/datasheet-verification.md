@@ -721,6 +721,52 @@ survive. It is invisible on the schematic unless you know which way a P-FET's bo
 cannot be "tidied" back. **Add to gate G1: physically confirm Q1's source and drain against the
 DMP3056L pinout, on the drawn schematic.**
 
+## 6E. Step 1 closures (2026-07)
+
+### LMR36015 variant — CLOSED, **and the earlier note had FPWM backwards**
+TI Device Comparison Table (SNVSB49D):
+
+| Orderable | FPWM | fSW |
+|---|---|---|
+| LMR36015**A**RNXT/R | No | **400 kHz** |
+| LMR36015**FB**RNXT/R | **Yes** | 1 MHz |
+| LMR36015**B**RNXT/R | No | 1 MHz |
+
+The earlier text said *"prefer the non-PFM (FPWM) variant"* and pointed at the **B** part. That is
+self-contradictory: **B has FPWM = No**. Forced-PWM — constant switching frequency at all loads, which
+is what you want next to an analog front end and LED drivers — is the **FB** variant.
+
+- **Recommended: `LMR36015FBRNXR`** (FPWM yes, 1 MHz) → the values already in the schematic are
+  correct: **L1 = 10 µH, C_OUT = 3 × 15 µF**.
+- ⚠ **The part LCSC stocks is `LMR36015AQRNXRQ1`** — the automotive Q1 flavour of the **A** variant,
+  which is **400 kHz and FPWM = No**. It is AEC-Q100 qualified, which is a genuine plus for a car, but
+  if you buy it **the passives change to L1 = 15 µH, C_OUT = 3 × 22 µF** (Table 10-1, 400 kHz row) and
+  the converter will pulse-skip at light load. Decide deliberately; do not let stock availability pick
+  silently.
+
+### DMP3056L — CLOSED, adequate
+V_DSS −30 V · **V_GS(th) = −2.1 V** · R_DS(on) = 0.035 Ω at V_GS = −10 V · I_D = −4.3 A.
+In this circuit the zener holds V_GS at −12 V, far past the −2.1 V threshold, so the FET is fully
+enhanced. Conduction loss at 0.29 A is 0.29² × 0.035 ≈ **3 mW**, a **10 mV** drop — confirming the
+"~20 mV versus 500 mV for a diode" claim that justified the P-FET in the first place. Even during
+crank at ~6 V the gate drive is −6 V, still well past threshold. **Genuinely logic-level here.**
+
+### SMAJ TVS parts — CLOSED
+`SMAJ24CA`: 24 V standoff, V_BR 26.7–29.5 V, **V_CL 38.9 V @ 10.3 A**.
+`SMAJ5.0A`: 5 V standoff, V_BR 6.40–7.00 V, **V_CL 9.2 V @ 43.5 A**.
+Both satisfy rigor rule 5 in their roles (standoff clears the working voltage; clamp is below what
+sits downstream). The SMAJ24CA on the paddle lines is what led to defect 1.8.
+
+### Still genuinely open after Step 1
+
+| Item | Why it is still open | Impact |
+|---|---|---|
+| **RM0440 ADC sampling-time table** | ST's server refused the ~2000-page download twice; no usable mirror found | `AIN_SAMPLE_CYCLES` stays marked UNVERIFIED in firmware. Affects DAQ *accuracy*, not safety |
+| HSE crystal exact part | Spec is settled (8 or 16 MHz, ≤50 ppm, CL 8–12 pF, ESR ≤80 Ω, 3225). Choosing a stocked part and computing `C = 2 × (CL − C_stray)` is a procurement step | Load-cap values |
+| JDI FPC contact side | Mechanical drawing not obtained | **Footprint** — a top-contact part mirrors the pinout |
+| PEC09 / PEC11H / KSC4 mechanicals + bounce | PEC09 datasheet returns HTTP 403; needs another source | Footprint and debounce tuning |
+| WS2812B-2020 electrical | Datasheet is image-only, no text layer | A3 stays a bench measurement; the 0.45 A firmware cap holds regardless |
+
 ## 7. Everything else — UNVERIFIED
 
 Not yet read, and every parameter quoted for them in the other memory files should be treated as

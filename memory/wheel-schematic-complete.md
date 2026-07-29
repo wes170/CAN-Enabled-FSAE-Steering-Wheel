@@ -97,9 +97,17 @@ Pinout (from datasheet): `1,11 PGND` · `2,10 VIN` · `3 NC` · `4 BOOT` · `5 V
 | `C_FF` | 20 pF, 0402 | across `R_FBT` (`+5V` → `NET_FB`). **This is a feed-forward capacitor** — it puts a zero in the feedback path to improve phase margin and transient response. 20 pF is TI's tabulated value **for this exact divider pair** (100 kΩ / 24.9 kΩ). It is not a value to re-derive or round: if you change `R_FBT`/`R_FBB`, go back to the datasheet table rather than keeping 20 pF |
 | `U1.7` (FB) | — | `NET_FB`. **Never float or ground FB** |
 
-Values are TI Table 10-1, 1 MHz variant, 5 V output. **[OPEN — trivial]** confirm the switching
-frequency of the exact ordered variant; if you buy a 400 kHz part instead, use `L1 = 15 µH` and
-`COUT = 3 × 22 µF`. Prefer the **non-PFM (FPWM)** variant for constant-frequency EMI.
+Values are TI Table 10-1, **1 MHz** row, 5 V output — correct for the recommended part.
+
+**Variant choice (closed).** TI's Device Comparison Table:
+`LMR36015FB` = FPWM **yes**, 1 MHz · `LMR36015B` = FPWM no, 1 MHz · `LMR36015A` = FPWM no, **400 kHz**.
+**Use `LMR36015FBRNXR`**: forced PWM holds the switching frequency constant at all loads, which is
+what you want beside an analog front end and LED drivers. (An earlier note here recommended the "B"
+part *for* FPWM — that was backwards, B is the non-FPWM one.)
+
+⚠ **If you instead buy `LMR36015AQRNXRQ1`** — the AEC-Q100 automotive part LCSC stocks — it is the
+**400 kHz, non-FPWM** variant, and the passives must change to **`L1 = 15 µH`, `C_OUT = 3 × 22 µF`**.
+Automotive qualification is a real benefit; just make it a decision rather than an accident of stock.
 
 ### 2.3 U2 — 5 V → 3.3 V LDO, **AP2112K-3.3TRG1**, SOT-25 (LCSC C51118)
 
