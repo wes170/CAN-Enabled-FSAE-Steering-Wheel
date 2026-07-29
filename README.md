@@ -17,6 +17,20 @@ Read in this order:
 | [sim-variant-instructions.md](memory/sim-variant-instructions.md) | Sim-rig build as an Altium assembly variant + USB HID firmware notes |
 | [engineering-rigor.md](memory/engineering-rigor.md) | Standing rules, review gates G1–G6, staged bring-up, lessons learned (append-only) |
 
+## Working files
+
+| Path | What it is |
+|---|---|
+| [PROJECT-LOG.md](PROJECT-LOG.md) | Gate sign-offs (G1–G6), assumption tracker (A1–A8), and the procurement actions that come before PCB spend |
+| [hardware/](hardware/) | Altium projects, shared library, orderable BOMs, bring-up logs |
+| [hardware/wheel/bom-FSAE-WHEEL-revB.csv](hardware/wheel/bom-FSAE-WHEEL-revB.csv) | Wheel BOM |
+| [hardware/dash/bom-FSAE-DASH-revB.csv](hardware/dash/bom-FSAE-DASH-revB.csv) | Dash BOM (includes the off-board servo branch) |
+
+**Start here:** order the Riverdi dash display and a spare, and a ~$30 USB-CAN sniffer. The display is
+the longest-lead, thinnest-stock part in the BOM and nothing about the PCB work depends on ordering
+boards first; the sniffer closes the two protocol assumptions (A1, A2) that could otherwise force a
+respin. Both are in `PROJECT-LOG.md` §3.
+
 ## System in one paragraph
 
 The wheel impersonates Haltech's own CAN devices so NSP auto-detects it: buttons ride a CANopen

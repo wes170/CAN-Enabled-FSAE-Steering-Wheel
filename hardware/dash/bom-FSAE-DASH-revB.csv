@@ -1,0 +1,73 @@
+Ref,Qty,Description,Value / Spec,Package,Source / PN,Status,Lead,Notes
+,,=== POWER: 12V ENTRY (memory/dash-pcb-altium-instructions.md 1.1) ===,,,,,,
+F1,1,Resettable fuse,2A hold / 4A trip / 30V,1812,spec — select at capture,Commodity,Stock,Input draw ~0.55A; 2A gives wide margin per rigor rule 5
+Q1,1,P-channel MOSFET reverse-polarity protect,-30V / >=5A / logic level,SOT-23 or DPAK,DMP3056L,Active,Stock,Same circuit as the wheel — copy the sheet
+R1,1,P-FET gate pulldown,10k 1%,0402,spec,Commodity,Stock,
+D5,1,Zener gate clamp,12V 500mW,SOD-323,spec,Commodity,Stock,
+D1,1,TVS unidirectional,SMBJ33A,SMB,SMBJ33A,Active,Stock,"Verify measured clamp vs LMR33630 42V abs-max; drop to SMBJ26A if needed"
+C1,1,Input decoupling,100nF 50V,0603,spec,Commodity,Stock,
+U1,1,Synchronous buck 12V->5V,5V / 2A / 400kHz / 36Vin,SO-8 PowerPAD (DDA),LMR33630ADDAR,Active,Stock,"Downsized 3A->2A in Rev B (wheel no longer fed from here). Hot loop <20mm2. Alt: TPS54331"
+L1,1,Buck inductor,10uH / Isat >=3A,shielded 5-6mm,spec — select at capture,Commodity,Stock,CONFIRM against LMR33630 datasheet 5V table
+C2;C3,2,Buck input capacitor,22uF 50V X7R,1210,spec,Commodity,Stock,50V for load-dump margin
+C4;C5,2,Buck output capacitor,47uF 16V X7R,1210,spec,Commodity,Stock,
+U2,1,Synchronous buck 12V->3.3V,3.3V / 2A / 3.8-32Vin,TSOT-26,AP63203WU-7,Active,Stock,"Fed from +12V_P (not +5V) to unload the 5V buck. Sized by the 1.2A display backlight"
+L2,1,Buck inductor,4.7uH / Isat >=3A,shielded,spec — select at capture,Commodity,Stock,CONFIRM against AP63203 datasheet
+C6;C7,2,3V3 buck input cap,10uF 50V X7R,1206,spec,Commodity,Stock,
+C8;C9,2,3V3 buck output cap,22uF 16V X7R,0805,spec,Commodity,Stock,
+FB1,1,Ferrite bead for VDDA,600 ohm @ 100MHz,0603,spec,Commodity,Stock,
+C10;C11,2,VDDA decoupling,1uF + 100nF,0603,spec,Commodity,Stock,
+F2,1,Sensor supply fuse,200mA hold,0805,spec,Commodity,Stock,Protects +5V_SENS at J2
+D2,1,Sensor supply TVS,SMBJ5.0A,SMB,SMBJ5.0A,Active,Stock,At J2
+R2;R3,2,12V sense divider,47k + 10k 1%,0402,spec,Commodity,Stock,-> PB0
+R4;R5,2,5V sense divider,10k + 10k 1%,0402,spec,Commodity,Stock,-> PB1
+C12;C13,2,Sense filter,100nF,0402,spec,Commodity,Stock,
+TP1-TP4,4,Test points,+12V_P / +5V / +3V3 / GND,TP pad,n/a,n/a,n/a,
+,,=== CAN ===,,,,,,
+U3,1,CAN transceiver,5V supply / 3.3V VIO,SO-8,TJA1051T/3,Active,Stock,No paddle circuits on this board
+C14;C15,2,Transceiver decoupling,100nF,0402,spec,Commodity,Stock,
+D3,1,CAN bus TVS,dual-line 24V,SOT-23,PESD2CAN,Active,Stock,
+R_T1;R_T2,2,Split termination,60.4 ohm 1%,0805,spec,Commodity,Stock,DNP — populate only if dash is the physical end of bus
+C_T1,1,Split termination cap,4.7nF,0603,spec,Commodity,Stock,DNP
+,,=== MCU ===,,,,,,
+U4,1,Microcontroller,STM32G474RET6,LQFP-64,LCSC C521608,Active,Stock,Same part as the wheel — one platform one codebase
+C16-C21,6,MCU decoupling,100nF,0402,spec,Commodity,Stock,
+C22,1,MCU bulk,4.7uF 16V,0805,spec,Commodity,Stock,
+C23,1,NRST cap,100nF,0402,spec,Commodity,Stock,
+R6,1,BOOT0 pulldown,10k,0402,spec,Commodity,Stock,
+J5,1,Debug UART,JST-GH 3-pin,SM03B-GHS-TB,spec,Commodity,Stock,
+,,=== USB-C (DFU / config) ===,,,,,,
+J3,1,USB-C receptacle,USB 2.0 16-pin,SMD,LCSC C165948,Active,Stock,
+U5,1,USB ESD protection,4-line,SOT-23-6,USBLC6-2SC6,Active,Stock,
+R7;R8,2,CC pull-downs,5.1k 1%,0402,spec,Commodity,Stock,
+,,=== DAQ ANALOG FRONT END x8 (1.2) ===,,,,,,
+R9-R16,8,AFE series limiter,10k 1%,0402,spec,Commodity,Stock,Limits a 12V-shorted sensor line to ~0.6mA into the clamps
+R17-R24,8,AFE divider lower leg,10k 1%,0402,spec,Commodity,Stock,Divide-by-2: 0-5V sensor -> 0-2.5V at ADC
+C24-C31,8,AFE filter,100nF,0402,spec,Commodity,Stock,fc ~320Hz — retune per channel if a fast signal is needed
+D6-D13,8,AFE clamp,BAT54S dual series Schottky,SOT-23,BAT54S,Active,Stock,Clamps to +3V3 and GND
+U6,1,Optional AFE buffer,quad rail-to-rail op-amp,TSSOP-14,TLV9004,Active,Stock,DNP — 0 ohm jumpers by default. Fit only if a sensor needs low-impedance drive
+,,=== ARB SERVO OUTPUTS x2 (1.2b) ===,,,,,,
+U7,1,Servo signal buffer,74AHCT2G125 dual buffer 5V,VSSOP-8,74AHCT2G125,Active,Stock,"One package covers both channels. AHCT mandatory (TTL VIH 2.0V accepts 3.3V logic)"
+C32,1,Buffer decoupling,100nF,0402,spec,Commodity,Stock,
+R25;R26,2,Servo fault-current limiter,100 ohm 1% 0.25W,0805,spec,Commodity,Stock,"12V short -> only ~70mA into the clamp. Also damps ringing on a multi-metre run"
+D14;D15,2,Servo line TVS,SMAJ5.0A,SMA,SMAJ5.0A,Active,Stock,At the connector — clamp before the transient travels
+,,=== DISPLAY (1.3) ===,,,,,,
+DS1,1,Dash display,"Riverdi EVE4 5.0"" 800x480 IPS 1000 cd/m2 BT817Q SPI/QSPI",module + FPC,RVT50HQBNWN00,Active,LONG / THIN STOCK,"*** ORDER FIRST *** Single-source, distributor stock seen in low single digits. Buy a spare. Nothing else in the build depends on ordering PCBs first"
+J4,1,Display FPC connector,20-pin 0.5mm ZIF,SMD,spec — select at capture,Commodity,Stock,"Transcribe the pin table of the PURCHASED module revision — revisions have moved pins (lesson L6)"
+C33-C35,3,Display decoupling,22uF + 1uF + 100nF,0805/0402,spec,Commodity,Stock,At the connector. Backlight driver is on-module
+R27;R28,2,SPI series damping,22 ohm,0402,spec,Commodity,Stock,On SCK/MOSI at the MCU — ringing control at 30MHz
+,,=== LOCAL BUTTONS (optional) ===,,,,,,
+SW1-SW3,3,Page / brightness buttons,IP67 tactile,SMT,C&K KSC4 series,Active,Stock,Same conditioning cell as the wheel
+R29-R31,3,Series limiter,1k 1%,0402,spec,Commodity,Stock,
+R32-R34,3,Pull-up,10k 1%,0402,spec,Commodity,Stock,
+C36-C38,3,Filter,100nF,0402,spec,Commodity,Stock,
+,,=== ALARM LED STRIP (optional) ===,,,,,,
+U8,1,LED data buffer,74AHCT1G125,SOT-353,74AHCT1G125,Active,Stock,DNP by default
+,,=== CONNECTORS ===,,,,,,
+J1,1,Power / bus / servo-signal connector,Deutsch DTM 12-way (positions 1-6 used),DTM04-12P,DTM04-12P + mate + wedges + sockets,Active,Stock,"1=+12V 2=GND 3=CANH 4=CANL 5=SERVO1_PWM 6=SERVO2_PWM. Servo signals reference J1 GND (lesson L13)"
+J2,1,DAQ connector,Deutsch DTM 12-way,DTM04-12P,DTM04-12P + mate + wedges + sockets,Active,Stock,"1-6=AIN1-6  7-8=ARB position feedback  9=+5V_SENS  10-12=GND_SENS"
+,1,Debug programming footprint,Tag-Connect TC2030-CTX,copper + locating holes,n/a,n/a,n/a,
+,,=== OFF-BOARD: SERVO BRANCH (harness — NOT on this PCB) ===,,,,,,
+,1,Servo BEC / regulator,12V -> 7.4V sized for 2x stall (~10A class),harness module,select once A6 is closed,n/a,TBD,"Ground MUST star back to dash GND or the PWM reference floats. Interim harness deliverable — reviewed under the same gates (rigor 5A)"
+,1,Servo branch fuse,per BEC rating,harness,spec,n/a,TBD,Independently fusible and killable without taking the dash down
+,2,ARB servo,high-torque digital servo,n/a,per vehicle dynamics team,n/a,TBD,"Assumption A6. If serial-bus servos (Dynamixel class) are chosen, the dash output stage changes from PWM to half-duplex UART — decide BEFORE layout"
+,2,ARB position sensor,0-5V rotary,n/a,spec,n/a,TBD,Servo pot tap or external rotary sensor -> AIN7/AIN8
