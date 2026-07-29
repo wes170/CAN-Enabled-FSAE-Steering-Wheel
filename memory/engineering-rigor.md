@@ -15,6 +15,11 @@
    sniffer *before* spending board money.
 3. **Worst case, not typical.** Budgets (current, voltage drop, temperature, timing) use datasheet
    worst case; where the datasheet is vague (WS2812 current — A3), we measure and write it down.
+3a. **Check lifecycle status, not just stock.** Every part needs an explicit *Active / NRND / EOL*
+   check at selection and again at G6 — a part can be in stock and obsolete at the same time, and
+   distributor stock says nothing about whether you can buy it again next year. Record the status in
+   the availability table, not just a quantity. (Origin: lesson L14.) Also read *lead time* correctly:
+   a long "manufacturer lead time" beside in-stock quantity is the restock time, not your ship date.
 4. **Everything that leaves the board gets conditioned.** Series impedance → filtering → clamp, at
    the connector, on every line, both boards. No exceptions for "it's just a button."
 5. **Derating:** fuses at ≥1.5× continuous load; TVS standoff ≥ rail, clamp ≤ downstream abs-max
@@ -130,6 +135,23 @@
   **Ground allocation is a signal-integrity decision, not a pin-count exercise: count returns, not just
   conductors, and ask what each ground is referencing.** Note also that this error survived the first
   write-up and was only caught on a re-read — which is exactly what gate G4 exists for.
+
+- **L14 (2026-07, BOM validation — the most expensive near-miss so far):** The Rev A thumb encoder
+  (Panasonic EVQ-WK4001) was **obsolete** when selected. It passed the original check because it was
+  in stock at four distributors — stock is not lifecycle status. Worse, the follow-up revealed the
+  *entire edge-drive thumbwheel category* is discontinued (EVQ-WK EOL, EVQWGD001 roller encoder EOL,
+  Grayhill 62T >$100 and oversized), so a like-for-like swap did not exist. Three rules came out of it:
+  **(a)** check Active/NRND/EOL explicitly, always (now standing rule 3a);
+  **(b)** when a part is EOL, check whether its *category* is dying before searching for a drop-in —
+  if the category is gone, the architecture has to change, not the part number;
+  **(c)** prefer parts whose function can be relocated to a satellite board (§4.1b of
+  `hardware-selections.md`), so the next EOL costs a $5 respin instead of a main-board spin.
+- **L15 (2026-07, BOM validation):** Distributor pages show *manufacturer lead time* next to
+  *in-stock quantity*, and the two are unrelated. A 25-week lead time beside 871 units in stock means
+  "ships today, and 25 weeks if we run out" — not "you wait 25 weeks." Nearly rejected a perfectly
+  good in-stock part (Bourns PEC09) over this. Read the stock number first; also check whether the
+  specific variant is a stocked reel/bulk part or a non-stocked tray part (`T00xx`), since variants of
+  the same series differ.
 
 ## 5A. Planned future work (do not lose track of these)
 

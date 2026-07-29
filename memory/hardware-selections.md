@@ -101,17 +101,53 @@ LED data line remains the board's worst aggressor, so this is a manageable addit
 
 ## 4. Human interface
 
-### 4.1 Thumb encoders (2–4) — Panasonic EVQ-WK4001
+### 4.1 Thumb encoders (2–4) — Bourns PEC09 (right-angle)
 
-**Selected:** **Panasonic EVQ-WK4001** — edge-drive thumbwheel encoder, 15 PPR / 15 detents,
-**integrated push switch**, vertical mount. Digi-Key/Mouser stocked (~$3–4). Panasonic lists the EVQ-WK
-family under *automotive encoders* — this exact style is what OEM steering-wheel audio thumbwheels use.
+> **Rev B correction.** The original selection (Panasonic EVQ-WK4001 edge-drive thumbwheel) is
+> **obsolete** — Mouser lists it End-of-Life/NCNR. This is not a one-part problem: **the entire
+> edge-drive thumbwheel category has been discontinued.** EVQ-WK is dead, Panasonic's EVQWGD001
+> "roller encoder" is dead (remaining supply is old stock), and the only functional survivor is the
+> Grayhill 62T at >$100 and far too large. **Do not design around an edge-drive thumbwheel.**
+> Recorded as lesson L14.
 
-**Justification:** a thumb encoder must be actuatable with the wheel gripped — that demands an
-edge-drive (wheel sticking out of the faceplate) geometry, not a shaft knob. Detented quadrature
-gives absolute click-count confidence; the push switch adds a "select/confirm" input for free.
-Through-hole legs take shear loads a driver's thumb applies (SMD-only jog encoders rejected for
-mechanical robustness).
+**Selected:** **Bourns PEC09-2120F-S0012** — 9 mm **right-angle** incremental encoder, 12 PPR /
+12 detents, integrated push switch, 6 mm flatted shaft, through-hole PC pins.
+Digi-Key: **Active, 871 in stock**, $3.96 @1 / $2.56 @100 (checked July 2026). Shaft-length variants
+`-2115F-` (15 mm) and `-2125F-` (25 mm) exist; 24-detent option is the `-22xxF-` prefix.
+*(Note: the 25-week figure on DigiKey is Bourns' factory lead time for restock, not the shipping
+time — stocked variants ship immediately. Order a stocked variant, not a tray-pack `T00xx` part.)*
+
+**Justification:**
+- **Right-angle pins are the geometric requirement.** With the main PCB parallel to the faceplate, a
+  right-angle encoder's shaft exits *parallel* to the board — i.e. out of the wheel's top/side edge,
+  where a thumb reaches while gripping. A vertical encoder points at the driver, which is correct for
+  faceplate knobs (§4.2) and wrong for thumb controls.
+- **Rotational life is a non-issue here despite the modest number.** 30,000 cycles is *revolutions*,
+  and at 12 detents that is ~360,000 detent clicks. An FSAE season is on the order of 10,000 detents,
+  so this is roughly two orders of magnitude of headroom. Do not pay for 100k-cycle parts on this axis.
+- Detented quadrature gives absolute click-count confidence; the push switch adds a select/confirm
+  input for free; through-hole pins take the shear load a thumb applies.
+
+**Mechanical note:** the 6 mm shaft needs a small knurled thumbwheel or knob. Specify it with the
+faceplate design; the shaft-length variant follows from how deep the board sits behind the panel.
+
+#### 4.1b Escape hatch: satellite encoder boards (use if geometry fights you)
+
+If right-angle geometry does not place the thumbs where ergonomics wants them, mount the thumb
+encoders on **small satellite PCBs** connected to the main board by JST-GH cable (the same
+conditioning cell as §6, run at the satellite end). This is the more robust architecture and is worth
+choosing deliberately, not just as a fallback:
+
+- **Thumb position becomes an ergonomics decision, not a board-outline decision** — the real
+  constraint on a steering wheel is grip geometry, which no main-board shape will naturally satisfy.
+- **Obsolescence becomes cheap.** When the next encoder goes EOL — and §4.1's history says it will —
+  a satellite respin is a $5 board, not a main-board spin. Given that this exact part category just
+  died under us, that insulation has demonstrated value.
+- **One part number everywhere:** a satellite lets a *vertical* encoder point any direction, so all
+  six encoders can be the PEC11H of §4.2 — one footprint, one spares kit, better volume pricing.
+
+Cost: two extra connectors and two cable assemblies per wheel, plus lines that leave the board
+(so the BAV99 clamp of §6 applies at each satellite connector).
 
 ### 4.2 Faceplate encoders (2) — Bourns PEC11H
 
@@ -281,24 +317,33 @@ is lost. A self-locking worm drive holds its setting; a direct lever does not. T
 whether losing servo power is a non-event or a mid-session setup change, and it is a mechanical-team
 answer, not an electronics one.
 
-## 10. Availability summary (checked July 2026)
+## 10. Availability & lifecycle validation (re-checked July 2026)
 
-| Part | Source | Status |
-|---|---|---|
-| STM32G474RET6 | LCSC C521608 / JLC | In stock, ~$3.93 |
-| TJA1051T/3 | LCSC / Digi-Key | In stock (SIT1051T/3 fallback) |
-| WS2812B-2020 | LCSC C965555 / JLC | 35k+ stock, ~$0.05 |
-| AMS1117-3.3 | JLC **basic** | Always stocked |
-| LMR33630ADDAR / AP63203WU-7 / AP63205WU-7 | LCSC / JLC | In stock |
-| 74AHCT1G125 / 74AHCT2G125 | LCSC / JLC | In stock (commodity logic) |
-| DMP3056L (reverse-polarity P-FET) | LCSC / Digi-Key | In stock |
-| LS013B7DH05 | Digi-Key | In stock, ships same day |
-| RVT50HQBNWN00 | Riverdi / Mouser | In stock (lead-time risk: single-source — order early, see rigor file) |
-| EVQ-WK4001 | Digi-Key / Mouser / Newark | In stock |
-| PEC11H series | Digi-Key / Mouser | In stock |
-| DTM connectors | Digi-Key / motorsport suppliers | Commodity |
+Lifecycle status is checked here, not just stock — **a part can be in stock and still be obsolete**,
+which is exactly how the EVQ-WK4001 got into Rev A (lesson L14).
+
+| Part | Source | Lifecycle | Stock / notes |
+|---|---|---|---|
+| STM32G474RET6 | LCSC C521608 / JLC | Active | In stock, ~$3.93 |
+| TJA1051T/3 | LCSC / Digi-Key | Active | In stock (SIT1051T/3 second source) |
+| WS2812B-2020 | LCSC C965555 / JLC | Active | 35k+ stock, ~$0.05 |
+| AMS1117-3.3 | JLC **basic** | Active | Always stocked |
+| LMR33630ADDAR / AP63203WU-7 / AP63205WU-7 | LCSC / JLC | Active | In stock |
+| 74AHCT1G125 / 74AHCT2G125 | LCSC / JLC | Active | In stock (commodity logic, many second sources) |
+| DMP3056L (reverse-polarity P-FET) | LCSC / Digi-Key | Active | In stock; any logic-level P-FET ≥30 V works |
+| **PEC09-2120F-S0012** (thumb, right-angle) | Digi-Key | **Active** | **871 in stock**, $3.96/1, $2.56/100. 30k cycles = ~360k detents, ample (§4.1) |
+| PEC11H-4120F-S0020 (faceplate) | Digi-Key / Mouser / TME | **Active** | In stock, ~$2.50–3.10, 100k cycles, −20…+70 °C |
+| ~~EVQ-WK4001~~ | — | **OBSOLETE (EOL/NCNR)** | **Removed in Rev B.** Whole edge-drive thumbwheel category is discontinued — see §4.1 |
+| C&K KSC4 sealed tactile | Digi-Key / C&K | Active | Current C&K catalogue part, IP67, 5.2 mm |
+| **LS013B7DH05** (wheel display) | Digi-Key / **LCSC C17500193 / JLC** | Active **with a materials PCN** | In stock (~$6.93 LCSC, ~$15 DK). Sharp issued a change notice on polarizer surface treatment / adhesive — **not** a discontinuation, but re-verify the optical spec of the revision actually delivered (ties to lesson L6) |
+| **RVT50HQBNWN00** (dash display) | Riverdi direct / RS / Mouser | Active | ⚠ **Thinnest supply line in the BOM** — distributor stock seen in low single digits. Single-source, long-lead. **Buy the dash displays first, before any PCB is ordered**, and buy a spare |
+| DTM connectors | Digi-Key / motorsport suppliers | Active | Commodity |
 
 Hand-solder fallback exists for every non-JLC part (all are leaded packages or module-level).
+
+**Two supply actions that should happen before board money is spent:** order the Riverdi display (and
+a spare) because it is single-source with thin stock, and buy encoders early enough to confirm the
+mechanical fit of the shaft length you chose.
 
 ## Sources
 
@@ -307,5 +352,9 @@ Hand-solder fallback exists for every non-JLC part (all are leaded packages or m
 - [WS2812B-2020 — LCSC C965555](https://www.lcsc.com/product-detail/Light-Emitting-Diodes-LED_Worldsemi-WS2812B-2020_C965555.html) · [datasheet](https://www.mouser.com/pdfDocs/WS2812B-2020_V10_EN_181106150240761.pdf)
 - [Sharp LS013B7DH05 — Digi-Key](https://www.digikey.com/en/products/detail/sharp-microelectronics/LS013B7DH05/5799456) · [spec PDF](https://pages.azumotech.com/hubfs/Sharp%20Spec%20Sheets/1.26_Sharp-LCD-Specification-LS013B7DH05.pdf)
 - [Riverdi RVT50HQBNWN00 (EVE4 BT817, 1000 cd/m²)](https://riverdi.com/product/eve4-intelligent-display-rvt50hqbnwn00-5-inch)
-- [Panasonic EVQ-WK4001 — Digi-Key](https://www.digikey.com/en/products/detail/panasonic-electronic-components/EVQ-WK4001/412477) · [EVQWK datasheet](https://media.digikey.com/pdf/Data%20Sheets/Panasonic%20Electric%20Works%20PDFs/EVQWK.pdf) · [Panasonic automotive encoder lineup](https://na.industrial.panasonic.com/products/switches-encoders-interface-devices/encoder-potentiometers/lineup/automotive-encoders/series/81850/model/81834)
-- [Bourns PEC11H datasheet](https://www.bourns.com/docs/Product-Datasheets/PEC11H.pdf)
+- [Bourns PEC09-2120F-S0012 — Digi-Key (Active, in stock, right angle)](https://www.digikey.com/en/products/detail/bourns-inc/PEC09-2120F-S0012/2440258) · [PEC09 datasheet](https://www.bourns.com/docs/product-datasheets/pec09.pdf) · [Bourns PEC09 series page](https://bourns.com/products/encoders/details/contacting-encoders/pec09)
+- [Bourns PEC11H datasheet](https://www.bourns.com/docs/Product-Datasheets/PEC11H.pdf) · [PEC11H-4120F-S0020 — Digi-Key](https://www.digikey.com/en/products/detail/bourns-inc/PEC11H-4120F-S0020/12349535)
+- **Obsolete, do not use:** [Panasonic EVQ-WK4001 — Mouser (lifecycle: EOL/NCNR)](https://www.mouser.com/ProductDetail/Panasonic/EVQ-WK4001?qs=WwqriLBepZtXJ9ryWu3WQQ%3D%3D) · [Panasonic discontinued-products index](https://industry.panasonic.com/global/en/products/discontinued) — kept here as the evidence trail for lesson L14
+- [Sharp LS013B7DH05 — LCSC C17500193](https://www.lcsc.com/product-detail/C17500193.html) · [JLCPCB part page](https://jlcpcb.com/partdetail/SharpMicroelectronics-LS013B7DH05/C17500193) (JLC-assemblable, ~$6.93)
+- [C&K KSC4 series datasheet](https://www.ckswitches.com/media/1970/ksc4.pdf) · [C&K KSC4 product page](https://www.ckswitches.com/products/switches/product-details/Tactile/KSC4/)
+- [Riverdi RVT50HQBNWN00 datasheet Rev 1.7](https://download.riverdi.com/RVT50HQBNWN00/DS_RVT50HQBNWN00_Rev.1.7.pdf)

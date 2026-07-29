@@ -36,7 +36,7 @@
 | PA13 / PA14 | SWD | Tag-Connect TC2030 |
 | PB8 / PB9 | `CAN_RX` / `CAN_TX` | FDCAN1 → TJA1051T/3 |
 | PB4 / PB5 | `PADDLE_UP_SNS` / `PADDLE_DN_SNS` | 100k tap off paddle lines |
-| PC0/PC1, PC2/PC3, PC4/PC5, PC6/PC7, PB0/PB1, PB2/PB10 | `ENC1_A/B` … `ENC6_A/B` | 4 thumb (EVQ-WK4001) + 2 faceplate (PEC11H) |
+| PC0/PC1, PC2/PC3, PC4/PC5, PC6/PC7, PB0/PB1, PB2/PB10 | `ENC1_A/B` … `ENC6_A/B` | 4 thumb (**PEC09**, right-angle) + 2 faceplate (PEC11H). Pin map is unchanged if thumb encoders move to satellite boards — the nets just leave via JST-GH instead of local pads |
 | PB11–PB15, PC13 | `ENC1_SW` … `ENC6_SW` | encoder push switches |
 | PC8–PC12, PD2 | `BTN1` … `BTN6` | sealed tactiles / JST-GH remotes |
 | BOOT0 | 10k to GND + test point | DFU entry via TP short to 3V3 |
@@ -58,7 +58,7 @@
    - Altium **Manufacturer Part Search** panel (place directly, then *right-click ▸ Add to library*),
    - SnapEDA / Ultra Librarian import (run **IPC-compliance check**: Reports ▸ Footprint comparison),
    - IPC Footprint Wizard (Tools menu in PcbLib) for anything missing — use datasheet nominal dims, density level **N**.
-3. Mandatory footprint checks (print datasheet page, tick off): STM32G474RET6 LQFP-64 (0.5 mm pitch — verify pad 0.28×1.5 mm class), TJA1051 SO-8, EVQ-WK4001 (THT, verify the 3 bracket tabs and rotation — the wheel must face the driver's thumb), PEC11H (bushing hole Ø9.5 mm + anti-rotation slot **on the faceplate drawing too**), WS2812B-2020 (2.2×2.0 mm, pin-1 dot orientation), Sharp LCD 10-pin FPC 0.5 mm bottom-contact ZIF (contacts flip if you pick top-contact — check twice), USB-C 16-pin, KSC4 tactiles, JST-GH horizontal, TC2030 footprint (no part, copper+3 locating holes), AP63205 TSOT-26 and its inductor.
+3. Mandatory footprint checks (print datasheet page, tick off): STM32G474RET6 LQFP-64 (0.5 mm pitch — verify pad 0.28×1.5 mm class), TJA1051 SO-8, **PEC09 right-angle** (THT — verify the body sits flat against the board and the shaft exits *parallel* to the PCB at the intended edge; check shaft length 15/20/25 mm against the faceplate depth before committing), PEC11H (bushing hole Ø9.5 mm + anti-rotation slot **on the faceplate drawing too**), WS2812B-2020 (2.2×2.0 mm, pin-1 dot orientation), Sharp LCD 10-pin FPC 0.5 mm bottom-contact ZIF (contacts flip if you pick top-contact — check twice), USB-C 16-pin, KSC4 tactiles, JST-GH horizontal, TC2030 footprint (no part, copper+3 locating holes), AP63205 TSOT-26 and its inductor.
 4. For every JLC-assembled part, add parameters `LCSC = Cxxxxxx` and `JLC-Rotation` (fill after §7 check). Key numbers already verified: MCU `C521608`, LEDs `C965555`.
 
 ## 3. Schematic capture (sheet by sheet)
@@ -95,7 +95,13 @@ This is now the *same input stage as the dash* (§1.1 of the dash doc). Copy tha
 ### 3.4 `wheel-hmi.SchDoc`
 Repeat this conditioning cell for **every** encoder A/B/SW and button line (make it a snippet/device sheet so it's identical 24 times):
 `switch contact → 1 kΩ series → MCU net`, with `10 kΩ pull-up to +3V3` and `100 nF to GND` on the MCU side of the resistor. Switch commons to GND.
-- 4 × EVQ-WK4001 (A/B/SW), 2 × PEC11H (A/B/SW).
+- 4 × **PEC09** right-angle (A/B/SW), 2 × PEC11H (A/B/SW).
+- **Satellite provision (cheap insurance, do it):** give each thumb encoder a **DNP JST-GH 5-pin
+  footprint** wired to the same `ENCn_A/B/SW` + 3V3 + GND nets, placed beside its on-board footprint.
+  Populating one and not the other decides at *assembly* time whether that encoder is on-board or on a
+  satellite board — no respin either way. Put the 1 kΩ/100 nF/10 kΩ conditioning cell on the main
+  board in both cases, and add the **BAV99** clamp on any line routed to a satellite connector
+  (it leaves the PCB). Rationale: `hardware-selections.md` §4.1b.
 - 6 × KSC4 tactile **plus** 2 × JST-GH 2-pin aux button connectors wired in parallel with BTN5/BTN6 nets, each aux line adding **BAV99** clamp to +3V3/GND at the connector (lines leave the board).
 
 ### 3.5 `wheel-leds.SchDoc`
