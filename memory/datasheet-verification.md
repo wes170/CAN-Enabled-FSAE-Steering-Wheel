@@ -25,7 +25,7 @@
 | **DMP3056L** | **VERIFIED** | Adequate; −30 V V_DSS is thin against a reverse jump start. See §5D |
 | **BAT54S → BAV199** | **VERIFIED** | **Defect — Schottky leakage corrupts the DAQ channels.** See §5A |
 | **Riverdi RVT50HQBNWN00** | **VERIFIED** | **Defect — backlight is a separate 5 V rail, 353 mA not 1.2 A.** See §5B |
-| **Dash pin map** | **VERIFIED** | Sound except inherited BOOT0 issue + open ADC-instance question. See §6 |
+| **Dash pin map** | **VERIFIED** | Sound; BOOT0 handled by option bit. **ADC question closed: all 8 DAQ pins reach ADC1/ADC2**, so one scan sequence covers them. See §6 |
 | PEC09 / PEC11H / KSC4 | **PARTIAL** | Distributor parametric data + conditioning analysed (§5E); mechanical drawings and bounce duration still unread |
 | **LMR36015 / AP2112K-3.3** | **VERIFIED** | Final selections, both closed. See §6A |
 | **PESD2CAN / USBLC6-2SC6** | **VERIFIED** | Compliant; margins computed. See §6A |
@@ -382,7 +382,7 @@ Re-checked every dash assignment against the same STM32G474 Table 13 used in §1
 | `V12_SENSE`/`V5_SENSE` = PB0/PB1 | ✅ ADC1_IN12 / ADC2_IN12 |
 | CAN / USB / SWD / UART | ✅ same as wheel |
 | **BOOT0** | ❌ **inherits defect 1.3** — `PB8-BOOT0` is `FDCAN1_RX`. No strap; use the `nBOOT0` option bit |
-| `AIN1–8` = PA0–PA3, PC0–PC3 | ⚠ all are ADC-capable, **but the ADC *instance* per channel was never checked.** PA0→ADC12_IN2, PA1→ADC1_IN3, PA2→ADC1_IN4, PA3→ADC2_IN17, PC0→ADC12_IN7… Confirm all eight can be covered by one or two ADC instances in a single scan sequence before capture, or the 8-channel scan will not work as assumed |
+| `AIN1–8` = PA0–PA3, PC0–PC3 | ✅ **Closed.** All eight are reachable by **ADC1 and/or ADC2** (PA0–PA3 on ADC1/ADC2, PC0–PC3 all `ADC12_*`), so a single ADC1 scan sequence — or ADC1+ADC2 in dual mode — covers the set. No channel is stranded on ADC3/4/5. Exact channel numbers are a CubeMX detail, not a schematic one |
 
 **The dash map survived because it never attempted six hardware encoder pairs** — it asked less of
 the alternate-function map, so there was less to get wrong. Only the BOOT0 issue and the open ADC
