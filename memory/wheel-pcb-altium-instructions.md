@@ -11,18 +11,23 @@
 
 | Pin | Net | Notes |
 |---|---|---|
-| 1 | `+5V_IN` | from dash 5V AUX (1.5 A fused at dash) |
+| 1 | `+12V_IN` | **vehicle 12V from harness** (Rev B — was 5V from dash in Rev A) |
 | 2 | `CAN_H` | 1 Mbit/s Haltech bus |
 | 3 | `CAN_L` | |
 | 4 | `PADDLE_UP` | passthrough to Nexus DI |
 | 5 | `PADDLE_DOWN` | passthrough to Nexus DI |
 | 6 | `GND` | |
 
+> **Rev B change:** the wheel is now 12V-fed and standalone — it no longer requires the dash board to
+> operate. Rationale and the contact-resistance arithmetic: `hardware-selections.md` §0.2 and
+> `system-architecture-and-can.md` §3.
+
 - **MCU pin map (STM32G474RET6) — verify in STM32CubeMX before schematic capture, then freeze:**
 
 | MCU pin | Net | Function |
 |---|---|---|
-| PA0 | `V5_SENSE` | ADC, 5V rail monitor (10k/10k divider) |
+| PA0 | `V12_SENSE` | ADC, 12V input monitor (47k/10k divider) |
+| PA1 | `V5_SENSE` | ADC, local 5V rail monitor (10k/10k divider) |
 | PA4 / PA5 / PA7 | `LCD_SCS` / `LCD_SCLK` / `LCD_SI` | Sharp memory LCD (SCS is **active-high**) |
 | PB3 / PB6 | `LCD_DISP` / `LCD_EXTCOMIN` | DISP enable; EXTCOMIN toggled ~1 Hz (TIM4_CH1) |
 | PA8 | `LED_DATA_3V3` | TIM1_CH1 + DMA → 74AHCT1G125 → `LED_DATA_5V` |
@@ -44,7 +49,7 @@
 1. **File ▸ New ▸ Project** → template *Default*, name `FSAE-WHEEL.PrjPcb`, save under `hardware/wheel/` in this repo. Enable **version control (Git)** in project options; commit the empty project.
 2. Add documents: `wheel-power.SchDoc`, `wheel-mcu.SchDoc`, `wheel-can-io.SchDoc`, `wheel-hmi.SchDoc`, `wheel-leds.SchDoc`, `wheel-display.SchDoc`, top sheet `wheel-top.SchDoc`, and `FSAE-WHEEL.PcbDoc`.
 3. **Project ▸ Project Options ▸ Error Reporting**: set *Nets with only one pin*, *Floating power object*, *Duplicate part designators* to **Fatal Error**. Comparator: leave all differences enabled. These are the ERC gates in engineering-rigor.md.
-4. Parameters (Project ▸ Parameters): `Rev = A`, `Board = FSAE-WHEEL`, add title-block template referencing them.
+4. Parameters (Project ▸ Parameters): `Rev = B`, `Board = FSAE-WHEEL`, add title-block template referencing them.
 
 ## 2. Libraries
 
@@ -53,20 +58,27 @@
    - Altium **Manufacturer Part Search** panel (place directly, then *right-click ▸ Add to library*),
    - SnapEDA / Ultra Librarian import (run **IPC-compliance check**: Reports ▸ Footprint comparison),
    - IPC Footprint Wizard (Tools menu in PcbLib) for anything missing — use datasheet nominal dims, density level **N**.
-3. Mandatory footprint checks (print datasheet page, tick off): STM32G474RET6 LQFP-64 (0.5 mm pitch — verify pad 0.28×1.5 mm class), TJA1051 SO-8, EVQ-WK4001 (THT, verify the 3 bracket tabs and rotation — the wheel must face the driver's thumb), PEC11H (bushing hole Ø9.5 mm + anti-rotation slot **on the faceplate drawing too**), WS2812B-2020 (2.2×2.0 mm, pin-1 dot orientation), Sharp LCD 10-pin FPC 0.5 mm bottom-contact ZIF (contacts flip if you pick top-contact — check twice), USB-C 16-pin, KSC4 tactiles, JST-GH horizontal, TC2030 footprint (no part, copper+3 locating holes).
+3. Mandatory footprint checks (print datasheet page, tick off): STM32G474RET6 LQFP-64 (0.5 mm pitch — verify pad 0.28×1.5 mm class), TJA1051 SO-8, EVQ-WK4001 (THT, verify the 3 bracket tabs and rotation — the wheel must face the driver's thumb), PEC11H (bushing hole Ø9.5 mm + anti-rotation slot **on the faceplate drawing too**), WS2812B-2020 (2.2×2.0 mm, pin-1 dot orientation), Sharp LCD 10-pin FPC 0.5 mm bottom-contact ZIF (contacts flip if you pick top-contact — check twice), USB-C 16-pin, KSC4 tactiles, JST-GH horizontal, TC2030 footprint (no part, copper+3 locating holes), AP63205 TSOT-26 and its inductor.
 4. For every JLC-assembled part, add parameters `LCSC = Cxxxxxx` and `JLC-Rotation` (fill after §7 check). Key numbers already verified: MCU `C521608`, LEDs `C965555`.
 
 ## 3. Schematic capture (sheet by sheet)
 
 Net naming: exactly the names in §0. Use ports between sheets; no hidden power-net magic except `GND`.
 
-### 3.1 `wheel-power.SchDoc`
-1. `+5V_IN` from J1 pin 1 → **MF-MSMF110** polyfuse → net `+5V` (board-wide LED/CAN/LDO rail).
-2. At J1 side of the fuse: **SMBJ5.0A** to GND + 10 µF X7R + 100 nF.
-3. **AMS1117-3.3**: 10 µF in / 22 µF out (X7R ≥10V), net `+3V3`.
-4. `+3V3` → ferrite bead (600Ω@100MHz) → `+3V3A` (VDDA/VREF+) with 1 µF + 100 nF.
-5. Divider 10k/10k from `+5V` → `V5_SENSE`, 100 nF at ADC pin.
-6. Test points: `+5V`, `+3V3`, `GND` ×2 (loop for scope ground spring).
+### 3.1 `wheel-power.SchDoc` — **Rev B: 12V automotive entry**
+This is now the *same input stage as the dash* (§1.1 of the dash doc). Copy that sheet, don't redraw it.
+1. `+12V_IN` from J1 pin 1 → **1 A polyfuse** → reverse-polarity **P-FET** (DMP3056L class: source→board,
+   gate→GND via 10k, gate zener 12V) → net `+12V_P`.
+2. At the J1 side: **SMBJ33A** to GND + 100 nF. (Scope the clamp during the A8 transient test; drop to
+   SMBJ26A if the measured clamp threatens the buck's abs-max.)
+3. **AP63205WU-7** sync buck `+12V_P` → net `+5V` @ 1.5 A: follow the datasheet reference layout exactly
+   (inductor ≥2 A sat, 2×10 µF in, 2×22 µF out). This rail feeds the LED bars and the CAN transceiver.
+4. **AMS1117-3.3** from `+5V`: 10 µF in / 22 µF out (X7R ≥10V), net `+3V3`.
+5. `+3V3` → ferrite bead (600Ω@100MHz) → `+3V3A` (VDDA/VREF+) with 1 µF + 100 nF.
+6. Dividers: 47k/10k from `+12V_P` → `V12_SENSE`; 10k/10k from `+5V` → `V5_SENSE`; 100 nF at each ADC pin.
+7. Test points: `+12V_P`, `+5V`, `+3V3`, `GND` ×2 (loop for scope ground spring).
+8. USB VBUS OR-ing: **BAT60A Schottky from VBUS into the `+5V` rail (downstream of the buck)** through
+   the DNP `R_VBUS` link — see `sim-variant-instructions.md`. Never OR into `+12V_P`.
 
 ### 3.2 `wheel-mcu.SchDoc`
 1. STM32G474RET6: 100 nF at **every** VDD pin + one 4.7 µF bulk; VDDA from `+3V3A`.
@@ -100,19 +112,23 @@ Wire sheet symbols, then **Project ▸ Validate**. Zero errors, zero *unsuppress
 
 1. **Board shape:** import the wheel chassis/faceplate DXF (**File ▸ Import ▸ DXF**) onto a mech layer; draw outline; place mounting holes (M3, plated, GND-stitched) per the mechanical design. Keep the quick-release hub keep-out (no parts within the hub boss circle + 2 mm).
 2. **Layer stack manager:** 4-layer, pick **JLC7628** preset; L2 = uninterrupted GND (rule: no routing on L2, period).
+2b. **Buck placement (new in Rev B):** put the AP63205 hot loop in the J1 connector corner, loop area
+   <20 mm², inductor and input caps tight, output ferrite before the LED bulk caps. Keep it outside the
+   quick-release hub keep-out and ≥10 mm from the memory-LCD FPC and encoder conditioning cells. The
+   800 kHz WS2812 data line remains the board's worst aggressor — do not route it over the buck.
 3. **Placement zones** (component side facing away from driver except HMI):
    - Encoders/buttons/display on **front** side per cockpit ergonomics (display top-center, thumb encoders at grip height L/R, faceplate encoders lower center).
    - LED bars on front, top edge: 16-LED arc; TC bar left, lockup bar right (driver-mnemonic: left = traction).
-   - MCU central back; CAN transceiver + TVS **adjacent to J1 pigtail entry**; LDO/polyfuse at power entry. Protection parts always closest to the connector — energy must be clamped before it travels.
+   - MCU central back; CAN transceiver + TVS **adjacent to J1 pigtail entry**; polyfuse → P-FET → SMBJ33A → buck in that physical order at power entry, no crossing nets. Protection parts always closest to the connector — energy must be clamped before it travels.
 4. **Routing rules (Design ▸ Rules):**
-   - Clearance 0.2 mm global; track 0.25 mm signal / 0.5 mm `+3V3` / 1.0 mm min `+5V` trunk (2 A capable at 35 µm, ΔT<10 °C — widen where space allows).
+   - Clearance 0.2 mm global (**0.4 mm minimum around `+12V_P` and the buck switch node** — higher voltage, and it keeps creepage sane on a board that sees sweat); track 0.25 mm signal / 0.5 mm `+3V3` / 1.0 mm min `+5V` trunk (2 A capable at 35 µm, ΔT<10 °C — widen where space allows); `+12V_P` 0.5 mm is ample at 0.3 A.
    - Via 0.3/0.6 mm. Teardrops on.
    - Diff pairs: `CAN_H/L` and `USB_DP/DM` as pairs. USB: 90Ω differential — get exact geometry from the **JLCPCB impedance calculator** for JLC7628 (≈0.3 mm/0.2 mm class) and enter into the rule; length-match ±0.15 mm. CAN at 1 Mbit/s on a ≤100 mm board is not impedance-critical — route as a coupled pair, keep off noisy zones.
    - `LED_DATA_5V`: single 800 kHz edge-heavy line — route over solid GND, no layer hops if avoidable.
 5. **Order of routing:** power trunks → CAN/USB pairs → display/encoder buses → LED chain (short DOUT→DIN hops along the bars) → cleanup. Every signal referenced to L2 GND; if a signal must change layers, add a GND stitching via within 2 mm.
-6. **Analog/quiet:** keep `V5_SENSE`/VDDA parts away from LED bars; ferrite + VDDA caps within 5 mm of pin 13 (VDDA).
+6. **Analog/quiet:** keep `V5_SENSE`/`V12_SENSE`/VDDA parts away from LED bars and the buck; ferrite + VDDA caps within 5 mm of pin 13 (VDDA).
 7. **Copper pours:** GND on L1/L4 stitched at ≤5 mm grid near LEDs (thermal spreading — 24 LEDs ≈ 4 W worst case over the bar area).
-8. **Silkscreen:** J1 pinout table printed on the back silk; LED1/LED17/LED21 index marks; polarity/pin-1 everywhere; board name + rev + date.
+8. **Silkscreen:** J1 pinout table printed on the back silk (**note the 12V on pin 1**); LED1/LED17/LED21 index marks; polarity/pin-1 everywhere; board name + rev + date.
 
 ## 5. DRC & pre-release gates
 
@@ -132,4 +148,4 @@ Run **Tools ▸ Design Rule Check**: zero errors. Then the rigor-file gates: G2 
 
 ## 8. Bring-up hook
 
-Do not ship straight to the car: follow the staged bring-up in `engineering-rigor.md` §4 (power-only → SWD → CAN loopback → NSP detection with bench Nexus/sniffer → HMI → LEDs → display → in-car).
+Do not ship straight to the car: follow the staged bring-up in `engineering-rigor.md` §4 (power-only at 12 V → SWD → CAN loopback → NSP detection with bench Nexus/sniffer → HMI → LEDs → display → in-car).

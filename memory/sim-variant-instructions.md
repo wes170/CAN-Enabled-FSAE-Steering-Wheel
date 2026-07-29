@@ -7,19 +7,25 @@
 ## 1. Why a variant, not a second board (first principles)
 
 A second layout doubles NRE, doubles respin risk, and forks the BOM; the sim use case differs only
-in *power source* (USB VBUS instead of dash 5V), *host interface* (USB HID instead of CAN), and
+in *power source* (USB VBUS instead of vehicle 12V), *host interface* (USB HID instead of CAN), and
 *paddle consumer* (MCU instead of Nexus). All three differences are populate/depopulate + firmware —
 exactly what Altium assembly variants exist for. The car remains the base design; sim is the derivative.
+
+**Rev B note:** moving the car wheel to 12V made this cleaner, not messier. Because USB VBUS ORs into
+the **5V rail downstream of the buck**, the sim build simply omits the entire 12V front end. That also
+means the board inherently supports a 5V bench supply via USB — so no buck-boost or dual-voltage input
+is needed to keep both use cases (a dual 5V-or-12V input pin would have required one, for no real gain).
 
 ## 2. Electrical mechanism (already designed into the base schematic)
 
 | Difference | Base-schematic provision | CAR variant | SIM variant |
 |---|---|---|---|
-| Power from USB VBUS | `R_VBUS` 0 Ω link after BAT60A Schottky OR-ing VBUS into `+5V` | **DNP** (car power never backfeeds a PC; port is data/DFU only) | **Fitted** — board runs from USB |
+| Power from USB VBUS | `R_VBUS` 0 Ω link after BAT60A Schottky OR-ing VBUS into the `+5V` rail **downstream of the buck** | **DNP** (car power never backfeeds a PC; port is data/DFU only) | **Fitted** — board runs from USB |
+| 12V input stage (Rev B) | polyfuse, P-FET, SMBJ33A, AP63205 buck | Fitted | **DNP** — no 12V on a desk; USB feeds the 5V rail directly. This is a *bonus* of the 12V change: the sim build gets simpler and cheaper, not harder |
 | CAN unused | TJA1051 + PESD2CAN + termination | Fitted | **DNP** (saves cost; FDCAN pins idle) |
-| Paddles read by MCU | 100 k sense taps `PADDLE_*_SNS` always routed | MCU passively observes ECU-pulled lines | MCU enables internal pull-ups; paddle switches short to GND through the same J1 pins — jumper plug on J1 not required because pull-ups + switch-to-GND are self-contained… **wire the paddle switches to J1 pins 4/5 and GND pin 6 exactly as in the car** |
+| Paddles read by MCU | 100 k sense taps `PADDLE_*_SNS` always routed | MCU passively observes ECU-pulled lines | MCU enables internal pull-ups; paddle switches short to GND through the same J1 pins — **wire the paddle switches to J1 pins 4/5 and GND pin 6 exactly as in the car** |
 | Paddle TVS | SMAJ24CA | Fitted | Fitted (harmless) |
-| Wheel-side 5V input protection | polyfuse + SMBJ5.0A | Fitted | Fitted (protects PC port too) |
+| USB port protection | USBLC6-2SC6 on D+/D−, CC pull-downs | Fitted | Fitted — in SIM this is the *only* input protection left, and it now guards a PC's USB port, so never DNP it |
 
 **USB current budget (first principles):** with plain 5.1 k CC pull-downs a UFP may draw 500 mA
 (default USB power) — the full-white LED worst case (0.86 A) exceeds it. Firmware in SIM mode
@@ -31,13 +37,16 @@ footprint `R_CC_SNS` provided) to detect a 1.5 A/3 A source and lift the cap.
 
 1. **Project ▸ Variants…** opens Variant Management.
 2. Add variant `SIM` (base design = car build; also add explicit variant `CAR` if you want both labeled).
-3. For `SIM`, set **Not Fitted**: `U_CAN` (TJA1051), `D_CANTVS` (PESD2CAN), `R_T1`, `R_T2`, `C_T1` (already DNP in base), and set **Fitted**: `R_VBUS`.
+3. For `SIM`, set **Not Fitted**: `U_CAN` (TJA1051), `D_CANTVS` (PESD2CAN), `R_T1`, `R_T2`, `C_T1`
+   (already DNP in base), **plus the whole 12V input stage** (input polyfuse, reverse P-FET + its gate
+   parts, SMBJ33A, AP63205 buck, its inductor and in/out caps); and set **Fitted**: `R_VBUS`.
+   Keep the AMS1117-3.3 fitted in both — it regulates from the 5V rail regardless of where 5V came from.
 4. For `CAR`, set **Not Fitted**: `R_VBUS`.
 5. Title block: place a special string `.VariantName` on silk/assembly drawing so built boards are identifiable.
 6. Outputs: in the OutJob, duplicate the BOM + pick-and-place outputs and set each one's **Variant**
    (`[No Variations]` is *not* what you upload — always pick `CAR` or `SIM`). Order JLC assembly per variant.
 7. Sanity gate: open **3D view per variant** (View ▸ Variants toolbar selector) and confirm the CAN
-   transceiver disappears in SIM.
+   transceiver and the buck stage disappear in SIM.
 
 ## 4. Firmware notes (SIM build flag)
 
@@ -60,4 +69,4 @@ footprint `R_CC_SNS` provided) to detect a 1.5 A/3 A source and lift the cap.
 1. First plug through a **USB power meter** — confirm ≤100 mA enumeration draw before LEDs enable.
 2. Verify HID with `joy.cpl` (Windows) / `jstest` (Linux): all buttons, both paddles, encoder pulses both directions at slow and flick speeds (missed detents = firmware quadrature bug, not hardware — the TIM encoder peripheral doesn't miss).
 3. 30-minute soak at capped-max LED load; USB meter must stay ≤500 mA.
-4. Then run the common bring-up items of `engineering-rigor.md` §4 that apply (skip CAN stages).
+4. Then run the common bring-up items of `engineering-rigor.md` §4 that apply (skip CAN stages and the 12 V power-only stage).
