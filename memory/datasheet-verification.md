@@ -237,6 +237,79 @@ datasheet verification**, and the docs must not present them as decisions until 
 choice *downstream* of the front-end converter. The original "1.5 A" figure quoted for AP63205 was
 wrong in the docs — the family is rated **2 A**.
 
+## 5A. BAT54S in the DAQ front end — **VERIFIED, wrong part** (defect 5.2)
+
+The 8-channel analog front end clamps each ADC input with a **BAT54S**. That is the wrong device
+class for a 12-bit input, and the error it injects is large.
+
+| Device | Reverse leakage | Source |
+|---|---|---|
+| **BAT54S** (Schottky) | **2 µA @ 25 V, 25 °C**; **~100 µA @ 30 V, 100 °C** | BAT54 family datasheets (ST / Vishay / Diodes, consistent) |
+| **BAV199** (low-leakage silicon) | **3 pA typ**; 3 nA @ 150 °C | Nexperia BAV199 |
+
+**Why it matters here.** The AFE presents a **5 kΩ Thévenin source** at the ADC node (10 kΩ series ∥
+10 kΩ to ground). Leakage current flowing into that impedance is indistinguishable from signal:
+
+- At 25 °C: 2 µA × 5 kΩ = **10 mV** of offset — about **12 LSB** at 12 bits over 3.3 V.
+- At 100 °C — entirely reachable for a dash in direct sun, which is the environment we *chose* the
+  display for — 100 µA × 5 kΩ = **500 mV**. On a 0–2.5 V signal that is a **20 % error**.
+
+A DAQ channel that drifts half a volt when the car gets hot is worse than no DAQ channel, because it
+looks like data.
+
+**Correction:** replace BAT54S with **BAV199** (same SOT-23 dual, ~667,000× lower leakage). Its higher
+forward drop is irrelevant here — the clamp is a fault-path device, not a signal-path one.
+
+**Worth noting:** the 10 kΩ series resistor already does the real protection work. A 12 V fault on a
+sensor line injects (12 − 3.3 − 0.7)/10 kΩ ≈ **0.8 mA** into the MCU's internal protection diodes,
+comfortably inside the STM32's ±5 mA injection limit. The external clamp is belt-and-braces, which is
+exactly why it must not cost accuracy. Keep it, but keep it low-leakage.
+
+---
+
+## 5B. Riverdi RVT50HQBNWN00 — **VERIFIED, power architecture was wrong** (defect 5.3, and it's good news)
+
+Source: Riverdi **DS_RVT50HQBNWN00 Rev 1.7**, read directly.
+
+The docs stated: *"3.3 V supply, integrated backlight driver (≈1.2 A at full brightness — drives the
+3.3 V buck sizing)."* **All three claims were wrong.**
+
+### What the datasheet actually says
+
+| Parameter | Value |
+|---|---|
+| Module logic supply **VDD** | 3.0 / **3.3** / 3.6 V — `IVDD` **98 mA typ, 384 mA max** (max is with audio at full volume; we fit no speaker) |
+| Backlight supply **BLVDD** | **A completely separate rail**, 3.1 / **5.0 typ** / 5.5 V |
+| Backlight current **@ 5.0 V** | **353 mA** at 100 % brightness, 164 mA at 50 % |
+| Backlight current @ 3.3 V | 657 mA at 100 % — *the driver is constant-current, so a lower rail costs more current* |
+| Interface | 20-pin, 0.5 mm pitch FFC ("RiBUS"), matched cable `FFC0520150` — **pin count claim was correct** |
+| Logic levels | VIH 2.0 V min, VIL 0.8 V max — 3.3 V logic drives it directly ✅ |
+| INT (pin 7), RST/PD (pin 8) | Both **internally pulled up 47 kΩ**, active low |
+
+Verified RiBUS pinout: 1 VDD, 2 GND, 3 SPI_SCLK, 4 MISO/IO1, 5 MOSI/IO0, 6 CS, 7 INT, 8 RST/PD,
+9 GPIO0, 10 DISP_AUDIO, 11 GPIO1/IO2, 12 GPIO2/IO3, 13–16 NC, **17–18 BLVDD**, **19–20 BLGND**.
+
+### Consequences — the dash gets simpler and cheaper
+
+1. **Feed BLVDD from the 5 V rail, not 3.3 V.** At 5 V the backlight draws 353 mA; at 3.3 V it would
+   draw 657 mA for the same light. Running it at 5 V is both correct per the datasheet and lower current.
+2. **The 3.3 V buck was sized for a load that was never on it.** Real 3.3 V load is MCU (~100 mA) +
+   module VDD (~98 mA typ, 384 mA worst case) ≈ **0.5 A**, not 1.4 A. The AP63203 (2 A) is now
+   heavily oversized — fine, but no longer load-bearing.
+3. **The 5 V buck requirement drops, and this resolves the open selection from §5.** Revised 5 V rail
+   load: backlight 353 mA + sensor excitation 200 mA + servo buffers + CAN ≈ 0.6 A direct, plus the
+   3.3 V rail reflected (0.5 A × 3.3/5 ÷ 0.9 ≈ 0.37 A) = **≈ 1.0 A**.
+   **The 1.5 A LMR36015 candidate now fits the dash as well as the wheel** — one 60 V converter part
+   across both boards, instead of needing a larger part for the dash. (Still a candidate until its
+   own datasheet is verified.)
+4. **Revised dash 12 V input draw:** ≈ (1.65 W + 3.0 W) ÷ 0.85 ÷ 12 V ≈ **0.46 A** — the 2 A input
+   polyfuse remains correct with generous margin.
+
+Also correct the earlier assumption **A5** ("Riverdi 3.3 V backlight inrush") — it was aimed at the
+wrong rail. The inrush to scope is on **BLVDD/5 V**, not 3.3 V.
+
+---
+
 ## 6. Everything else — UNVERIFIED
 
 Not yet read, and every parameter quoted for them in the other memory files should be treated as

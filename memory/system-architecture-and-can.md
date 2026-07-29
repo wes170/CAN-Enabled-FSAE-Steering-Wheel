@@ -144,15 +144,22 @@ Contact-degradation check (the reason for 12V — see hardware-selections.md §0
 
 Buck needs ≥ ~5.5 V in for 5 V out; arriving voltage stays >11.5 V under any plausible contact wear ✔.
 
-### Dash (12V input) — **Rev B**
-| Load | Worst case |
-|---|---|
-| Display @ 3.3V, 100% backlight | 1.2 A → 4.0 W |
-| MCU + CAN + analog | 0.2 A @ 3.3V |
-| ~~5V AUX to wheel~~ | **removed — wheel is now 12V-fed and standalone** |
-| 5V sensors (DAQ excitation) | 0.2 A |
-| Servo signal buffers @ 5V | < 0.01 A (logic only — servo *power* is external, §3A.2) |
-| **12V input draw** | ≈ (4.6 W + 1.0 W)/0.85 eff / 12 V ≈ **0.55 A** → 2 A polyfuse ✔ (comfortable margin; 5V buck downsized 3A → 2A) |
+### Dash (12V input) — **Rev B, corrected against Riverdi DS Rev 1.7**
+| Load | Rail | Worst case |
+|---|---|---|
+| Display **backlight** (`BLVDD`) @ 100 % | **5 V** | **0.353 A** — a *separate* module supply, not 3.3 V (see `datasheet-verification.md` §5B) |
+| Display module logic (`VDD`) | 3.3 V | 0.098 A typ / 0.384 A max (max is audio-at-full-volume; no speaker fitted) |
+| MCU + CAN + analog | 3.3 V | 0.10 A |
+| 5V sensor excitation (DAQ) | 5 V | 0.20 A |
+| Servo signal buffers | 5 V | < 0.01 A (logic only — servo *power* is external, §3A.2) |
+| ~~5V AUX to wheel~~ | — | **removed — wheel is 12V-fed and standalone** |
+
+- **3.3 V rail total: ≈ 0.5 A** (was assumed 1.4 A — the 1.2 A "backlight" was never on this rail).
+- **5 V rail total: ≈ 0.6 A direct + 0.37 A reflected from the 3.3 V buck ≈ 1.0 A.**
+- **12 V input draw:** ≈ (1.65 W + 3.0 W) / 0.85 eff / 12 V ≈ **0.46 A** → 2 A polyfuse ✔ (ample).
+
+Feed `BLVDD` from **5 V**, not 3.3 V: the backlight driver is constant-current, so at 3.3 V it would
+draw 657 mA for the same brightness instead of 353 mA.
 
 ### DAQ analog front end (dash, 8 channels)
 `AIN → 10k series → [node: 10k to GND ∥ 100nF ∥ BAT54S clamp to 3V3/GND] → ADC pin`
@@ -246,7 +253,7 @@ reviewed under the same gates as the PCBs. Do not let "temporary" mean "unreview
 | A2 | IO12 **Box B** ID set (Box A = 0x2C1/3/5/7 verified via PT Motorsport emulator) | Request write protocol from Haltech support (they supply it to owners) or sniff |
 | A3 | WS2812B-2020 worst-case current 36 mA/LED | Measure a 24-LED strip at full white, update budget |
 | A4 | TC / lockup status source on broadcast bus | Decide with tuner in NSP; bind config table |
-| A5 | Riverdi 3.3V rail peak (backlight inrush) | Scope at power-on; verify AP63203 soft-start covers it |
+| A5 | Riverdi backlight inrush | **Re-aimed:** the backlight is on `BLVDD`/**5 V**, not 3.3 V (§5B of the verification file), so scope the **5 V rail** at power-on and verify the 60 V buck's soft-start covers it |
 | A6 | ARB servo torque/stall current unknown (assumed ~5A stall @7.4V per channel) | Get the actual servo part number from the vehicle dynamics/mechanical team; it sizes the BEC now and the servo power conditioning board later (§3A.4). If the team instead picks **serial-bus servos** (Dynamixel/Herkulex class), the dash output stage changes from PWM to half-duplex UART — decide before layout |
 | A7 | Does the ARB mechanism back-drive when servo power is lost? | Mechanical-team answer. Self-locking worm drive ⇒ setting holds, power loss is a non-event. Direct lever ⇒ setting is lost mid-session; may require holding torque or a locking mechanism |
 | A8 | Wheel 12V transient environment (now seen directly, not filtered by the dash) | Scope the wheel's 12V feed during crank, alternator load steps, and fan/solenoid switching; confirm SMBJ33A clamp vs. buck abs-max |

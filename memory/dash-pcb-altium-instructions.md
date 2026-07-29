@@ -84,7 +84,13 @@ behind the board-personality `#define`, not assume a pin means the same thing ev
 
 ### 1.2 `dash-afe.SchDoc` — DAQ front end (×8, make it a repeated device sheet)
 Per channel (values from `system-architecture-and-can.md` §3):
-`AINx (J2) → 10 kΩ series → node N1 → 10 kΩ to GND ∥ 100 nF ∥ BAT54S (clamps to +3V3 and GND) → AINx_ADC`
+`AINx (J2) → 10 kΩ series → node N1 → 10 kΩ to GND ∥ 100 nF ∥ **BAV199** (clamps to +3V3 and GND) → AINx_ADC`
+
+> **Use BAV199, not BAT54S.** A Schottky's reverse leakage (2 µA at 25 °C, ~100 µA at 100 °C) flows
+> into the 5 kΩ Thévenin source and becomes indistinguishable from signal: 10 mV of offset at room
+> temperature, **500 mV when hot** — a 20 % error on a 0–2.5 V channel, in a dash we deliberately
+> specified for direct sun. BAV199 leaks ~3 pA. Its higher forward drop costs nothing because the
+> clamp is a fault-path device. Full arithmetic: `datasheet-verification.md` §5A.
 - All 8 GND legs to a quiet analog pour tied at one point to L2 GND.
 - **TLV9004 buffer footprints DNP** between N1 and ADC (jumpered by 0Ω default) — populate only if a future sensor needs low-impedance drive.
 - Silkscreen at J2: “0–5 V MAX, 12 V tolerant (fault)”.
@@ -109,8 +115,32 @@ Per channel, in this physical order from MCU to connector:
 > on the separate conditioning board (`system-architecture-and-can.md` §3A.4), not here.
 
 ### 1.3 `dash-display.SchDoc`
-20-pin 0.5 mm FPC ZIF to the Riverdi EVE4 module: SPI (CS/SCK/MISO/MOSI + optional QSPI IO2/IO3 — wire them, firmware may upgrade to QSPI), `EVE_PDN`, `EVE_INT`, `+3V3` power pins (check Riverdi datasheet current pinout **against the exact module revision purchased** — transcribe the pin table into the schematic as a note; module revisions have moved pins — rigor lesson L6), bulk 22 µF + 1 µF + 100 nF at the connector.
-Backlight is driven on-module; no extra circuit.
+**Verified against Riverdi DS_RVT50HQBNWN00 Rev 1.7.** 20-pin 0.5 mm FFC ("RiBUS", matched cable
+`FFC0520150`):
+
+| Pin | Signal | Connect to |
+|---|---|---|
+| 1 | VDD | `+3V3` (module logic — 98 mA typ, 384 mA max with audio) |
+| 2 | GND | GND |
+| 3 / 4 / 5 / 6 | SPI_SCLK / MISO(IO1) / MOSI(IO0) / CS | `EVE_SCK` / `EVE_MISO` / `EVE_MOSI` / `EVE_CS` |
+| 7 | INT | `EVE_INT` — active low, **internally pulled up 47 kΩ** (no external pull-up needed) |
+| 8 | RST/PD | `EVE_PDN` — active low, **internally pulled up 47 kΩ** |
+| 9 | GPIO.0 | spare |
+| 10 | DISP_AUDIO | leave unconnected (no speaker fitted) |
+| 11 / 12 | GPIO.1/IO.2, GPIO.2/IO.3 | wire out — QSPI data lines 2/3 if firmware upgrades to QSPI |
+| 13–16 | NC | |
+| **17, 18** | **BLVDD** | **`+5V` — backlight is a SEPARATE supply, both pins** |
+| **19, 20** | **BLGND** | GND (internally common to GND, but route both) |
+
+> **The backlight is not on the 3.3 V rail.** The original instruction assumed it was and sized the
+> 3.3 V buck for ~1.2 A that was never there. BLVDD is its own input, spec 3.1 / **5.0 typ** / 5.5 V,
+> drawing **353 mA at 5 V** at full brightness. Feed it from `+5V`: the driver is constant-current, so
+> running it at 3.3 V would draw **657 mA** for the same light. Consequences for rail sizing (and the
+> resulting simplification of the 60 V buck choice) are in `datasheet-verification.md` §5B.
+
+Logic levels: VIH 2.0 V min / VIL 0.8 V max, so 3.3 V GPIO drives it directly with no shifting.
+Decoupling: 22 µF + 1 µF + 100 nF at the connector on VDD, **plus separate bulk on BLVDD** (that is
+where the switching load lives).
 
 ## 2. PCB layout deltas
 

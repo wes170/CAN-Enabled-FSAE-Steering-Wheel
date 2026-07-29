@@ -6,11 +6,11 @@ R1,1,P-FET gate pulldown,10k 1%,0402,spec,Commodity,Stock,
 D5,1,Zener gate clamp,12V 500mW,SOD-323,spec,Commodity,Stock,
 D1,1,TVS unidirectional,SMBJ33A 33V standoff / VC 53.3V @ 11.26A,SMB,SMBJ33A,Active,Stock,"KEEP -- the BUCK changes, not the TVS. 53.3V clamp requires a 60V-class U1. See datasheet-verification.md section 5"
 C1,1,Input decoupling,100nF 50V,0603,spec,Commodity,Stock,
-U1,1,Synchronous buck 12V->5V,"5V / >=2A / **60V-class input**",TBD,"SELECTION OPEN: LMR36520 or TPS54360 class -- VERIFY DATASHEET BEFORE ADOPTING",Active,Stock,"*** LMR33630 REJECTED: 42V abs max vs the 53.3V SMBJ33A clamp. Must carry 5V loads (~0.5A) PLUS the 3.3V rail reflected through U2 (~1.0A) = size for ~1.6A. LMR36015 (1.5A) is too marginal here."
+U1,1,Synchronous buck 12V->5V,"5V / >=1.2A / **60V-class input**",TBD,"CANDIDATE: TI LMR36015 (4.2-60V / 66V tol / 1.5A) LCSC C2863325 -- SAME PART AS THE WHEEL. Verify datasheet before adopting",Active,Stock,"*** LMR33630 REJECTED: 42V abs max vs 53.3V SMBJ33A clamp. Load re-derived after reading the Riverdi datasheet: backlight is on BLVDD/5V (353mA) not 3.3V, so 5V rail = ~1.0A total. 1.5A part now fits."
 L1,1,Buck inductor,per chosen buck reference design,TBD,spec -- select at capture,Commodity,Stock,"Depends on the 60V buck finally chosen"
 C2;C3,2,Buck input capacitor,22uF 50V X7R,1210,spec,Commodity,Stock,50V for load-dump margin
 C4;C5,2,Buck output capacitor,47uF 16V X7R,1210,spec,Commodity,Stock,
-U2,1,Synchronous buck **5V**->3.3V,3.3V / 2A / 3.8-32Vin (35V abs max),TSOT-26,AP63203WU-7,Active,Stock,"*** RE-SOURCED FROM +5V not +12V_P: 35V abs max must never face the battery. Fine downstream. Keeps U1 as the single high-voltage exposure point."
+U2,1,Synchronous buck **5V**->3.3V,3.3V / 2A / 3.8-32Vin (35V abs max),TSOT-26,AP63203WU-7,Active,Stock,"*** RE-SOURCED FROM +5V not +12V_P (35V abs max must never face the battery). Real 3.3V load is only ~0.5A (MCU + module VDD 98mA typ) -- the 1.2A backlight is NOT on this rail. 2A part is now heavily oversized but harmless."
 L2,1,Buck inductor,4.7uH / Isat >=3A,shielded,spec — select at capture,Commodity,Stock,CONFIRM against AP63203 datasheet
 C6;C7,2,3V3 buck input cap,10uF 50V X7R,1206,spec,Commodity,Stock,
 C8;C9,2,3V3 buck output cap,22uF 16V X7R,0805,spec,Commodity,Stock,
@@ -43,7 +43,7 @@ R7;R8,2,CC pull-downs,5.1k 1%,0402,spec,Commodity,Stock,
 R9-R16,8,AFE series limiter,10k 1%,0402,spec,Commodity,Stock,Limits a 12V-shorted sensor line to ~0.6mA into the clamps
 R17-R24,8,AFE divider lower leg,10k 1%,0402,spec,Commodity,Stock,Divide-by-2: 0-5V sensor -> 0-2.5V at ADC
 C24-C31,8,AFE filter,100nF,0402,spec,Commodity,Stock,fc ~320Hz — retune per channel if a fast signal is needed
-D6-D13,8,AFE clamp,BAT54S dual series Schottky,SOT-23,BAT54S,Active,Stock,Clamps to +3V3 and GND
+D6-D13,8,AFE clamp **LOW-LEAKAGE**,BAV199 dual low-leakage silicon,SOT-23,BAV199,Active,Stock,"*** BAT54S REJECTED: 2uA leak at 25C and ~100uA at 100C across the 5k Thevenin source = 10mV at room temp and 500mV hot (20pct error). BAV199 is 3pA. See datasheet-verification.md 5A"
 U6,1,Optional AFE buffer,quad rail-to-rail op-amp,TSSOP-14,TLV9004,Active,Stock,DNP — 0 ohm jumpers by default. Fit only if a sensor needs low-impedance drive
 ,,=== ARB SERVO OUTPUTS x2 (1.2b) ===,,,,,,
 U7,1,Servo signal buffer,74AHCT2G125 dual buffer 5V,VSSOP-8,74AHCT2G125,Active,Stock,"One package covers both channels. AHCT mandatory (TTL VIH 2.0V accepts 3.3V logic)"
@@ -51,8 +51,8 @@ C32,1,Buffer decoupling,100nF,0402,spec,Commodity,Stock,
 R25;R26,2,Servo fault-current limiter,100 ohm 1% 0.25W,0805,spec,Commodity,Stock,"12V short -> only ~70mA into the clamp. Also damps ringing on a multi-metre run"
 D14;D15,2,Servo line TVS,SMAJ5.0A,SMA,SMAJ5.0A,Active,Stock,At the connector — clamp before the transient travels
 ,,=== DISPLAY (1.3) ===,,,,,,
-DS1,1,Dash display,"Riverdi EVE4 5.0"" 800x480 IPS 1000 cd/m2 BT817Q SPI/QSPI",module + FPC,RVT50HQBNWN00,Active,LONG / THIN STOCK,"*** ORDER FIRST *** Single-source, distributor stock seen in low single digits. Buy a spare. Nothing else in the build depends on ordering PCBs first"
-J4,1,Display FPC connector,20-pin 0.5mm ZIF,SMD,spec — select at capture,Commodity,Stock,"Transcribe the pin table of the PURCHASED module revision — revisions have moved pins (lesson L6)"
+DS1,1,Dash display,"Riverdi EVE4 5.0"" 800x480 IPS 1000 cd/m2 BT817Q SPI/QSPI. VDD 3.3V (98mA typ); BLVDD SEPARATE 5V rail (353mA at 100pct)",module + 20pin 0.5mm FFC,RVT50HQBNWN00,Active,LONG / THIN STOCK,"*** ORDER FIRST *** Single-source, thin stock, buy a spare. Backlight is a SEPARATE BLVDD supply -- feed from 5V (353mA) not 3.3V (657mA). Verified DS Rev 1.7"
+J4,1,Display FFC connector,20-pin 0.5mm ZIF,SMD,spec -- select at capture,Commodity,Stock,"VERIFIED RiBUS pinout (DS Rev1.7): 1 VDD, 2 GND, 3 SCLK, 4 MISO/IO1, 5 MOSI/IO0, 6 CS, 7 INT(47k PU), 8 RST/PD(47k PU), 9 GPIO0, 10 DISP_AUDIO, 11 GPIO1/IO2, 12 GPIO2/IO3, 13-16 NC, 17-18 BLVDD, 19-20 BLGND. Matched cable FFC0520150"
 C33-C35,3,Display decoupling,22uF + 1uF + 100nF,0805/0402,spec,Commodity,Stock,At the connector. Backlight driver is on-module
 R27;R28,2,SPI series damping,22 ohm,0402,spec,Commodity,Stock,On SCK/MOSI at the MCU — ringing control at 30MHz
 ,,=== LOCAL BUTTONS (optional) ===,,,,,,

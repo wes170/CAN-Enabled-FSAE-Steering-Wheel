@@ -184,6 +184,24 @@
   be *managed* (option bits) rather than routed around. **Check peripheral pin availability in the
   specific package before committing to a package, not after.**
 
+- **L18 (2026-07, verification pass 3 — two more, and one of them was free money):**
+  **(a)** The DAQ front end clamped 12-bit ADC inputs with a **BAT54S**. Schottky reverse leakage
+  (2 µA at 25 °C, ~100 µA at 100 °C) flows into the 5 kΩ Thévenin source and *is* signal: 10 mV of
+  offset cold, **500 mV hot** — 20 % error, in a dash we specifically chose for direct sun. BAV199
+  (3 pA) fixes it for the same money. **Match the diode class to the node impedance: on a
+  high-impedance analog node, leakage is a signal-path parameter, not a leakage-path footnote.**
+  **(b)** The Riverdi display's backlight is on a **separate BLVDD rail**, not the module's 3.3 V —
+  and it draws **353 mA at 5 V**, not the 1.2 A the docs claimed. That single wrong sentence had
+  sized the 3.3 V buck for a load that did not exist and pushed the dash toward a bigger, different
+  60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
+  covers both boards. **Verification is not only a hunt for defects — unverified numbers are
+  padded numbers, and padding costs parts.**
+- **L19 (2026-07):** Six defects so far, and the two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+  were both **interactions between two correct-looking choices**, not errors in either one alone.
+  PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
+  combination. **Review pairs, not parts:** for every component, ask what else touches its net and
+  what the other end of that net does at power-on, at fault, and when hot.
+
 ## 5A. Planned future work (do not lose track of these)
 
 | Item | Status | Where specified |
