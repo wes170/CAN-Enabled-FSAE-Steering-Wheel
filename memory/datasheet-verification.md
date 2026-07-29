@@ -20,10 +20,15 @@
 | WS2812B-2020 | **UNVERIFIED** | Datasheet is image-only, not text-extractable. See §4 |
 | AP63205 / AP63203 | **VERIFIED** | **CRITICAL defect — 35 V abs max cannot face a vehicle battery.** See §5 |
 | SMBJ33A vs buck abs-max | **VERIFIED** | **CRITICAL — TVS clamps 18 V above what the wheel buck survives.** See §5 |
-| LMR33630 / AMS1117 | **PARTIAL** | Operating range confirmed; abs-max and all passive values still unconfirmed |
-| DMP3056L, PESD2CAN, USBLC6, BAT54S, BAV99, SMAJ | **UNVERIFIED** | §6 |
-| PEC09 / PEC11H / KSC4 | **PARTIAL** | Distributor parametric data only, not datasheets |
-| Riverdi RVT50HQBNWN00 | **UNVERIFIED** | Pinout and the 1.2 A backlight figure are both unconfirmed |
+| LMR33630 | **PARTIAL** | Rejected on abs-max grounds anyway (§5) |
+| **AMS1117-3.3** | **VERIFIED** | **Defect — datasheet requires a tantalum output cap; BOM specifies ceramic.** See §5C |
+| **DMP3056L** | **VERIFIED** | Adequate; −30 V V_DSS is thin against a reverse jump start. See §5D |
+| **BAT54S → BAV199** | **VERIFIED** | **Defect — Schottky leakage corrupts the DAQ channels.** See §5A |
+| **Riverdi RVT50HQBNWN00** | **VERIFIED** | **Defect — backlight is a separate 5 V rail, 353 mA not 1.2 A.** See §5B |
+| **Dash pin map** | **VERIFIED** | Sound except inherited BOOT0 issue + open ADC-instance question. See §6 |
+| PEC09 / PEC11H / KSC4 | **PARTIAL** | Distributor parametric data + conditioning analysed (§5E); mechanical drawings and bounce duration still unread |
+| PESD2CAN, USBLC6, SMAJ series | **UNVERIFIED** | §7 |
+
 
 ---
 
@@ -102,10 +107,8 @@ Verified bonded on LQFP-64 (pin numbers from the pin definition table): PC13=2, 
 PC2=10, PC3=11, PC4=22, PC5=23, PB14=36, PB15=37, PC6=38, PC7=39, PC8=40, PC9=41, PA8=42, PA9=43,
 PA15=51, PC10=52, PC11=53, PC12=54, PD2=55, PB3=56, PB4=57, PB5=58.
 
-**Dash pin map has the same class of problems and has NOT yet been rebuilt** — it inherits the
-CAN/BOOT0 issue (defect 1.3 applies identically), and its `PB6/PB7` servo assignment now collides
-with the wheel's ENC3, which is fine across boards but must be re-checked against the shared
-firmware's board-personality gating.
+**Dash pin map is now verified separately in §6** — it fared much better than the wheel's, because it
+never attempted six hardware encoder pairs. It does inherit the CAN/BOOT0 issue (defect 1.3).
 
 ---
 
@@ -310,7 +313,82 @@ wrong rail. The inrush to scope is on **BLVDD/5 V**, not 3.3 V.
 
 ---
 
-## 6. Everything else — UNVERIFIED
+## 5C. AMS1117-3.3 — **VERIFIED, stability defect** (defect 5.4)
+
+The AMS1117 datasheet specifies a **22 µF tantalum** output capacitor. That is not a packaging
+preference — the regulator's compensation **depends on the capacitor's ESR**. The BOM specifies
+**22 µF X7R ceramic**, whose ESR is a few milliohms. An all-ceramic output on an AMS1117 can push the
+loop unstable and oscillate, putting ripple on the 3.3 V rail that feeds the MCU and (on the wheel)
+the display.
+
+This is the classic AMS1117 trap: it usually *appears* to work, which is exactly why it survives
+review and then bites one board in ten, or one board when hot.
+
+**Three valid fixes, in order of preference:**
+1. **Replace with a ceramic-stable LDO.** The 3.3 V load is only ~100 mA, and modern SOT-23-5 LDOs
+   (AP2112K-3.3 class) are explicitly specified for ceramic output caps, with lower quiescent current
+   and a smaller footprint. **Recommended** — it removes the failure mode rather than compensating it.
+2. Keep the AMS1117 and use an actual **22 µF tantalum** output cap, as the datasheet says.
+3. Keep ceramic and add **0.5–1 Ω in series** with it to synthesise the ESR the loop expects.
+
+The original justification for the AMS1117 was "JLCPCB basic part, always stocked." That is still
+true and still worth something — but a basic part with a documented stability constraint is only a
+bargain if the constraint is honoured. **Selection open; do not capture the schematic with a ceramic
+output cap on an AMS1117.**
+
+---
+
+## 5D. DMP3056L — VERIFIED, adequate but thin margin (no defect, one recommendation)
+
+| Datasheet | Value | Our worst case | Verdict |
+|---|---|---|---|
+| V_DSS | **−30 V** | Reverse-connected supply: FET off, sees the input voltage. −12 V normal, **−24 V reverse jump start** | ⚠ only ~6 V margin |
+| V_GSS | ±20 V | Gate clamped by the 12 V zener → ≤12 V | ✅ comfortable |
+| I_D continuous | −4.3 A @ V_GS −10 V | 0.29 A (wheel) / 0.46 A (dash) | ✅ ~10× margin |
+
+The part works, but a reverse jump start leaves only 6 V of V_DS margin against a 30 V rating, and
+rigor rule 5 asks for derating on exactly this kind of parameter. **Recommendation: move to a −40 V
+or −60 V logic-level P-FET.** Same package, same circuit, negligible cost — and reverse protection
+that is thin precisely in the scenario it exists for is not worth keeping.
+
+---
+
+## 5E. Encoder input conditioning — checked by analysis (no defect)
+
+The conditioning cell (1 kΩ series, 10 kΩ pull-up, 100 nF to GND) is **asymmetric**, which is worth
+understanding rather than discovering later:
+- **Falling edge** (contact closes, node pulled to GND through 1 kΩ): τ ≈ 1 kΩ × 100 nF = **100 µs**
+- **Rising edge** (contact opens, node pulled up through 10 kΩ): τ ≈ 10 kΩ × 100 nF = **1 ms**
+
+Against the fastest realistic input: a 20-detent encoder spun at ~3 rev/s gives 60 detents/s, i.e.
+~8 ms between edges. A 1 ms rise fits with ~8× margin, so the filter does not limit usable encoder
+speed. **Enable the STM32 timer input filter (`ICxF`) as well** — the RC handles contact bounce
+energy, the digital filter rejects what survives it. Confirm the actual bounce duration on the bench
+during HMI bring-up (step 6) rather than trusting the analysis.
+
+---
+
+## 6. Dash pin map — VERIFIED against the AF table (fares much better than the wheel)
+
+Re-checked every dash assignment against the same STM32G474 Table 13 used in §1:
+
+| Assignment | Verdict |
+|---|---|
+| `EVE_CS/SCK/MISO/MOSI` = PA4/PA5/PA6/PA7 | ✅ SPI1_NSS / SCK / MISO / MOSI — a genuine, complete SPI1 set |
+| `SERVO1/2_PWM` = PB6/PB7 | ✅ TIM4_CH1 / TIM4_CH2 — valid pair on one timer |
+| `LED_DATA` = PA8 | ✅ TIM1_CH1, and no encoder competes for TIM1 on this board |
+| `V12_SENSE`/`V5_SENSE` = PB0/PB1 | ✅ ADC1_IN12 / ADC2_IN12 |
+| CAN / USB / SWD / UART | ✅ same as wheel |
+| **BOOT0** | ❌ **inherits defect 1.3** — `PB8-BOOT0` is `FDCAN1_RX`. No strap; use the `nBOOT0` option bit |
+| `AIN1–8` = PA0–PA3, PC0–PC3 | ⚠ all are ADC-capable, **but the ADC *instance* per channel was never checked.** PA0→ADC12_IN2, PA1→ADC1_IN3, PA2→ADC1_IN4, PA3→ADC2_IN17, PC0→ADC12_IN7… Confirm all eight can be covered by one or two ADC instances in a single scan sequence before capture, or the 8-channel scan will not work as assumed |
+
+**The dash map survived because it never attempted six hardware encoder pairs** — it asked less of
+the alternate-function map, so there was less to get wrong. Only the BOOT0 issue and the open ADC
+instance question remain.
+
+---
+
+## 7. Everything else — UNVERIFIED
 
 Not yet read, and every parameter quoted for them in the other memory files should be treated as
 provisional:
@@ -330,7 +408,7 @@ provisional:
 
 ---
 
-## 7. What this episode changed
+## 8. What this episode changed
 
 Three of the four defects found so far were in the *same* document (the wheel pin map), and all
 three came from writing plausible-looking detail from memory instead of reading a table. The pin map
