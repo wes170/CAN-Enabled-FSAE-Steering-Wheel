@@ -27,7 +27,9 @@
 | **Riverdi RVT50HQBNWN00** | **VERIFIED** | **Defect — backlight is a separate 5 V rail, 353 mA not 1.2 A.** See §5B |
 | **Dash pin map** | **VERIFIED** | Sound except inherited BOOT0 issue + open ADC-instance question. See §6 |
 | PEC09 / PEC11H / KSC4 | **PARTIAL** | Distributor parametric data + conditioning analysed (§5E); mechanical drawings and bounce duration still unread |
-| PESD2CAN, USBLC6, SMAJ series | **UNVERIFIED** | §7 |
+| **LMR36015 / AP2112K-3.3** | **VERIFIED** | Final selections, both closed. See §6A |
+| **PESD2CAN / USBLC6-2SC6** | **VERIFIED** | Compliant; margins computed. See §6A |
+| SMAJ24CA / SMAJ5.0A / SMBJ5.0A | **UNVERIFIED** | Low risk (standoff clearly above their rails); §7 |
 
 
 ---
@@ -387,6 +389,39 @@ the alternate-function map, so there was less to get wrong. Only the BOOT0 issue
 instance question remain.
 
 ---
+
+## 6A. Closed selections — final parts, all verified
+
+| Role | **Final part** | Verified facts | Fit |
+|---|---|---|---|
+| 12 V→5 V buck (**both boards**) | **TI LMR36015** (VQFN-HR-12 "RNX") | **VIN abs max 66 V**; recommended 4.2–60 V; IOUT 0–1.5 A | SMBJ33A clamps at 53.3 V → **12.7 V margin** ✅ Resolves §5. Wheel 0.63 A, dash ~1.0 A, both inside 1.5 A ✅ |
+| 5 V→3.3 V LDO (**both**) | **AP2112K-3.3TRG1** (SOT-25), LCSC `C51118`, ~$0.083 | 600 mA min, dropout 0.25 V @ 600 mA, **explicitly specified for 1 µF X7R/X5R ceramic in and out** | Replaces AMS1117 and its tantalum requirement (§5C). Load ~100 mA ✅ |
+| Reverse-polarity P-FET | **DMP3056L retained** — see analysis below | V_DSS −30 V, V_GSS ±20 V, I_D −4.3 A | ✅ for realistic FSAE reverse scenarios |
+| CAN bus TVS | **PESD2CAN** (SOT-23) | 24 V standoff, V_BR 26.2–30.3 V, **V_CL 41 V max @ 5 A**, 25 pF | TJA1051 bus pins tolerate ±58 V → **17 V margin** ✅. 24 V standoff clears CAN's −2…+7 V common mode ✅ |
+| USB ESD | **USBLC6-2SC6** (SOT-23-6), LCSC `C7519` | IEC 61000-4-2 level 4, 15 kV air / 8 kV contact, very low capacitance | ✅ suits USB 2.0 FS |
+
+### LMR36015 reference values (Table 10-1, 1 MHz variant, 5 V out)
+`L = 10 µH` · `COUT = 3 × 15 µF` (2 × 15 µF minimum rated) · `CIN = 4.7 µF + 2 × 220 nF` ·
+`RFBT = 100 kΩ` · `RFBB = 24.9 kΩ` · `CFF = 20 pF` · `CBOOT = 100 nF` · `CVCC = 1 µF`.
+Pinout: 1,11 PGND · 2,10 VIN · 3 NC (tie to SW) · 4 BOOT · 5 VCC · 6 AGND · 7 FB · 8 PG · 9 EN · 12 SW.
+Stocked variants are 1 MHz; prefer the **non-PFM (FPWM) variant** for constant-frequency EMI next to
+the analog front end. Confirm fSW of the exact ordered variant against Table 10-1 before capture.
+
+### DMP3056L — reversing the earlier recommendation, with the reasoning
+Earlier I suggested moving to a −40/−60 V P-FET. **Retracted after working the actual stress case:**
+
+- During a **load dump the FET is fully ON**, so V_DS ≈ 0. The 53 V clamp never appears across it.
+- **V_GS is the parameter at risk**, not V_DS: with gate pulled to ground through R1, V_GS = −V_IN,
+  which a load dump would drive to −53 V against a ±20 V rating. **That is exactly what the 12 V
+  zener is for**, and it holds V_GS at −12 V. Zener current at clamp: (53 − 12)/10 kΩ = **4.1 mA**,
+  trivial for a 500 mW part.
+- **V_DS only matters when reverse-connected** (FET off). Realistic FSAE reverse is a backwards 12–14 V
+  battery or bench supply → **14 V against 30 V = 2× margin**, which satisfies rigor rule 5.
+- The −24 V reverse-jump-start case would leave only 6 V, but an FSAE car is not jump-started from a
+  24 V truck. **Stated as an explicit design assumption rather than engineered against.**
+
+No readily LCSC-stocked −40/−60 V logic-level SOT-23 P-FET was found, so mandating one would have
+made the design less buildable for a scenario that does not occur. **DMP3056L stands.**
 
 ## 7. Everything else — UNVERIFIED
 

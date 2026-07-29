@@ -15,6 +15,7 @@ Read in this order:
 | [wheel-pcb-altium-instructions.md](memory/wheel-pcb-altium-instructions.md) | Step-by-step Altium workflow for the wheel PCB, through JLCPCB PCBA outputs |
 | [dash-pcb-altium-instructions.md](memory/dash-pcb-altium-instructions.md) | Dash deltas: 12V automotive entry, DAQ analog front end, ARB servo output stage, 1000-nit EVE display |
 | [sim-variant-instructions.md](memory/sim-variant-instructions.md) | Sim-rig build as an Altium assembly variant + USB HID firmware notes |
+| **[wheel-schematic-complete.md](memory/wheel-schematic-complete.md)** | **Self-contained wheel schematic definition** — every part number, pin, value and net. Capture the schematic from this file alone |
 | [datasheet-verification.md](memory/datasheet-verification.md) | **Per-part datasheet verification record.** Read this before trusting any pin number or component value — several were originally written from memory and four defects have been found so far |
 | [engineering-rigor.md](memory/engineering-rigor.md) | Standing rules, review gates G1–G6, staged bring-up, lessons learned (append-only) |
 
