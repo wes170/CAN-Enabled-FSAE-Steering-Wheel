@@ -78,19 +78,26 @@ regulator that makes 5 V.
 | Ref | Part | Value / spec | Connections |
 |---|---|---|---|
 | `F1` | Resettable polyfuse (a fuse that trips open on overcurrent and resets itself once the fault clears and it cools down), 1206 package | 1.1 A hold / 2.2 A trip / 30 V | `+12V_IN` → `NET_FUSED` |
-| `Q1` | **DMP3056L**, a P-channel MOSFET (a transistor used here as a one-way electronic valve for power, not a switch you toggle) in a SOT-23 package | V_DSS −30 V, V_GSS ±20 V, I_D −4.3 A | Source → `NET_FUSED`; Drain → `+12V_P`; Gate → `NET_QGATE` |
+| `Q1` | **DMP3056L**, a P-channel MOSFET (a transistor used here as a one-way electronic valve for power, not a switch you toggle) in a SOT-23 package | V_DSS −30 V, V_GSS ±20 V, I_D −4.3 A | Drain → `NET_FUSED` (battery side); Source → `+12V_P` (board side); Gate → `NET_QGATE` |
 | `R1` | Resistor, 0402 package (a tiny surface-mount size, roughly 1×0.5 mm) | 10 kΩ 1% | `NET_QGATE` → `GND` |
 | `D5` | Zener diode (a diode deliberately operated in reverse breakdown to hold a voltage at a fixed level, unlike a normal diode which just blocks reverse current), SOD-323 | 12 V, 500 mW | Cathode → `NET_QGATE`; Anode → `GND` |
 | `D1` | **SMBJ33A**, a TVS diode (transient voltage suppressor — a diode built specifically to clamp voltage spikes without being destroyed by them) in an SMB package | 33 V standoff (the voltage it sits below without conducting), clamps to 53.3 V at 11.26 A | Cathode → `+12V_P`; Anode → `GND` |
 | `C5` | Ceramic capacitor, 0603 | 100 nF, 50 V, X7R (a ceramic dielectric type chosen for stable capacitance over temperature and voltage) | `+12V_P` → `GND` |
 
-**Q1 is doing reverse-polarity protection, and its orientation is not optional.** Q1 uses its "body
-diode" (every MOSFET has a built-in diode as a side effect of how it's made) as the protection
-mechanism: wired correctly (source facing the incoming supply, drain facing the board), the body
-diode blocks a reversed 12 V supply from ever reaching the board. Wire it backwards and that same
-body diode *conducts* the reverse voltage straight through, and the protection does nothing at all.
-This is the single easiest way to accidentally build a board with zero reverse-polarity protection
-while it looks, on the schematic, exactly like it has some. Get the source/drain orientation right.
+**Q1 is doing reverse-polarity protection, and its orientation is not optional.** Q1's protection
+comes from its body diode — the parasitic diode every MOSFET has as a side effect of how it is built.
+In a P-channel FET that diode conducts DRAIN to SOURCE. So the drain must face the incoming supply
+(the battery side) and the source must face the board. Wired that way, normal power flows through the
+forward-biased body diode, the source rises to near +12 V while the gate is held at ground, V_GS goes
+to about −12 V, and the channel turns hard on and shorts out the diode's voltage drop. On a reversed
+supply the body diode is reverse-biased *and* V_GS collapses to about 0 V, so both paths are off and
+nothing reaches the board.
+
+Wired the other way round (source to the battery), the board still works perfectly with correct
+polarity — which is exactly what makes the error dangerous. On a reversed supply the body diode
+becomes forward-biased and dumps the fault straight into the board. You cannot catch this by testing;
+it stays invisible until the day someone connects a battery backwards, which is the one day the part
+exists for.
 
 **Why there's a zener diode (D5) on the gate of Q1.** With Q1's gate pulled to ground through R1,
 the voltage across the gate (V_GS) equals minus whatever is on the input (−V_IN). During a load
@@ -122,7 +129,7 @@ range — everything downstream of it lives in a much gentler 5 V/3.3 V world.
 | `U1.1`, `U1.11`, `U1.6` | — | `GND` (both PGND pins and AGND all go to GND) |
 | `U1.12` (SW) | — | `NET_SW` |
 | `U1.3` (NC) | — | tie to `NET_SW` — the datasheet specifically calls for this so the boost capacitor (`C_BOOT`) routes cleanly |
-| `U1.9` (EN) | — | `+12V_P` (the converter is always enabled — there's no separate on/off control) |
+| `U1.9` (EN) | — | `+12V_P` (the converter is always enabled — there's no separate on/off control). A resistor divider here would buy a programmable start-up threshold (UVLO), which this board does not need — the LMR36015 has its own internal UVLO and there is no power-sequencing requirement. The datasheet's only constraint is that EN must not exceed VIN by more than 0.3 V, and tying them together satisfies that exactly. |
 | `U1.8` (PG) | — | leave open, or add `R_PG` (100 kΩ) to `+3V3` if you want to sense "power good" in firmware |
 | `C_BOOT` | 100 nF, 25 V, X7R, 0402 | `U1.4` (BOOT) → `NET_SW` |
 | `C_VCC` | 1 µF, 16 V, X7R, 0603 | `U1.5` (VCC) → `GND`. **Do not load VCC externally** — it's an internal regulator output for the chip's own use, not a rail to power other things from |
@@ -131,7 +138,7 @@ range — everything downstream of it lives in a much gentler 5 V/3.3 V world.
 | `C3`, `C4`, `C_O3` | 3 × 15 µF, 16 V, X7R, 0805 | `+5V` → `GND` |
 | `R_FBT` | 100 kΩ, 1%, 0402 | `+5V` → `NET_FB` |
 | `R_FBB` | 24.9 kΩ, 1%, 0402 | `NET_FB` → `GND` |
-| `C_FF` | 20 pF, 0402 | across `R_FBT` (i.e. `+5V` → `NET_FB`) — a feed-forward capacitor that improves the converter's transient response |
+| `C_FF` | 20 pF, 0402 | across `R_FBT` (i.e. `+5V` → `NET_FB`) — a feed-forward capacitor that improves the converter's transient response. 20 pF is TI's tabulated value for this exact divider pair (100 kΩ / 24.9 kΩ) — not a value to re-derive or round. If you change `R_FBT` or `R_FBB`, go back to the datasheet table rather than keeping 20 pF. |
 | `U1.7` (FB) | — | `NET_FB`. **Never float or ground FB** — the feedback pin is how the chip senses its own output voltage to regulate it; grounding or floating it will send the output voltage to the wrong place (potentially destructively high) |
 
 These component values come from TI's own reference table (Table 10-1) for the 1 MHz switching
@@ -674,14 +681,5 @@ ordered (the "G6 pre-order gate"):
 
 ## Things I could not explain simply
 
-- **Why the LMR36015's EN (enable) pin is tied directly to `+12V_P` (the same net as VIN) rather
-  than through some threshold-setting network.** The source states this is fine because EN must not
-  exceed VIN by more than 0.3 V and the absolute maximum is 66.3 V, and tying EN equal to VIN trivially
-  satisfies that — but I could not find, in the material I was given, an explanation of what
-  functional benefit (versus, say, a resistor divider giving a defined turn-on voltage threshold)
-  this specific choice gives beyond "always enabled." I've reported it accurately, but I don't fully
-  understand why a threshold-setting divider wasn't considered necessary here.
-- **The precise mechanism by which C_FF (the 20 pF feed-forward capacitor across R_FBT) improves the
-  buck converter's transient response.** The source states its role but doesn't derive why 20 pF
-  specifically, versus some other value, and I don't have enough grounding in buck-converter
-  compensation theory to explain that derivation without guessing.
+None remaining — the two items previously listed here (the LMR36015 EN-to-VIN tie, and the C_FF
+20 pF value) are now explained inline in §2.2 above.

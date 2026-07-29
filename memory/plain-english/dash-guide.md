@@ -67,10 +67,14 @@ explicitly because they're easy to get wrong on any STM32G4 board:
   actual crystal oscillator, as opposed to the chip's internal, less precise clock.) CAN running at
   1 Mbit/s needs a timing reference accurate enough that the internal oscillator isn't good enough —
   skip the crystal and the CAN bus will misbehave.
-  - Fit nothing on **BOOT0**. On this chip, the pin normally used to select boot mode (`PB8-BOOT0`) is
-    also `FDCAN1_RX` — the CAN receive pin. If you strap that pin the way a "normal" STM32 board
-    would, you break CAN. Boot mode selection instead has to go through the chip's internal option
-    byte (`nBOOT0`), a firmware/programming-time setting, not a hardware strap.
+  - **Fit nothing on BOOT0 — no pulldown, no strap, no test point.** On this chip PB8-BOOT0 is also
+    `FDCAN1_RX`, so a pulldown there fights the CAN transceiver's RXD output: actively harmful, not
+    merely redundant. And if BOOT0 is ever taken from the pin, an idle CAN bus sits recessive, which
+    is logic HIGH — so the MCU samples BOOT0 = 1 and jumps into the system bootloader at every
+    power-on with a live bus, while booting perfectly on the bench with the bus unplugged. BOOT0 must
+    come from the `nBOOT0` option bit with `nBOOT_SEL = 1`, set at first flash, verified on every
+    board, and re-checked after any mass erase, because a full chip erase can restore the factory
+    option-bit state. DFU entry uses USB DFU or an SWD-triggered jump — never a BOOT0 strap.
 - One placement difference from the wheel: the rail-voltage monitor signals land on **PB0/PB1** here
   instead of the wheel's PA1/PA2 (see the pin table in §7 for why).
 
@@ -352,19 +356,18 @@ The silkscreen at J2 should read **"0–5 V MAX"**.
 | Sensor excitation (`+5V_SENS`) | 5 V | 0.20 A |
 | Servo buffers | 5 V | under 0.01 A |
 
-Adding those up: the 3.3 V rail totals roughly **0.5 A**, which the AP2112K linear regulator (rated
-600 mA) covers, though not with huge margin — flagged as an open item below. The 5 V rail totals
-roughly **0.6 A** of direct load plus about 0.37 A "reflected" back from the 3.3 V regulator (a linear
-regulator effectively draws from its input rail whatever current it delivers on its output, scaled by
-the voltage ratio), for about **1.0 A** total against the LMR36015's 1.5 A rating — comfortable. The
-12 V input current works out to roughly **0.46 A**, well inside the 2 A polyfuse chosen for `F1`.
+Adding those up: the 3.3 V rail totals roughly **0.5 A**, supplied here by the **AP63203WU-7 buck
+converter** (fed from `+5V`) — the dash's 3.3 V rail is not an LDO. Because a buck trades voltage for
+current rather than just burning off the difference as heat, that 0.5 A at 3.3 V reflects back as
+roughly **0.37 A** drawn from the 5 V rail (0.5 × 3.3/5, then divided by the buck's roughly 90%
+efficiency). So the 5 V rail carries about **0.6 A** of direct load plus that **0.37 A** reflected,
+for about **1.0 A** total against the LMR36015's 1.5 A rating — comfortable. The 12 V input current
+works out to roughly **0.46 A**, well inside the 2 A polyfuse chosen for `F1`.
 
-One number is worth double-checking before you commit the schematic to fab: the 3.3 V linear
-regulator dissipates 0.5 A × (5 − 3.3) V = **0.85 W** in its SOT-25 package if the display ever hits
-its 384 mA worst case simultaneously with full MCU load — that's a meaningful amount of heat for that
-small a part. At the typical 98 mA display draw it's only 0.17 W, which is fine. **Measure the
-display's real current draw before capture**, and if it runs hot, move the 3.3 V rail to a small buck
-converter instead of the linear regulator.
+The two boards deliberately use different parts here, and that's not an inconsistency to "harmonise"
+away: the wheel's 3.3 V load is only around 100 mA, so an LDO is fine there (0.17 W dissipated), while
+the dash's roughly 0.5 A load would dissipate 0.85 W in an LDO — enough to matter in a small package —
+so the dash keeps a switching converter (the AP63203) on this rail instead.
 
 ---
 
@@ -401,9 +404,8 @@ number means the same thing on both boards.
 
 | Item | Why it matters | How to close it |
 |---|---|---|
-| 3.3 V linear regulator heat at worst-case display current | 0.85 W in a small SOT-25 package if the display's 384 mA absolute maximum is ever real in practice | Measure the display module's actual VDD current draw; move to a small buck converter if it runs hot |
 | LMR36015 exact ordered variant | the 400 kHz version of this part needs a 15 µH inductor and 3× 22 µF output capacitors — different from the values used elsewhere | Look up the ordering table for whichever exact variant gets purchased |
-| SMAJ5.0A / SMBJ5.0A TVS diode parameters | considered low risk since the clamp voltage clearly sits above the 5 V rail it protects | Worth a quick confirming check |
+| SMAJ5.0A / SMBJ5.0A TVS diode parameters | considered low risk because their standoff voltage clearly exceeds the 5 V rail, so they cannot conduct in normal operation — the rule is standoff ≥ rail, clamp ≤ downstream absolute max (`engineering-rigor.md` rule 5) | Worth a quick confirming check |
 
 None of these are blockers — they're flagged so nobody forgets to close them before the board is
 finalized, not because the design can't move forward.
