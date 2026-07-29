@@ -200,7 +200,7 @@
   60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
   covers both boards. **Verification is not only a hunt for defects — unverified numbers are
   padded numbers, and padding costs parts.**
-- **L19 (2026-07, updated):** **Thirteen defects so far** (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+- **L19 (2026-07, updated):** **Fifteen defects so far** (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
   were both **interactions between two correct-looking choices**, not errors in either one alone.
   PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
   combination. **Review pairs, not parts:** for every component, ask what else touches its net and
@@ -241,6 +241,18 @@
   Second point: the wrong name came from **family drift** — `nBOOT_SEL` is real, just not on G4.
   Plausible-because-half-remembered is the most dangerous kind of wrong, because it survives a
   reader's sanity check.
+
+- **L24 (2026-07, closing open items):** Two defects in one sitting from the same root — **I had
+  recorded pin *types* from memory.** The DAQ analysis assumed a "±5 mA injection budget" that does
+  not exist (the spec is −5/0 mA, positive injection not permitted), and the paddle sense taps were
+  documented as landing on 5 V-tolerant FT pins when PB0/PB1 are `TT_a` with a **4.0 V** absolute
+  maximum. Both readings made an unsafe circuit look safe.
+  **Pin electrical class (FT / FT_c / TT / TT_a) is a datasheet fact with a different limit for each,
+  and it is invisible in a net name.** Record it next to the pin, like the alternate function.
+- **L25 (2026-07):** Sizing against the *nominal* rail instead of the *worst-case* rail. The paddle
+  divider was first sized so a 12 V line landed safely — then the arithmetic for a 16 V charging
+  system gave 4.35 V against a 4.0 V limit. A "12 V" automotive system is 14.4 V running and higher
+  in transient. **Rigor rule 3 says worst case; a rail's *name* is not its worst case.**
 
 ## 5A. Planned future work (do not lose track of these)
 

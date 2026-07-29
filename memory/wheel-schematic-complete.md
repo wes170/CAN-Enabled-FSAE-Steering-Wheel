@@ -243,11 +243,20 @@ Per line (UP and DOWN):
 | Ref | Value | Connection |
 |---|---|---|
 | `D3` / `D4` | **SMAJ24CA** bidirectional TVS, SMA | `PADDLE_UP` → `GND` / `PADDLE_DOWN` → `GND`, at the connector |
-| `R6` / `R7` | 100 kΩ 1 %, 0402 | `PADDLE_UP` → `PADDLE_UP_SNS` / `PADDLE_DOWN` → `PADDLE_DN_SNS` |
+| `R6` / `R7` | **150 kΩ** 1 %, 0402 | `PADDLE_UP` → `PADDLE_UP_SNS` / `PADDLE_DOWN` → `PADDLE_DN_SNS` |
+| **`R6b` / `R7b`** | **39 kΩ** 1 %, 0402 | **`PADDLE_UP_SNS` → `GND` / `PADDLE_DN_SNS` → `GND`** — the lower half of the divider. **Without this the pin sits at the full paddle-line voltage** (defect 1.8) |
 | `C14` / `C15` | 1 nF, 0402 | each `*_SNS` net → `GND`, at the MCU pin |
 
 `PADDLE_UP` and `PADDLE_DOWN` run **as copper** from J1 pins 4 and 5 straight out — they are not
-switched or buffered by this board. The 100 kΩ taps are observation only (<50 µA of influence).
+switched or buffered by this board. The taps are observation only: 189 kΩ total means **63 µA** of
+influence at 12 V, 85 µA at a 16 V charging-system maximum.
+
+> ⚠ **The sense taps are ADC inputs, not GPIO.** PB0/PB1 are `TT_a` pins with a **4.0 V absolute
+> maximum**, and the Nexus pulls these lines to 5 V or 12 V depending on configuration. The
+> 150 kΩ/39 kΩ divider puts a 16 V line at 3.30 V, a 12 V line at 2.48 V and a 5 V line at 1.03 V — both safe, but 1.03 V is
+> below the 2.31 V logic-high threshold, so **no single divider works as a digital input for both
+> pull-up voltages.** Read them with the ADC and threshold in firmware; the measured level also tells
+> you which pull-up the ECU is actually using. Origin: defect 1.8.
 
 ---
 

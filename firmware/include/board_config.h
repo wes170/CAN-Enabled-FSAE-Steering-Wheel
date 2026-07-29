@@ -145,13 +145,23 @@
 #define LCD_SPI_MAX_HZ    2000000u
 #define LCD_EXTCOMIN_HZ   1u
 
-/* Paddle sense taps — observation only, 100k series. The paddle signals
- * themselves are copper from the connector to the ECU and do not pass
- * through this MCU. In the SIM build these become the shift inputs. */
+/* Paddle sense taps — observation only. The paddle signals themselves are
+ * copper from the connector to the ECU and do not pass through this MCU.
+ * In the SIM build these become the shift inputs.
+ *
+ * READ THESE WITH THE ADC, NOT AS GPIO. PB0/PB1 are TT_a pins (4.0 V absolute
+ * max input) and the Nexus pulls the paddle lines to 5 V or 12 V depending on
+ * configuration. The 150k/39k divider puts 16 V at 3.30 V and 5 V at 1.03 V --
+ * both safe, but 1.03 V is below the 2.31 V logic-high threshold, so no single
+ * divider serves both pull-ups as a digital input. Threshold in firmware.
+ * (Defect 1.8.) */
 #define PADDLE_UP_SNS_PORT  GPIOB
-#define PADDLE_UP_SNS_PIN   0u
+#define PADDLE_UP_SNS_PIN   0u          /* ADC1_IN15 */
 #define PADDLE_DN_SNS_PORT  GPIOB
-#define PADDLE_DN_SNS_PIN   1u
+#define PADDLE_DN_SNS_PIN   1u          /* ADC1_IN12 */
+#define PADDLE_DIVIDER_NUM  189u        /* (150k + 39k) / 39k -> Vline = Vpin * 189/39 */
+#define PADDLE_DIVIDER_DEN  39u
+#define PADDLE_THRESH_MV    500u        /* above this = line high (pulled up) */
 
 /* Rail monitors */
 #define V12_SENSE_CH  3u                /* PA1 = ADC1_IN3, 47k/10k divider */

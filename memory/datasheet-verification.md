@@ -82,6 +82,47 @@ with the bus unplugged — one of the nastiest failure signatures possible.
 4. A full chip erase can restore the factory option-bit state, so **re-check `nSWBOOT0`/`nBOOT0` after any
    mass erase.** Put it in the bring-up log.
 
+### Defect 1.8 — paddle sense taps expose a 3.3 V pin to the full paddle-line voltage (MAJOR)
+
+Found while verifying the SMAJ TVS parts. Two compounding errors:
+
+**(a) The pin type was wrong in my own validation table.** I recorded the paddle sense pins as
+"5 V-tolerant FT". They are **`TT_a`** — 3.3 V-tolerant analog-capable pins whose **absolute maximum
+input is 4.0 V** (Table 14). Verified directly from the pin definition table.
+
+**(b) There is no lower divider resistor.** The circuit is
+`PADDLE_UP → 100 kΩ → PADDLE_UP_SNS → 1 nF to GND`. A capacitor is not a DC path, so once it charges
+**the pin sits at the full paddle-line DC voltage**, limited only by the MCU's internal ESD structure
+— and per defect 1.7 positive injection is not a permitted mode on these pins.
+
+The paddle lines are pulled up by the **Nexus digital inputs**, typically to 5 V or 12 V. Either
+exceeds the 4.0 V limit; 12 V exceeds it by 3×.
+
+**Fix — read the tap as an ADC input, not a GPIO.** PB0 and PB1 are already ADC-capable
+(`ADC1_IN15`/`ADC3_IN12` and `ADC1_IN12`/`ADC3_IN1`), which resolves a problem a plain divider
+cannot: a divider sized so 12 V lands safely under 4.0 V puts a 5 V pull-up at ~1.4 V, **below the
+2.31 V logic-high threshold** — so no single divider serves both possible ECU pull-up voltages as a
+digital input.
+
+| Change | Value |
+|---|---|
+| Series resistor `R6`/`R7` | **150 kΩ** (was 100 kΩ) |
+| **New** lower resistor to GND | **39 kΩ** |
+| Filter cap `C14`/`C15` | 1 nF, unchanged |
+| Pin voltage at **16 V** (alternator max) | 16 × 39/189 = **3.30 V** ✅ (0.70 V under the limit) at the *charging-system* maximum, not just nominal 12 V |
+| Pin voltage at 5 V pull-up | 5 × 39/189 = **1.03 V** ✅ readable as analog; 12 V gives 2.48 V |
+| Load on the ECU line | 189 kΩ → **85 µA at 16 V**, 63 µA at 12 V ✅ still negligible |
+
+**Sized for 16 V, not 12 V.** A first cut at 150 kΩ/56 kΩ put a 12 V line at a comfortable 3.26 V — but a running 12 V system charges at 14.4 V and can sit higher, and 16 V through that divider gives **4.35 V, over the 4.0 V limit**. The divider must be sized against the charging-system maximum, not the nominal rail. 150 kΩ/39 kΩ holds 16 V to 3.30 V.
+
+Firmware thresholds in software (e.g. >0.5 V = pressed) and works with either pull-up voltage —
+and usefully, the measured level *tells you* which one the ECU uses, closing that question by
+observation rather than by asking.
+
+**Why this hid:** the paddle path is described everywhere as "pure copper passthrough", which is true
+and is the safety-critical property. The sense tap is a footnote to that story, so it never got the
+scrutiny an input pin deserves. **A monitoring tap is still an input.**
+
 ### Defect 1.7 — the DAQ clamp is primary protection, not "belt-and-braces" (MAJOR)
 
 Closing the injected-current item produced a worse answer than expected. Read from the STM32G474
@@ -650,7 +691,7 @@ Every place two components talk to each other, checked against both datasheets:
 | AP2112K VIN | From 5 V rail | LMR36015 output | ✅ |
 | ADC inputs | 0–3.3 V | Divider gives 0–2.5 V from 0–5 V sensors | ✅ 0.8 V headroom |
 | Encoder/button lines | 3.3 V logic | 10 kΩ pull-up to `+3V3`, switch to GND | ✅ |
-| Paddle sense | ECU-driven line, unknown pull-up voltage | 100 kΩ series + 1 nF, and the MCU pins are **5 V-tolerant FT** | ✅ but confirm the Nexus DI pull-up voltage; if it pulls to 12 V, the 100 kΩ limits current but the pin still needs the clamp |
+| Paddle sense | ECU-driven line, 5 V or 12 V pull-up | ~~100 kΩ + 1 nF, pins are FT~~ | ❌ **DEFECT 1.8** — pins are `TT_a` (4.0 V abs max), and with no lower resistor the pin sees the full line voltage. Fixed: 150 kΩ/39 kΩ divider, read as ADC |
 
 **One new firmware-facing constraint fell out of this:** the display's 2 MHz SCLK ceiling. It is not
 a schematic item, so it would have been easy to miss — recorded here and in the schematic file.
