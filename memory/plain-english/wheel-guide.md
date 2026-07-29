@@ -544,7 +544,7 @@ same net names, same firmware structure.
 | 2 | SI | `LCD_SI` (PA7) |
 | 3 | SCS | `LCD_SCS` (PA4) |
 | 4 | EXTCOMIN | `LCD_EXTCOMIN` (PC3) |
-| 5 | DISP | `LCD_DISP` (PC2) — high = show the stored memory contents, low = go black, but the memory contents are retained either way |
+| 5 | DISP | `LCD_DISP` (PB13) — high = show the stored memory contents, low = go black, but the memory contents are retained either way |
 | 6 | VDDA | `+3V3` |
 | 7 | VDD | `+3V3` |
 | 8 | **EXTMODE** | `+3V3` via `R_EXTMODE`, a 0 Ω link (per JDI: "H = enable EXTCOMIN, connect to VDD"); the alternative, `R_EXTMODE_L` (0 Ω to `GND`), is on the footprint but **DNP** |
@@ -629,7 +629,7 @@ is actually valid, not just plausible-looking.
 | PC6 / PC7 | `ENC2_A` / `ENC2_B` | TIM3_CH1 / TIM3_CH2 |
 | PB6 / PB7 | `ENC3_A` / `ENC3_B` | TIM4_CH1 / TIM4_CH2 |
 | PA15 / PB3 | `ENC4_A` / `ENC4_B` | TIM2_CH1 / TIM2_CH2 |
-| PB14 / PB15 | `ENC5_A` / `ENC5_B` | TIM15_CH1 / TIM15_CH2 |
+| **PB2 / PC2** | `ENC5_A` / `ENC5_B` | **TIM20_CH1 / TIM20_CH2** (TIM15 cannot decode encoders — defect 1.5) |
 | PA0 / PC12 | `ENC6_A` / `ENC6_B` | TIM5_CH1 / TIM5_CH2 |
 | PC4, PC5, PC8, PC9, PC10, PC11 | `ENC1_SW`…`ENC6_SW` | GPIO input |
 | PC13, PD2, PA3, PB10, PB11, PB12 | `BTN1`…`BTN6` | GPIO input |

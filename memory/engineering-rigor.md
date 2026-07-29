@@ -196,7 +196,7 @@
   60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
   covers both boards. **Verification is not only a hunt for defects — unverified numbers are
   padded numbers, and padding costs parts.**
-- **L19 (2026-07, updated):** **Eleven defects so far** (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+- **L19 (2026-07, updated):** **Twelve defects so far** (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
   were both **interactions between two correct-looking choices**, not errors in either one alone.
   PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
   combination. **Review pairs, not parts:** for every component, ask what else touches its net and
@@ -218,6 +218,16 @@
   LDO, "provisional" banners on pin maps since verified, a TVS trade-off presented as open after it
   had been closed in the *opposite* direction. Superseded text does not announce itself.
   **When a decision changes, grep for every place the old one is stated — including the prose.**
+
+- **L22 (2026-07, found while writing firmware):** A rule learned from one defect became the blind
+  spot for the next. Defect 1.1 taught "encoder pins must be CH1+CH2 of the same timer", and I then
+  applied that rule to **TIM15 — a timer with two channels and no quadrature decoder at all**. The
+  assignment satisfied the rule and was still wrong. **A checklist item derived from a past failure
+  checks that failure, not the category it belongs to.** The general question was "can this
+  peripheral do the job", and the specific rule quietly replaced it.
+  Second lesson from the same find: **writing the firmware is a design review.** Nothing else forced
+  the question "which timers actually have an encoder interface", because on a schematic a timer
+  channel is just a pin name.
 
 ## 5A. Planned future work (do not lose track of these)
 

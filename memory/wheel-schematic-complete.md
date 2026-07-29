@@ -331,7 +331,7 @@ structure.
 | 2 | SI | `LCD_SI` (PA7) |
 | 3 | SCS | `LCD_SCS` (PA4) |
 | 4 | EXTCOMIN | `LCD_EXTCOMIN` (PC3) |
-| 5 | DISP | `LCD_DISP` (PC2) — H = show memory, L = black, memory retained either way |
+| 5 | DISP | `LCD_DISP` (**PB13**) — H = show memory, L = black, memory retained either way |
 | 6 | VDDA | `+3V3` |
 | 7 | VDD | `+3V3` |
 | 8 | **EXTMODE** | **`+3V3` via `R_EXTMODE` 0 Ω** (JDI: "H = enable EXTCOMIN, connect to VDD"); `R_EXTMODE_L` 0 Ω to `GND` **DNP** |
@@ -410,9 +410,11 @@ zero unsuppressed warnings before moving to layout.
 | **PF0 / PF1** | `OSC_IN` / `OSC_OUT` | **HSE crystal — LQFP-64 pins 5 and 6.** Mandatory for 1 Mbit CAN (§3.2) |
 | PA8, PB2, PB4, PB5, PB13 | spare | bring to test points if convenient |
 
-**Every encoder pair is CH1+CH2 of one timer**, which is what hardware quadrature mode requires. Do
-not substitute pins without re-checking that property — four of six pairs were wrong in the first
-draft for exactly this reason.
+**Every encoder pair is CH1+CH2 of one timer, *and that timer supports encoder mode*.** Both halves
+matter. Four of six pairs were wrong in the first draft for failing the first test, and a fifth was
+wrong for failing the second — TIM15 has two channels but no quadrature decoder. The timers that
+**do** support encoder mode on this part are **TIM1, TIM2, TIM3, TIM4, TIM5, TIM8, TIM20** (and
+LPTIM1). TIM15/16/17 do **not**. Do not substitute encoder pins without checking both properties.
 
 ---
 

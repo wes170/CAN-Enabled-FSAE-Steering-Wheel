@@ -12,7 +12,7 @@
 
 | Part | Status | Outcome |
 |---|---|---|
-| STM32G474RET6 | **PARTIAL — see §1.4 for what was *not* read** | **4 defects found** (3 pin-map + missing clock source). See §1 |
+| STM32G474RET6 | **PARTIAL — see §1.4b for what was *not* read** | **5 defects found** (4 pin-map + missing clock source). See §1 |
 | Sharp LS013B7DH05 | **PARTIAL** | **1 defect found (EXTMODE omitted).** See §2 |
 | TJA1051T/3 | **VERIFIED** | Compliant as designed. See §3 |
 | Haltech CAN broadcast protocol | VERIFIED | Read in full; §2.3 table transcribed from it |
@@ -82,6 +82,31 @@ with the bus unplugged — one of the nastiest failure signatures possible.
 4. A full chip erase can restore the factory option-bit state, so **re-check `nBOOT_SEL` after any
    mass erase.** Put it in the bring-up log.
 
+### Defect 1.5 — ENC5 was on a timer that cannot decode encoders (found during firmware work)
+
+Hardware quadrature decoding needs **two** things, and the earlier fix only checked one:
+
+1. the two pins are **CH1 and CH2 of the same timer** — checked in defect 1.1; and
+2. **that timer actually implements an encoder interface** — *not* checked.
+
+ENC5 was assigned PB14/PB15 = **TIM15**_CH1/CH2. TIM15 has two channels, so it passed test 1 and
+looked correct. But the datasheet §3.24.3 describes TIM15/16/17 as "general-purpose timers with
+mid-range features" listing input capture, output compare, PWM and one-pulse mode — **no quadrature
+encoder**. By contrast §3.24.3 says of TIM2/3/4/5: "All have independent DMA request generation and
+**support quadrature encoders**", and §3.24.5 explicitly lists "Encoder mode" for LPTIM1. The
+datasheet states encoder support where it exists, and does not for TIM15.
+
+**Encoder-capable timers on this part: TIM1, TIM2, TIM3, TIM4, TIM5, TIM8, TIM20, and LPTIM1.**
+
+**Fix.** TIM1–TIM5 were already taken by ENC1–ENC4 and ENC6, and TIM8's channel pins collide with
+CAN and SWD. **TIM20** — an advanced-control timer, encoder-capable — has `TIM20_CH1` on **PB2** and
+`TIM20_CH2` on **PC2**, both bonded on LQFP-64. PB2 was spare; PC2 held `LCD_DISP`, which is a plain
+GPIO and moved to **PB13**. ENC5 is now **PB2/PC2 on TIM20**, and PB14/PB15 return to spare.
+
+**Why this survived the earlier pass:** defect 1.1 established the rule "CH1+CH2 of one timer" and I
+then applied that rule mechanically to a timer that does not have the feature at all. A rule derived
+from one failure became a blind spot for the adjacent failure. Recorded as lesson L22.
+
 ### Corrected wheel pin map — every entry justified by the AF table
 
 | Function | Pin | Justification (from Table 13) |
@@ -90,11 +115,11 @@ with the bus unplugged — one of the nastiest failure signatures possible.
 | ENC2 A / B | PC6 / PC7 | TIM3_CH1 / TIM3_CH2 |
 | ENC3 A / B | PB6 / PB7 | TIM4_CH1 / TIM4_CH2 |
 | ENC4 A / B | PA15 / PB3 | TIM2_CH1 / TIM2_CH2 |
-| ENC5 A / B | PB14 / PB15 | TIM15_CH1 / TIM15_CH2 |
+| ENC5 A / B | **PB2 / PC2** | **TIM20_CH1 / TIM20_CH2** — TIM20 is encoder-capable; TIM15 was not (defect 1.5) |
 | ENC6 A / B | PA0 / PC12 | TIM5_CH1 / TIM5_CH2 |
 | LED_DATA | PA6 | TIM16_CH1 + DMA — moved off TIM1 (defect 1.2) |
 | LCD_SCLK / LCD_SI | PA5 / PA7 | SPI1_SCK / SPI1_MOSI (PB3 alternative is taken by ENC4) |
-| LCD_SCS / LCD_DISP / LCD_EXTCOMIN | PA4 / PC2 / PC3 | plain GPIO; EXTCOMIN is a ~1 Hz software toggle, no timer needed |
+| LCD_SCS / LCD_DISP / LCD_EXTCOMIN | PA4 / **PB13** / PC3 | plain GPIO; EXTCOMIN is a ~1 Hz software toggle, no timer needed |
 | CAN_RX / CAN_TX | PB8 / PB9 | FDCAN1 — **only option left after USB claims PA11/PA12** (defect 1.3) |
 | USB_DM / USB_DP | PA11 / PA12 | USB FS |
 | SWDIO / SWCLK | PA13 / PA14 | |
@@ -103,7 +128,7 @@ with the bus unplugged — one of the nastiest failure signatures possible.
 | PADDLE_UP/DN_SNS | PB0 / PB1 | GPIO input |
 | ENC1–6_SW | PC4, PC5, PC8, PC9, PC10, PC11 | GPIO input |
 | BTN1–6 | PC13, PD2, PA3, PB10, PB11, PB12 | GPIO input (PD2 = pin 55, confirmed bonded on LQFP-64) |
-| Spare | PA8, PB2, PB4, PB5, PB13 | |
+| Spare | PA8, PB4, PB5, PB14, PB15 | |
 
 Verified bonded on LQFP-64 (pin numbers from the pin definition table): PC13=2, PC0=8, PC1=9,
 PC2=10, PC3=11, PC4=22, PC5=23, PB14=36, PB15=37, PC6=38, PC7=39, PC8=40, PC9=41, PA8=42, PA9=43,

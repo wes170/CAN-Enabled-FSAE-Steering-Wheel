@@ -36,6 +36,7 @@ disagree, the reference document is right and the guide is a bug.
 | Path | What it is |
 |---|---|
 | [PROJECT-LOG.md](PROJECT-LOG.md) | Gate sign-offs (G1–G6), assumption tracker (A1–A8), and the procurement actions that come before PCB spend |
+| [firmware/](firmware/) | Shared STM32G474 firmware — pin map and Haltech CAN protocol layer (foundation; drivers not yet written) |
 | [hardware/](hardware/) | Altium projects, shared library, orderable BOMs, bring-up logs |
 | [hardware/wheel/bom-FSAE-WHEEL-revB.csv](hardware/wheel/bom-FSAE-WHEEL-revB.csv) | Wheel BOM |
 | [hardware/dash/bom-FSAE-DASH-revB.csv](hardware/dash/bom-FSAE-DASH-revB.csv) | Dash BOM (includes the off-board servo branch) |
