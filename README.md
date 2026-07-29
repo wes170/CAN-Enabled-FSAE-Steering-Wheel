@@ -20,6 +20,17 @@ Read in this order:
 | [datasheet-verification.md](memory/datasheet-verification.md) | **Per-part datasheet verification record.** Read this before trusting any pin number or component value — several were originally written from memory and four defects have been found so far |
 | [engineering-rigor.md](memory/engineering-rigor.md) | Standing rules, review gates G1–G6, staged bring-up, lessons learned (append-only) |
 
+## Plain-English guides (start here if you're not an electronics specialist)
+
+| Path | What it is |
+|---|---|
+| [wheel-guide.md](memory/plain-english/wheel-guide.md) | What the wheel board does and why each part is there, in prose |
+| [dash-guide.md](memory/plain-english/dash-guide.md) | Same for the dash — DAQ front end, ARB servo outputs, display |
+| [build-process-guide.md](memory/plain-english/build-process-guide.md) | Getting from these documents to ordered, working PCBs |
+
+These explain the precise reference documents below; they never override them. If the two ever
+disagree, the reference document is right and the guide is a bug.
+
 ## Working files
 
 | Path | What it is |

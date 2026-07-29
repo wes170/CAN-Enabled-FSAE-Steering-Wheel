@@ -67,7 +67,7 @@ Pinout (from datasheet): `1,11 PGND` · `2,10 VIN` · `3 NC` · `4 BOOT` · `5 V
 | `U1.1`, `U1.11`, `U1.6` | — | `GND` (PGND ×2 and AGND all to GND) |
 | `U1.12` (SW) | — | `NET_SW` |
 | `U1.3` (NC) | — | **tie to `NET_SW`** — the datasheet says to do this so CBOOT routes cleanly |
-| `U1.9` (EN) | — | `+12V_P` (always enabled) |
+| `U1.9` (EN) | — | `+12V_P` (always enabled). **Why straight to VIN and not a divider:** a divider on EN would give a *programmable* start-up threshold (UVLO). We do not need one — the LMR36015 has its own internal UVLO, and there is no sequencing requirement on this board. The datasheet's only constraint is that EN must not exceed VIN by more than 0.3 V; tying them together satisfies that exactly. Fewer parts, nothing to get wrong |
 | `U1.8` (PG) | — | leave open, or `R_PG` 100 kΩ to `+3V3` if you want power-good sensing |
 | `C_BOOT` | 100 nF, 25 V, X7R, 0402 | `U1.4` (BOOT) → `NET_SW` |
 | `C_VCC` | 1 µF, 16 V, X7R, 0603 | `U1.5` (VCC) → `GND`. **Do not load VCC externally** |
@@ -76,7 +76,7 @@ Pinout (from datasheet): `1,11 PGND` · `2,10 VIN` · `3 NC` · `4 BOOT` · `5 V
 | `C3`,`C4`,`C_O3` | **3 × 15 µF**, 16 V, X7R, 0805 | `+5V` → `GND` |
 | `R_FBT` | **100 kΩ** 1 %, 0402 | `+5V` → `NET_FB` |
 | `R_FBB` | **24.9 kΩ** 1 %, 0402 | `NET_FB` → `GND` |
-| `C_FF` | 20 pF, 0402 | across `R_FBT` (`+5V` → `NET_FB`) |
+| `C_FF` | 20 pF, 0402 | across `R_FBT` (`+5V` → `NET_FB`). **This is a feed-forward capacitor** — it puts a zero in the feedback path to improve phase margin and transient response. 20 pF is TI's tabulated value **for this exact divider pair** (100 kΩ / 24.9 kΩ). It is not a value to re-derive or round: if you change `R_FBT`/`R_FBB`, go back to the datasheet table rather than keeping 20 pF |
 | `U1.7` (FB) | — | `NET_FB`. **Never float or ground FB** |
 
 Values are TI Table 10-1, 1 MHz variant, 5 V output. **[OPEN — trivial]** confirm the switching

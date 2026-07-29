@@ -136,7 +136,7 @@ belongs on the planned conditioning board, not here.
 | `C34` | 1 µF, 0603 | `+3V3` → `GND` at J4 |
 | `C35` | 100 nF, 0402 | `+3V3` → `GND` at J4 |
 | `C35b` | **22 µF, 16 V, 0805** | **`+5V` → `GND` at pins 17/18** — the backlight is the switching load, it needs its own bulk |
-| `R27`, `R28` | 22 Ω, 0402 | in series on `EVE_SCK` and `EVE_MOSI`, at the MCU end (ringing control at 30 MHz) |
+| `R27`, `R28` | 22 Ω, 0402 | in series on `EVE_SCK` and `EVE_MOSI`, **at the MCU end**. These are **series termination**: the MCU's output impedance is well below the trace's characteristic impedance, so a fast edge reflects off the far end and rings. Adding ~22 Ω brings the source closer to the trace impedance and damps that reflection. The "30 MHz" refers to the BT817's maximum SPI clock — the faster the edges, the more the trace behaves like a transmission line and the more this matters. Place them at the driver, not the receiver; at the far end they do nothing |
 
 **The backlight is not on the 3.3 V rail.** `BLVDD` is its own input, spec 3.1 / **5.0 typ** / 5.5 V,
 drawing **353 mA at 5 V** at full brightness. Feed it from `+5V`: the driver is constant-current, so
@@ -216,7 +216,7 @@ its receiver uses, and the servo BEC stars to power ground. Do not "tidy" the se
 | PA4 / PA5 / PA6 / PA7 | `EVE_CS` / `EVE_SCK` / `EVE_MISO` / `EVE_MOSI` | SPI1_NSS / SCK / MISO / MOSI — a complete SPI1 set |
 | PB3 / PB4 | `EVE_PDN` / `EVE_INT` | GPIO |
 | PA0–PA3, PC0–PC3 | `AIN1_ADC` … `AIN8_ADC` | **All eight are reachable by ADC1 and/or ADC2**, so one scan sequence (or ADC1+ADC2 dual mode) covers them — no channel is stranded on ADC3/4/5. Exact channel numbers come from CubeMX; the schematic does not need them |
-| PB0 / PB1 | `V12_SENSE` / `V5_SENSE` | ADC1/ADC2 capable |
+| PB0 / PB1 | `V12_SENSE` / `V5_SENSE` | ADC1/ADC2 capable. **Why not PA1/PA2 as on the wheel:** on the dash, PA0–PA3 are all consumed by DAQ channels `AIN1`–`AIN4`, so the rail monitors had to move. Pure pin pressure, no electrical reason — which is exactly why the two boards' pin maps must never be assumed identical |
 | **PB6 / PB7** | `SERVO1_PWM_3V3` / `SERVO2_PWM_3V3` | **TIM4_CH1 / TIM4_CH2** — one timer, so both servos share a timebase |
 | PA8 | `LED_DATA_3V3` | TIM1_CH1 (no encoder competes for TIM1 on this board) |
 | PC8–PC10 | `BTN1`–`BTN3` | GPIO input |

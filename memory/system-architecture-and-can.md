@@ -257,6 +257,7 @@ reviewed under the same gates as the PCBs. Do not let "temporary" mean "unreview
 | A6 | ARB servo torque/stall current unknown (assumed ~5A stall @7.4V per channel) | Get the actual servo part number from the vehicle dynamics/mechanical team; it sizes the BEC now and the servo power conditioning board later (§3A.4). If the team instead picks **serial-bus servos** (Dynamixel/Herkulex class), the dash output stage changes from PWM to half-duplex UART — decide before layout |
 | A7 | Does the ARB mechanism back-drive when servo power is lost? | Mechanical-team answer. Self-locking worm drive ⇒ setting holds, power loss is a non-event. Direct lever ⇒ setting is lost mid-session; may require holding torque or a locking mechanism |
 | A8 | Wheel 12V transient environment (now seen directly, not filtered by the dash) | Scope the wheel's 12V feed during crank, alternator load steps, and fan/solenoid switching; confirm SMBJ33A clamp vs. buck abs-max |
+| A9 | Wheel colour display (JDI LPM013M126A) is rated **−20…+70 °C**, tighter than the rest of the wheel BOM; a black wheel in direct sun may exceed it at the panel surface | Measure panel surface temperature during a summer track session. If it bites, the fix is a shade/recess in the faceplate, not a different display class — the mono Sharp fallback has the same limit |
 
 ## Sources
 

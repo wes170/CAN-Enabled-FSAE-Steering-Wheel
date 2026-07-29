@@ -26,6 +26,7 @@ PWM to half-duplex UART.
 | A6 | ARB servo torque / stall current (assumed ~5 A @ 7.4 V/ch) | **Dash layout** + BEC sizing | Get the part number from vehicle dynamics. **If serial-bus servos, the output stage changes** | OPEN | |
 | A7 | Does the ARB mechanism back-drive on power loss? | ARB safety strategy | Mechanical team. Worm drive holds; direct lever does not | OPEN | |
 | A8 | Wheel 12 V transient environment (now seen raw) | Wheel input protection | Scope the feed during crank, alternator steps, fan/solenoid switching | OPEN | |
+| A9 | Wheel colour display rated −20…+70 °C, tighter than the rest of the BOM | Wheel display longevity | Measure panel surface temperature on a summer track day; faceplate shade/recess if exceeded | OPEN | |
 
 ---
 
@@ -65,6 +66,7 @@ report file, a photo, a scope capture) — not a memory of having looked.
 | **Riverdi RVT50HQBNWN00 + 1 spare** | Single-source, thin distributor stock, longest lead in the BOM. Nothing about the PCB design depends on ordering boards first, so there is no reason to wait | ☐ |
 | USB-CAN sniffer (~$30) | Closes A1 and A2 without spending board money | ☐ |
 | Encoders (PEC09 + PEC11H) | Confirm shaft length against the real faceplate depth before the footprint is frozen | ☐ |
+| **JDI LPM013M126A wheel display + 1 spare** | Specialty distributors only (Switch-Science / Data Modul / Youritech), not Digi-Key or LCSC — thinner supply than the rest of the BOM. Sharp LS013B7DH05 is the zero-board-change mono fallback if it fails | ☐ |
 | Haltech IO12 Box B write protocol | Email Haltech support with proof of ownership (they supply it) — closes A2 | ☐ |
 
 ---
@@ -75,3 +77,4 @@ report file, a photo, a scope capture) — not a memory of having looked.
 |---|---|---|
 | A | 2026-07 | Initial design. Wheel fed 5 V from the dash |
 | B | 2026-07 | Wheel moved to vehicle 12 V and made standalone; dash 5 V AUX deleted and 5 V buck downsized to 2 A; 2× ARB servo outputs added to the dash on J1.5/J1.6; obsolete EVQ-WK4001 thumb encoder replaced with the Bourns PEC09 right-angle, plus a DNP satellite-board option |
+| B.1 | 2026-07 | Wheel display changed to colour (JDI LPM013M126A, 176×176 8-colour reflective MIP) — pin-for-pin identical to the Sharp mono part, so a BOM change only; Sharp retained as a zero-board-change fallback. Adds assumption A9 |
