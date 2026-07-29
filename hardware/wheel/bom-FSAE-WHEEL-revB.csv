@@ -4,9 +4,9 @@ F1,1,Resettable fuse,1.1A hold / 2.2A trip / 30V,1206,spec — select at capture
 Q1,1,P-channel MOSFET reverse-polarity protect,-30V / >=3A / logic level,SOT-23,DMP3056L,Active,Stock,Source to board; gate to GND via R1; D5 clamps gate
 R1,1,P-FET gate pulldown,10k 1%,0402,spec,Commodity,Stock,
 D5,1,Zener gate clamp,12V 500mW,SOD-323,spec,Commodity,Stock,Protects Q1 Vgs during load dump
-D1,1,TVS unidirectional,SMBJ33A 33V standoff,SMB (DO-214AA),SMBJ33A,Active,Stock,"Scope clamp during A8 test; drop to SMBJ26A if clamp threatens buck abs-max"
-U1,1,Synchronous buck 12V->5V,5V out / >=1.5A / 3.8-32Vin,TSOT-26,AP63205WU-7,Active,Stock,"Follow datasheet reference layout exactly. Hot loop <20mm2"
-L1,1,Power inductor,4.7uH / Isat >=2A / low DCR,1210 or 4x4mm,spec — select at capture,Commodity,Stock,CONFIRM value against the exact AP63205 datasheet before capture
+D1,1,TVS unidirectional,SMBJ33A 33V standoff / VC 53.3V @ 11.26A,SMB (DO-214AA),SMBJ33A,Active,Stock,"KEEP this TVS -- 33V standoff clears jump start. It is the BUCK that had to change: 53.3V clamp needs a 60V-class converter (U1). Do not downsize the TVS to chase a low-voltage buck; no SMBJ fits between jump-start standoff and a 35-42V abs max"
+U1,1,Synchronous buck 12V->5V,"5V out / >=1A / **60V-class input**",TBD,"CANDIDATE: TI LMR36015 (4.2-60V / 66V tol / 1.5A) LCSC C2863325 -- VERIFY DATASHEET BEFORE ADOPTING",Active,Stock,"*** AP63205 REJECTED: 35V abs max vs the 53.3V SMBJ33A clamp -- the TVS would let this part die. See datasheet-verification.md section 5. Inductor/cap values must come from the CHOSEN part datasheet."
+L1,1,Power inductor,per chosen buck reference design,TBD,spec -- select at capture,Commodity,Stock,"Value depends on the 60V buck finally chosen; do not carry over the AP63205 figure"
 C1;C2,2,Buck input capacitor,10uF 50V X7R,1206,spec,Commodity,Stock,50V rating is deliberate: 12V rail + load-dump margin (rigor rule 5)
 C3;C4,2,Buck output capacitor,22uF 16V X7R,0805,spec,Commodity,Stock,
 C5,1,Input bulk / TVS decoupling,100nF 50V X7R,0603,spec,Commodity,Stock,At J1 side of protection
@@ -34,7 +34,7 @@ U4,1,Microcontroller,STM32G474RET6 170MHz FDCAN USB,LQFP-64,LCSC C521608,Active,
 C16-C21,6,MCU decoupling,100nF,0402,spec,Commodity,Stock,One per VDD pin — place under/adjacent to each pin
 C22,1,MCU bulk,4.7uF 16V X7R,0805,spec,Commodity,Stock,
 C23,1,NRST capacitor,100nF,0402,spec,Commodity,Stock,
-R8,1,BOOT0 pulldown,10k,0402,spec,Commodity,Stock,Plus a test point for DFU entry
+R8,0,**DELETED - BOOT0 pulldown**,do not fit,n/a,n/a,REMOVED,n/a,"*** HARMFUL: PB8-BOOT0 is also FDCAN1_RX. A pulldown fights the transceiver RXD output. BOOT0 must come from the nBOOT0 option bit (nBOOT_SEL=1), re-checked after any mass erase. See datasheet-verification.md defect 1.3"
 J4,1,Debug UART connector,JST-GH 3-pin,SM03B-GHS-TB,spec,Commodity,Stock,TX/RX/GND
 ,,=== USB-C (sim variant / DFU) ===,,,,,,
 J2,1,USB-C receptacle,USB 2.0 16-pin,SMD,LCSC C165948 (HRO TYPE-C-31-M-12),Active,Stock,

@@ -4,13 +4,13 @@ F1,1,Resettable fuse,2A hold / 4A trip / 30V,1812,spec — select at capture,Com
 Q1,1,P-channel MOSFET reverse-polarity protect,-30V / >=5A / logic level,SOT-23 or DPAK,DMP3056L,Active,Stock,Same circuit as the wheel — copy the sheet
 R1,1,P-FET gate pulldown,10k 1%,0402,spec,Commodity,Stock,
 D5,1,Zener gate clamp,12V 500mW,SOD-323,spec,Commodity,Stock,
-D1,1,TVS unidirectional,SMBJ33A,SMB,SMBJ33A,Active,Stock,"Verify measured clamp vs LMR33630 42V abs-max; drop to SMBJ26A if needed"
+D1,1,TVS unidirectional,SMBJ33A 33V standoff / VC 53.3V @ 11.26A,SMB,SMBJ33A,Active,Stock,"KEEP -- the BUCK changes, not the TVS. 53.3V clamp requires a 60V-class U1. See datasheet-verification.md section 5"
 C1,1,Input decoupling,100nF 50V,0603,spec,Commodity,Stock,
-U1,1,Synchronous buck 12V->5V,5V / 2A / 400kHz / 36Vin,SO-8 PowerPAD (DDA),LMR33630ADDAR,Active,Stock,"Downsized 3A->2A in Rev B (wheel no longer fed from here). Hot loop <20mm2. Alt: TPS54331"
-L1,1,Buck inductor,10uH / Isat >=3A,shielded 5-6mm,spec — select at capture,Commodity,Stock,CONFIRM against LMR33630 datasheet 5V table
+U1,1,Synchronous buck 12V->5V,"5V / >=2A / **60V-class input**",TBD,"SELECTION OPEN: LMR36520 or TPS54360 class -- VERIFY DATASHEET BEFORE ADOPTING",Active,Stock,"*** LMR33630 REJECTED: 42V abs max vs the 53.3V SMBJ33A clamp. Must carry 5V loads (~0.5A) PLUS the 3.3V rail reflected through U2 (~1.0A) = size for ~1.6A. LMR36015 (1.5A) is too marginal here."
+L1,1,Buck inductor,per chosen buck reference design,TBD,spec -- select at capture,Commodity,Stock,"Depends on the 60V buck finally chosen"
 C2;C3,2,Buck input capacitor,22uF 50V X7R,1210,spec,Commodity,Stock,50V for load-dump margin
 C4;C5,2,Buck output capacitor,47uF 16V X7R,1210,spec,Commodity,Stock,
-U2,1,Synchronous buck 12V->3.3V,3.3V / 2A / 3.8-32Vin,TSOT-26,AP63203WU-7,Active,Stock,"Fed from +12V_P (not +5V) to unload the 5V buck. Sized by the 1.2A display backlight"
+U2,1,Synchronous buck **5V**->3.3V,3.3V / 2A / 3.8-32Vin (35V abs max),TSOT-26,AP63203WU-7,Active,Stock,"*** RE-SOURCED FROM +5V not +12V_P: 35V abs max must never face the battery. Fine downstream. Keeps U1 as the single high-voltage exposure point."
 L2,1,Buck inductor,4.7uH / Isat >=3A,shielded,spec — select at capture,Commodity,Stock,CONFIRM against AP63203 datasheet
 C6;C7,2,3V3 buck input cap,10uF 50V X7R,1206,spec,Commodity,Stock,
 C8;C9,2,3V3 buck output cap,22uF 16V X7R,0805,spec,Commodity,Stock,
@@ -33,7 +33,7 @@ U4,1,Microcontroller,STM32G474RET6,LQFP-64,LCSC C521608,Active,Stock,Same part a
 C16-C21,6,MCU decoupling,100nF,0402,spec,Commodity,Stock,
 C22,1,MCU bulk,4.7uF 16V,0805,spec,Commodity,Stock,
 C23,1,NRST cap,100nF,0402,spec,Commodity,Stock,
-R6,1,BOOT0 pulldown,10k,0402,spec,Commodity,Stock,
+R6,0,**DELETED - BOOT0 pulldown**,do not fit,n/a,n/a,REMOVED,n/a,"*** HARMFUL: PB8-BOOT0 is also FDCAN1_RX -- same as the wheel. Use the nBOOT0 option bit. See datasheet-verification.md defect 1.3"
 J5,1,Debug UART,JST-GH 3-pin,SM03B-GHS-TB,spec,Commodity,Stock,
 ,,=== USB-C (DFU / config) ===,,,,,,
 J3,1,USB-C receptacle,USB 2.0 16-pin,SMD,LCSC C165948,Active,Stock,

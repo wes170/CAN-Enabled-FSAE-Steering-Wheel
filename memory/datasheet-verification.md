@@ -18,8 +18,10 @@
 | Haltech CAN broadcast protocol | VERIFIED | Read in full; §2.3 table transcribed from it |
 | Blink PKP2600SI CANopen | VERIFIED | Read in full; keypad frames transcribed from it |
 | WS2812B-2020 | **UNVERIFIED** | Datasheet is image-only, not text-extractable. See §4 |
-| AP63205 / AP63203 / LMR33630 / AMS1117 | **UNVERIFIED** | All passive values still from memory. See §5 |
-| DMP3056L, PESD2CAN, USBLC6, BAT54S, BAV99, SMBJ/SMAJ | **UNVERIFIED** | §5 |
+| AP63205 / AP63203 | **VERIFIED** | **CRITICAL defect — 35 V abs max cannot face a vehicle battery.** See §5 |
+| SMBJ33A vs buck abs-max | **VERIFIED** | **CRITICAL — TVS clamps 18 V above what the wheel buck survives.** See §5 |
+| LMR33630 / AMS1117 | **PARTIAL** | Operating range confirmed; abs-max and all passive values still unconfirmed |
+| DMP3056L, PESD2CAN, USBLC6, BAT54S, BAV99, SMAJ | **UNVERIFIED** | §6 |
 | PEC09 / PEC11H / KSC4 | **PARTIAL** | Distributor parametric data only, not datasheets |
 | Riverdi RVT50HQBNWN00 | **UNVERIFIED** | Pinout and the 1.2 A backlight figure are both unconfirmed |
 
@@ -161,7 +163,81 @@ plausible reading, so the buffer stays regardless.
 
 ---
 
-## 5. Everything else — UNVERIFIED
+## 5. Input protection vs. buck ratings — **VERIFIED, and the protection does not work** (CRITICAL)
+
+This was flagged in the original docs as "verify with a scope" and then shipped anyway with a part
+chosen from memory. Verified now, and **the input protection on both boards fails to protect
+anything.** This defect destroys hardware, where the BOOT0 defect merely prevented booting.
+
+### The numbers (all read from datasheets)
+
+| Device | Rating | Source |
+|---|---|---|
+| **AP63200/01/03/05** (wheel 5 V buck, dash 3.3 V buck) | **VIN abs max −0.3 to +35.0 V DC**, +40.0 V for 400 ms. Operating 3.8–32 V | Diodes DS41326 Rev 3, Absolute Maximum Ratings |
+| LMR33630 (dash 5 V buck) | Operating to 36 V, abs max 42 V | TI datasheet (operating range confirmed; abs-max value still from secondary source — **confirm in the table**) |
+| **SMBJ33A** (specified on both boards) | **VC = 53.3 V @ IPP 11.26 A** | SMBJ series datasheets (Littelfuse / Vishay / Bourns, consistent) |
+| SMBJ26A | VC = 42.1 V @ 14.25 A | as above |
+| SMBJ24A | VC = 38.9 V @ 15.42 A | as above |
+
+### Defect 5.1 — The TVS clamps far above what the regulators survive
+
+The SMBJ33A lets the rail reach **53.3 V** before it is doing its full job. That is:
+- **18.3 V above the AP632xx's 35 V DC absolute maximum** — and still 13.3 V above even its
+  relaxed 40 V/400 ms rating. **The wheel's buck is destroyed by the very event the TVS is there to
+  survive.**
+- **~11 V above the LMR33630's 42 V absolute maximum** on the dash.
+
+A TVS whose clamping voltage exceeds the downstream absolute maximum is decorative. Both boards
+currently have decorative input protection.
+
+### Why you cannot fix this by just picking a smaller TVS
+
+There is a genuine squeeze, and it is worth seeing explicitly:
+- **Lower bound on standoff:** the TVS must *not* conduct during normal operation or a 24 V
+  jump start, so VRWM wants to be ≥ 26 V. Below that the TVS sits in avalanche and cooks.
+- **Upper bound on clamping:** VC must stay under the regulator's absolute maximum — 35 V for the
+  AP632xx.
+
+There is no SMBJ part that satisfies both: even SMBJ24A (standoff too low for jump start) clamps at
+38.9 V, still above the AP632xx's 35 V DC limit. **The constraint is not the TVS. It is that a 35 V
+converter has no business sitting directly across a vehicle battery.**
+
+### Correction: raise the converter rating, then the TVS fits easily
+
+**Recommended architecture — one 60 V-class converter per board as the single point of
+high-voltage exposure, everything downstream living in a benign 5 V world:**
+
+```
+12V ─ fuse ─ P-FET ─ SMBJ33A ─→ [60V-rated buck] ─→ 5V ─→ [cheap LV regulator] ─→ 3.3V
+                                 ^ only part that ever sees an automotive transient
+```
+
+With a 60 V converter, the SMBJ33A's 53.3 V clamp has roughly 7 V of headroom and its 33 V standoff
+comfortably clears jump start. The conflict dissolves instead of being squeezed.
+
+**Candidate (NOT yet adopted — needs its own datasheet verification per rule 1a):**
+**TI LMR36015** — 4.2–60 V input, tolerant to 66 V, 1.5 A. LCSC `C2863325` (LMR36015AQRNXRQ1),
+in stock. HotRod package, so PCBA rather than hand assembly.
+
+- **Wheel** (0.63 A on the 5 V rail): 1.5 A part is comfortable. ✅ candidate fits.
+- **Dash**: if the 3.3 V buck is re-fed from the **5 V rail** instead of `+12V_P` — which it must be,
+  since the AP63203 cannot face the battery either — then the 5 V buck carries roughly
+  0.5 A + (1.4 A × 3.3/5 ÷ 0.9) ≈ **1.5 A**, which is exactly at the LMR36015 limit and therefore
+  **too marginal**. The dash needs a larger 60 V part (LMR36520-class ~2 A, or TPS54360-class 3.5 A).
+  **Selection open — verify against the datasheet before adopting.**
+
+**Also required by this change:** the AP63203 keeps its job on the dash but is re-sourced from `+5V`,
+not `+12V_P`. Its 35 V rating is perfectly fine there; it was only ever wrong at the battery.
+
+**Status:** the architectural fix is settled; the specific 60 V parts are **candidates pending
+datasheet verification**, and the docs must not present them as decisions until that is done.
+
+### Verified good news
+`AP63200/01/03/05` operating range 3.8–32 V and the 2 A rating are as claimed, so the part is a sound
+choice *downstream* of the front-end converter. The original "1.5 A" figure quoted for AP63205 was
+wrong in the docs — the family is rated **2 A**.
+
+## 6. Everything else — UNVERIFIED
 
 Not yet read, and every parameter quoted for them in the other memory files should be treated as
 provisional:
@@ -181,7 +257,7 @@ provisional:
 
 ---
 
-## 6. What this episode changed
+## 7. What this episode changed
 
 Three of the four defects found so far were in the *same* document (the wheel pin map), and all
 three came from writing plausible-looking detail from memory instead of reading a table. The pin map
