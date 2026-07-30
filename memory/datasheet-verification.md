@@ -1102,6 +1102,64 @@ another file, which nothing mechanically verifies. Found while verifying the pla
 because the guide (correctly, from the schematic) said `C10`/`C11` and the BOM said `C8`/`C9` — the
 disagreement was only visible because two independently-written sources were read against each other.
 
+### Defect 8.14 — the ABM8's *default* configuration is the wrong part (MAJOR — a buying error)
+
+**ABM8 datasheet rev. 07-29-20 read first-hand** (user-supplied PDF). Everything the design asserts
+about the part confirms exactly — and the datasheet also surfaced a hazard nothing in the project had
+recorded.
+
+**Confirmed, first-hand, against the real document:**
+
+| Claim in the design | Datasheet | Verdict |
+|---|---|---|
+| ESR ≤ 70 Ω at 16 MHz | Table 1: 16.000–19.999 MHz (Fund) = **70 Ω** | ✅ |
+| ESR 400 / 120 / 50 Ω at 8 / 12 / 20 MHz | Table 1: 8.000–9.999 = **400**; 12.000–15.999 = **120**; 20.000–29.999 = **50** | ✅ all four rows of the frequency-choice table |
+| C0 ≤ 3 pF | Shunt capacitance **3.0 pF max** | ✅ and it is a *standard* spec, not an option |
+| Drive level ≤ 100 µW | **100 µW max**, 10 µW typ | ✅ (the 10 µW typ supports the note that real drive sits far below the 117 µW worst case) |
+| Aging ±2 ppm/yr in the ppm budget | **±2 ppm** first year | ✅ |
+| 3.2 × 2.5 mm, pins 2 and 4 = case ground | Outline drawing; **0.80 mm** max height for `ABM8` (not `ABM81`/`ABM82`) | ✅ |
+
+So the frequency-selection table, the CL table, the 4.4× headroom and the ±91 ppm budget all stand
+unchanged. **Every gm_crit value re-derives to three decimal places from the datasheet's own ESR
+table.** This is the good outcome of reading the source: not a correction, but the difference between
+"these numbers are right" and "these numbers are asserted."
+
+**The defect.** The design specified the crystal by its *electrical* requirements and named the series.
+It never recorded that on the ABM8, **the two figures the whole analysis depends on are order options
+with unsuitable defaults**:
+
+| Parameter | ABM8 **standard** (blank field) | Needed | Option |
+|---|---|---|---|
+| Load capacitance | **18.0 pF** | 8 pF | `8` |
+| Operating temperature | **−10…+60 °C** | −40…+85 °C | `D` |
+| Tolerance / stability | ±50 / ±50 ppm | ±30 / ±30 ppm | `4` / `Y` |
+
+**Consequence of ordering "an ABM8, 16 MHz":** CL 18 pF gives
+`gm_crit = 4·70·(2π·16 MHz)²·(3 + 18 pF)²` = **1.248 mA/V against the MCU's 1.5 mA/V — 1.2× margin**,
+and the load capacitors would need to be 26 pF rather than the 6 pF fitted. That is a board that may
+not oscillate at all, and whose failure is temperature-dependent and intermittent when it half-works.
+The temperature default is separately disqualifying: −10…+60 °C is not a vehicle rating.
+
+Correct part: **`ABM8-16.000MHZ-8-D4Y-T`**. Format
+`ABM8[height]-[freq]MHZ-[CL]-[custom ESR]-[temp][tol][stab]-[packaging]`, blank fields omitted; ESR is
+blank because 70 Ω *is* the standard band. The BOM's previous placeholder string had the temperature,
+tolerance and stability as three separate dash-delimited fields; they are one three-character field.
+
+Note what is **not** claimed: the tolerance and stability defaults are harmless here — ±50/±50 ppm
+gives ±131 ppm total, still 38× CAN's requirement. Only CL and temperature are load-bearing. Flagging
+all four equally would train a reader to discount the warning.
+
+**Class:** same as defect 8.12 (the LMR36015 400 kHz variant) — a **live buying hazard** rather than a
+design error. The design is right; the risk is that a purchaser reads the series name, finds a stocked
+standard part, and fits it. Both boards' BOMs now carry the full option string and the reason.
+
+**How it was found:** the user supplied the datasheet after being told the exact part number was not
+verified. Nothing in the project's own process would have caught it — the specification was internally
+consistent, the electrical numbers were all correct, and a consistency script cannot know that a
+vendor's default option differs from the value the design assumes. **A spec written in engineering
+units is not an orderable part**, and the gap between them is invisible until someone opens the
+ordering-information page.
+
 ### Also corrected in the same pass (documentation, no board consequence)
 
 - The wheel's `D14`/`D15` paddle clamps specified only one diode of the dual BAV199, leaving the third

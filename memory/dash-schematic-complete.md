@@ -33,7 +33,7 @@ Same as the wheel (§1 of `wheel-schematic-complete.md`), plus:
 | Dash sheet | Copy from | Changes to make |
 |---|---|---|
 | `dash-power.SchDoc` | `wheel-schematic-complete.md` §2.1–2.5 | **⚠ The 3.3 V rail is the one deliberate difference: the dash uses the `AP63203` buck, not the wheel's `AP2112K` LDO (see §7). Otherwise, two changes only:** `F1` becomes a **2 A hold / 4 A trip** polyfuse (1812) instead of 1.1 A; add the `+5V_SENS` branch in §4.3 below. Everything else — Q1/R1/D5/D1, the LMR36015 and all its passives, FB1, the rail-monitor dividers — is identical |
-| `dash-mcu.SchDoc` | `wheel-schematic-complete.md` §3 | Identical, including **the HSE crystal on PF0/PF1 (§3.2 — mandatory for 1 Mbit CAN, not optional)** and **fitting nothing on BOOT0** (`PB8-BOOT0` is `FDCAN1_RX` on this board too). Rail monitors land on PB0/PB1 here instead of PA1/PA2 — see §8 |
+| `dash-mcu.SchDoc` | `wheel-schematic-complete.md` §3 | Identical, including **the HSE crystal on PF0/PF1 (§3.2 — mandatory for 1 Mbit CAN, not optional; order `ABM8-16.000MHZ-8-D4Y-T` by the full option string, because the ABM8's *standard* part is CL 18 pF / −10…+60 °C and would leave only 1.2× startup margin — see the ordering box in wheel §3.2)** and **fitting nothing on BOOT0** (`PB8-BOOT0` is `FDCAN1_RX` on this board too). Rail monitors land on PB0/PB1 here instead of PA1/PA2 — see §8 |
 | `dash-can.SchDoc` | `wheel-schematic-complete.md` §4.1–4.2 | **Delete the paddle circuits (§4.3) entirely.** The dash has no paddles. Keep U3, its decoupling, D2 and the DNP termination |
 
 The LMR36015 sizing holds for the dash: its load is ~1.0 A (see §7) against a 1.5 A rating.

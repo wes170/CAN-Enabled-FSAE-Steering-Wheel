@@ -393,6 +393,27 @@ plus aging ±2 ppm, plus ±29 ppm if the stray-capacitance estimate above is off
 short oscillator traces — a longer trace changes `C_stray`, which changes frequency, not just
 startup.
 
+**The exact part to order is `ABM8-16.000MHZ-8-D4Y-T`, and the suffix is not decoration.** This is
+the one place in the crystal story where being nearly right is worse than being obviously wrong,
+because a crystal with the wrong option codes looks identical, fits the same footprint, and mostly
+works. Abracon sells the ABM8 as a *series*, and the specification the whole analysis above depends
+on is assembled from option codes. **Leave them off and the defaults you get are:**
+
+| What you asked for | What "an ABM8, 16 MHz" actually is by default | Does it matter? |
+|---|---|---|
+| Load capacitance **8 pF** | **18 pF** | **Yes — this is the serious one.** Redo the `gm_crit` sum with CL = 18 pF and it comes to 1.248 mA/V against the chip's 1.5 mA/V: **1.2× headroom**, where the design has 4.4×. That is a board that may not start at all, and when it half-starts it does so intermittently and temperature-dependently. The 6 pF load capacitors would also be wrong — an 18 pF crystal wants 26 pF |
+| **−40…+85 °C** | **−10…+60 °C** | **Yes.** That is not a rating for something bolted to a car. Every other active part in the BOM is −40…+85 °C |
+| ±30 ppm tolerance | ±50 ppm | No. ±50/±50 ppm still totals ±131 ppm, which is 38× what CAN needs. Specified at ±30 because the option costs nearly nothing, not because ±50 would fail |
+| ±30 ppm stability | ±50 ppm | No, same reason |
+
+Two of those four are load-bearing and two are preferences, and it's worth saying which is which — a
+warning that treats every deviation as equally alarming teaches people to skim it, and the person who
+skims past the load-capacitance row is precisely the failure this note exists to prevent.
+
+Decoding the suffix: `8` = CL 8 pF · `D` = −40…+85 °C · `4` = ±30 ppm tolerance · `Y` = ±30 ppm
+stability · `T` = tape and reel. The ESR field is empty because 70 Ω is already the standard value for
+this frequency band — nothing to ask for.
+
 **Substitution warning.** Any 3.2 × 2.5 mm 16 MHz crystal is fine, provided it meets all three of:
 ESR ≤ 70 Ω, C0 ≤ 3 pF, CL = 8 pF — those three numbers are what the whole analysis above depends on.
 ⚠ **The ABM8G is NOT a drop-in despite the nearly identical name** — it's 80 Ω with C0 ≤ 5 pF, which

@@ -223,7 +223,7 @@
   60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
   covers both boards. **Verification is not only a hunt for defects — unverified numbers are
   padded numbers, and padding costs parts.**
-- **L19 (2026-07, updated):** **Twenty-eight defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and thirteen more in the Step 2 design pass (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+- **L19 (2026-07, updated):** **Twenty-nine defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and fourteen more in the Step 2 design pass (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
   were both **interactions between two correct-looking choices**, not errors in either one alone.
   PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
   combination. **Review pairs, not parts:** for every component, ask what else touches its net and
@@ -426,6 +426,26 @@
   so 6 pF CL needs 2 pF external caps) says CL = 10 pF. Only 8 pF satisfies both, and neither
   analysis on its own would have found it. **When a value looks over-determined, check whether you
   have applied every constraint — and when it looks free, you probably have not.**
+
+- **L45 (2026-07, ABM8 datasheet supplied by the user):** **A specification in engineering units is
+  not an orderable part, and the gap between them is invisible from inside the design.** Every
+  electrical number the crystal analysis rested on was correct — ESR, C0, drive level, aging all
+  confirmed to the digit when the datasheet was finally read. What the design had never recorded is
+  that on this part **`CL` and operating temperature are order options whose defaults are wrong for
+  us**: the standard ABM8 is CL 18 pF and −10…+60 °C, and CL 18 pF drops startup margin from 4.4× to
+  **1.2×** (defect 8.14). Nothing internal could have caught this. The spec was self-consistent, the
+  physics was right, and a consistency script cannot know a vendor's default differs from the
+  assumed value. **Read the ordering-information page, not just the parametric table** — and treat
+  "series + electrical spec" as an unfinished selection, however precise the numbers look. The tell
+  was already in my own words: the BOM said *"confirm exact option string with the distributor,"* and
+  a `[CONFIRM]` note in a shipping document is an open item (L35), not a footnote.
+
+- **L46 (2026-07, same):** **Rank the deviations, or the warning gets discounted wholesale.** Four of
+  the ABM8's defaults differ from what this design specifies, and only **two** matter: CL and
+  temperature are load-bearing, while the ±50 ppm tolerance/stability defaults still leave 38× CAN
+  margin. Flagging all four at equal volume would teach a reader that the warnings are boilerplate —
+  and the reader who then skims past CL is the exact failure the warning exists to prevent. **Say
+  which items are load-bearing and which are preferences, in the warning itself.**
 
 ## 5A. Planned future work (do not lose track of these)
 

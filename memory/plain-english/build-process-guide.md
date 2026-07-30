@@ -27,7 +27,7 @@ Buy the slow part first, build a shared parts library, draw the schematic and ch
 lay out the copper and check it physically, get a second human to look at all of it, order the boards
 and the assembly, then power each one up in small deliberate steps before it goes anywhere near the
 car. Every step in that sentence exists because skipping it has already cost this project real
-mistakes — twenty-eight of them, found so far (lesson L19 in `engineering-rigor.md`), several of which
+mistakes — twenty-nine of them, found so far (lesson L19 in `engineering-rigor.md`), several of which
 slipped past the person who wrote them.
 
 ## 1. Buy the long-lead part before you touch Altium at all
@@ -369,7 +369,7 @@ the first write-up and was only caught on a re-read" — which the project's own
 the project log. This is the gate that exists because, plainly, **the author of a design cannot see
 their own blind spots.** It is not a formality layered on top of the other four gates — it's the
 recognition that a design can be self-consistent and still wrong in a way that only becomes visible to
-someone who didn't write it. This project's own defect history backs that up directly: twenty-eight
+someone who didn't write it. This project's own defect history backs that up directly: twenty-nine
 defects have been found across this design so far (lesson L19 in `engineering-rigor.md`), and multiple of them — the BOOT0/CAN conflict, the missing
 EXTMODE strap, three errors in one supposedly-frozen pin table — passed an initial self-review by the
 person who wrote the section, and were only caught on a later, harder look. "Plausible-sounding detail

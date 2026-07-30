@@ -277,12 +277,50 @@ fact and never verified is the kind of number that gets copied into a layout rev
 
 | Ref | Part / value | Connection |
 |---|---|---|
-| `Y1` | **Abracon ABM8 series, 16.000 MHz, CL = 8 pF, −40…+85 °C, ±30 ppm tol, ±30 ppm stability.** SMD 3.2 × 2.5 mm | pin 1 → `NET_OSC_IN` (PF0), pin 2 → `GND`, pin 3 → `NET_XOUT`, pin 4 → `GND` |
+| `Y1` | **Abracon `ABM8-16.000MHZ-8-D4Y-T`** — 16.000 MHz, CL = 8 pF, ESR ≤ 70 Ω, C0 ≤ 3 pF, −40…+85 °C, ±30 ppm tol, ±30 ppm stability. SMD 3.2 × 2.5 × 0.8 mm. **Every field after the frequency is a non-standard option — see the ordering box below** | pin 1 → `NET_OSC_IN` (PF0), pin 2 → `GND`, pin 3 → `NET_XOUT`, pin 4 → `GND` |
 | `C_X1` | **6 pF ±0.25 pF, C0G/NP0, 0402** | `NET_OSC_IN` → `GND` |
 | `C_X2` | **6 pF ±0.25 pF, C0G/NP0, 0402** | **`NET_XOUT` → `GND` — the CRYSTAL side of `R_X1`, not the MCU pin** |
 | `R_X1` | **0 Ω, 0402 — fit the footprint, and see the drive-level box** | series `NET_OSC_OUT` (PF1, pin 6) → `NET_XOUT` → `Y1` pin 3 |
 
 No external feedback resistor: DS12288 Table 41 gives an **internal `R_F` of 200 kΩ typ**.
+
+> ### ⚠ Ordering the ABM8 — the default part is the wrong part (defect 8.14)
+>
+> The ABM8 datasheet (rev. 07-29-20) read first-hand. **Standard specifications** — what you get if
+> you order "an ABM8, 16 MHz" and leave the option fields blank:
+>
+> | Parameter | ABM8 **standard** | What this design needs | Option code |
+> |---|---|---|---|
+> | Load capacitance `CL` | **18.0 pF** | **8 pF** | `8` (field accepts any CL ≥ 6 pF) |
+> | Operating temperature | **−10…+60 °C** | **−40…+85 °C** | `D` |
+> | Frequency tolerance @25 °C | ±50 ppm | ±30 ppm | `4` |
+> | Frequency stability over temp | ±50 ppm | ±30 ppm | `Y` |
+> | Packaging | bulk | tape & reel, 1 k/reel | `T` |
+> | Height | 0.80 max | 0.80 max ✓ | blank (`ABM8`, not `ABM81`/`ABM82`) |
+> | ESR @ 16.000–19.999 MHz | **70 Ω** ✓ | ≤ 70 Ω | blank — standard |
+> | Shunt capacitance `C0` | **3.0 pF max** ✓ | ≤ 3 pF | not an option; standard |
+> | Drive level | **100 µW max**, 10 µW typ | see the drive-level box | not an option |
+> | Aging, first year | **±2 ppm** ✓ | ±2 ppm | not an option |
+>
+> Ordering format: `ABM8[height]-[freq]MHZ-[CL]-[custom ESR]-[temp][tol][stab]-[packaging]`, blank
+> fields omitted. Hence **`ABM8-16.000MHZ-8-D4Y-T`**.
+>
+> **Two of those defaults are load-bearing, not preferences.**
+>
+> - **CL 18 pF instead of 8 pF collapses startup margin to 1.2×** — `gm_crit` = 4·70·(2π·16 MHz)²·
+>   (3 + 18 pF)² = **1.248 mA/V against the MCU's 1.5 mA/V**. That is a board that may simply not
+>   oscillate, and the fault is intermittent and temperature-dependent when it half-works. The load
+>   caps would also have to change from 6 pF to 26 pF, so a wrong-CL part fitted to this PCB is wrong
+>   twice over.
+> - **−10…+60 °C is not a vehicle rating.** Every other active part in this BOM is −40…+85 °C.
+>
+> The tolerance/stability defaults are *not* in that class: ±50/±50 ppm gives a ±131 ppm budget, still
+> 38× CAN's requirement. They are specified at ±30 ppm because the option is nearly free, not because
+> ±50 ppm would fail. **Do not let that leniency bleed onto CL and temperature.**
+>
+> ⚠ **This is a live buying hazard, like the LMR36015 variant (8.12).** The decision is closed; the
+> risk of a purchaser reading "Abracon ABM8, 16 MHz" and ordering the stocked standard part is not.
+> Order by the full option string, and check the CL and temperature fields on what arrives.
 
 > **`C_X2` goes on the far side of `R_X1`, and that is not arbitrary.** `R_X1` and `C_X2` together
 > form the low-pass that limits how hard the MCU drives the crystal — that is the entire mechanism by
@@ -312,7 +350,9 @@ whole selection is a fight between two terms that pull in opposite directions:
 - `gm_crit` scales with **F²**, so a *lower* frequency helps.
 - ESR rises steeply as frequency falls in a small package, so a lower frequency *hurts*.
 
-Real ABM8 numbers (datasheet Table 1) show where the optimum actually is:
+Real ABM8 numbers show where the optimum actually is. These are the datasheet's own
+**Table 1 — Standard ESR**, read first-hand from the PDF (rev. 07-29-20), not a distributor
+parametric summary; every row below re-derives from it exactly:
 
 | F (MHz) | ESR max (Ω) | ESR·F² (relative) | `gm_crit` at CL = 8 pF | Headroom vs 1.5 mA/V |
 |---|---|---|---|---|
@@ -396,6 +436,10 @@ Any 3.2 × 2.5 mm 16.000 MHz crystal is acceptable **provided it is checked agai
 numbers**: `ESR ≤ 70 Ω`, `C0 ≤ 3 pF`, `CL = 8 pF`. Those three are what the analysis above depends
 on. In particular the **ABM8G is *not* a drop-in** despite the similar name — it is 80 Ω and
 `C0 ≤ 5 pF`, which gives `gm_crit` = 0.547 mA/V and only **2.7× headroom**.
+
+Note that `C0 ≤ 3 pF` and `100 µW` are *fixed properties of the ABM8*, not order options — a second
+source has to be re-checked on those two, whereas on the ABM8 itself only `CL` and temperature are
+selectable and therefore gettable wrong (see the ordering box in §3.2).
 
 ### 3.3 Reset, boot, debug
 

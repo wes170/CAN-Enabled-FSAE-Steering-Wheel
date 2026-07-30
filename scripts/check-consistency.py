@@ -263,6 +263,37 @@ def check_stale_values():
     print(f"  stale-value sweep: {len(STALE)} superseded tokens checked")
 
 
+def check_crystal_mpn():
+    """Defect 8.14. The ABM8's CL and temperature are ORDER OPTIONS whose defaults
+    (18 pF, -10..+60 C) are wrong for this design -- CL 18 pF leaves 1.2x startup
+    margin instead of 4.4x. So the series name alone is not a specification, and
+    every file a purchaser might read has to carry the full option string.
+
+    Two rules:
+      1. The exact MPN appears in both BOMs and the schematic definition.
+      2. No file carries a DIFFERENT ABM8 option string (a near-miss suffix is the
+         failure mode here -- the earlier placeholder split D/4/Y into three
+         dash-delimited fields, which is not the datasheet's format).
+    """
+    MPN = "ABM8-16.000MHZ-8-D4Y-T"
+    REQUIRED = ["hardware/wheel/bom-FSAE-WHEEL-revB.csv",
+                "hardware/dash/bom-FSAE-DASH-revB.csv",
+                "memory/wheel-schematic-complete.md"]
+    for f in REQUIRED:
+        if MPN not in DOCS.get(f, ""):
+            fails.append(f"{f}: does not carry the full crystal MPN '{MPN}' "
+                         f"(series name alone is not orderable -- defect 8.14)")
+    variants = set()
+    for f, txt in DOCS.items():
+        for m in re.finditer(r"ABM8[A-Z0-9]*-[0-9.]+MHZ[A-Z0-9-]*", txt, re.I):
+            if m.group(0).upper() != MPN:
+                variants.add(f"{f}: {m.group(0)}")
+                fails.append(f"{f}: ABM8 part number '{m.group(0)}' differs from "
+                             f"the specified '{MPN}'")
+    print(f"  crystal MPN: '{MPN}' present in {len(REQUIRED)} required files, "
+          f"{len(variants)} conflicting string(s)")
+
+
 def check_boms_parse():
     for f in [k for k in DOCS if k.endswith(".csv")]:
         rows = list(csv.reader(DOCS[f].splitlines()))
@@ -342,7 +373,8 @@ print("Cross-document consistency check\n")
 for fn in (check_wheel_pin_table, check_pin_table_complete, check_adc_channels, check_firmware_matches_schematic,
            check_ucpd_hazard_documented, check_buck_support_parts,
            check_battery_rail_cap_ratings,
-           check_no_rejected_parts_as_live_spec, check_stale_values, check_boms_parse,
+           check_no_rejected_parts_as_live_spec, check_stale_values, check_crystal_mpn,
+           check_boms_parse,
            check_bom_note_crossrefs):
     fn()
 

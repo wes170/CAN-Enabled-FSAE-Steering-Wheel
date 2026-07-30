@@ -71,7 +71,7 @@ explicitly because they're easy to get wrong on any STM32G4 board:
   skip the crystal and the CAN bus will misbehave. Because this sheet is copied from the wheel's, the
   dash gets the identical crystal circuit — same part, same load capacitors, same series resistor —
   rather than a separate selection exercise.
-  - **Selected:** Abracon **ABM8** series, **16.000 MHz**, load capacitance `CL` = **8 pF**, ESR ≤ 70 Ω,
+  - **Selected:** Abracon **`ABM8-16.000MHZ-8-D4Y-T`** — **16.000 MHz**, load capacitance `CL` = **8 pF**, ESR ≤ 70 Ω,
     C0 ≤ 3 pF, ±30 ppm initial tolerance, ±30 ppm stability, −40…+85 °C, 3.2 × 2.5 mm package. Load
     capacitors `C_X1`/`C_X2` = **6 pF ±0.25 pF, C0G, 0402**. `R_X1` = 0 Ω, 0402, in series between the
     MCU's `OSC_OUT` pin and the crystal. The full reasoning — why this part, the load-capacitor math,
@@ -80,6 +80,11 @@ explicitly because they're easy to get wrong on any STM32G4 board:
     - **`C_X2` goes on the CRYSTAL side of `R_X1`, not at the MCU pin.** `R_X1` and `C_X2` together are
       the low-pass filter that limits how hard the MCU drives the crystal. With `C_X2` at the pin
       instead, `R_X1` costs startup margin while limiting no drive at all.
+    - ⚠ **Order the full option string, not "an ABM8, 16 MHz."** The ABM8's *standard* configuration
+      is CL **18 pF** and **−10…+60 °C**. CL 18 pF leaves only **1.2× startup headroom** instead of
+      4.4× — a board that may not oscillate — and would need 26 pF load capacitors rather than the
+      6 pF fitted here. (`8` = CL 8 pF, `D` = −40…+85 °C, `4`/`Y` = ±30 ppm tolerance/stability,
+      `T` = tape and reel.)
     - ⚠ **The ABM8G is not a substitute despite the near-identical name** — 80 Ω ESR and C0 ≤ 5 pF
       instead of 70 Ω and 3 pF, which cuts the startup headroom from 4.4× to 2.7×.
   - **Fit nothing on BOOT0 — no pulldown, no strap, no test point.** On this chip PB8-BOOT0 is also
