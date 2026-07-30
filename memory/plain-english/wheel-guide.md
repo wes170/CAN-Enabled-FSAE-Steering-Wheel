@@ -82,7 +82,7 @@ regulator that makes 5 V.
 | `R1` | Resistor, 0402 package (a tiny surface-mount size, roughly 1×0.5 mm) | 10 kΩ 1% | `NET_QGATE` → `GND` |
 | `D5` | Zener diode (a diode deliberately operated in reverse breakdown to hold a voltage at a fixed level, unlike a normal diode which just blocks reverse current), SOD-323 | 12 V, 500 mW | Cathode → `NET_QGATE`; Anode → `GND` |
 | `D1` | **SMBJ33A**, a TVS diode (transient voltage suppressor — a diode built specifically to clamp voltage spikes without being destroyed by them) in an SMB package | 33 V standoff (the voltage it sits below without conducting), clamps to 53.3 V at 11.26 A | Cathode → `+12V_P`; Anode → `GND` |
-| `C5` | Ceramic capacitor, 0603 | 100 nF, 50 V, X7R (a ceramic dielectric type chosen for stable capacitance over temperature and voltage) | `+12V_P` → `GND` |
+| `C5` | Ceramic capacitor, 0603 | **100 nF, 100 V**, X7R (a ceramic dielectric type chosen for stable capacitance over temperature and voltage). **100 V, not 50 V** — `D1` clamps this rail at 53.3 V, so a 50 V part is under-rated against the exact event the TVS exists to handle (defect 8.10) | `+12V_P` → `GND` |
 
 **Q1 is doing reverse-polarity protection, and its orientation is not optional.** Q1's protection
 comes from its body diode — the parasitic diode every MOSFET has as a side effect of how it is built.
@@ -129,12 +129,12 @@ range — everything downstream of it lives in a much gentler 5 V/3.3 V world.
 | `U1.1`, `U1.11`, `U1.6` | — | `GND` (both PGND pins and AGND all go to GND) |
 | `U1.12` (SW) | — | `NET_SW` |
 | `U1.3` (NC) | — | tie to `NET_SW` — the datasheet specifically calls for this so the boost capacitor (`C_BOOT`) routes cleanly |
-| `U1.9` (EN) | — | `+12V_P` (the converter is always enabled — there's no separate on/off control). A resistor divider here would buy a programmable start-up threshold (UVLO), which this board does not need — the LMR36015 has its own internal UVLO and there is no power-sequencing requirement. The datasheet's only constraint is that EN must not exceed VIN by more than 0.3 V, and tying them together satisfies that exactly. |
+| `U1.9` (EN) | — | `+12V_P` (the converter is always enabled — there's no separate on/off control). A resistor divider here would give a programmable start-up threshold, which this board does not need: the LMR36015 has its own internal undervoltage lockout and nothing needs sequencing. The datasheet's pin table says of EN, in as many words, *"Can be connected directly to VIN; Do not float"* — so this is its sanctioned arrangement, not a shortcut. |
 | `U1.8` (PG) | — | leave open, or add `R_PG` (100 kΩ) to `+3V3` if you want to sense "power good" in firmware |
 | `C_BOOT` | 100 nF, 25 V, X7R, 0402 | `U1.4` (BOOT) → `NET_SW` |
 | `C_VCC` | 1 µF, 16 V, X7R, 0603 | `U1.5` (VCC) → `GND`. **Do not load VCC externally** — it's an internal regulator output for the chip's own use, not a rail to power other things from |
 | `L1` | 10 µH inductor, saturation current (I_sat, the current above which an inductor stops behaving like an inductor) ≥ 2 A, shielded | `NET_SW` → `+5V` |
-| `C1`, `C2` | 4.7 µF, 50 V, X7R, 1206 (×1) plus 220 nF, 50 V, 0402 (×2) | `+12V_P` → `GND`, placed right at pins `U1.2`/`U1.10` |
+| `C1`, `C2` | **4.7 µF, 100 V**, X7R, 1206 (×1) plus **220 nF, 100 V**, 0402 (×2) | `+12V_P` → `GND`, one 220 nF at **each** of `U1.2`/`U1.10`. **100 V, not 50 V:** `D1` clamps this rail at 53.3 V, so a 50 V part is under-rated against the event the TVS exists to survive — and the datasheet asks for "at least the maximum input voltage, preferably twice", naming 100 V for the 220 nF parts explicitly (defect 8.10) |
 | `C3`, `C4`, `C_O3` | 3 × 15 µF, 16 V, X7R, 0805 | `+5V` → `GND` |
 | `R_FBT` | 100 kΩ, 1%, 0402 | `+5V` → `NET_FB` |
 | `R_FBB` | 24.9 kΩ, 1%, 0402 | `NET_FB` → `GND` |
@@ -775,8 +775,7 @@ feels exactly like the second one passing. (See `datasheet-verification.md` defe
 These items don't block starting the schematic, but need to be closed before parts are actually
 ordered (the "G6 pre-order gate"):
 
-- **LMR36015 switching-frequency variant.** Stocked variants are 1 MHz; confirm which one you're
-  actually buying, because a 400 kHz variant needs different values (`L = 15 µH`, `COUT = 3 × 22 µF`
+- **LMR36015 switching-frequency variant.** ⚠ **Order the `LMR36015FBRNXR`** — the 1 MHz, forced-PWM part, which is what every passive value in §2.2 assumes. **The variant LCSC stocks is the `LMR36015AQRNXRQ1`, which is 400 kHz and non-FPWM**, so if you buy from stock without checking you get the wrong part: it needs a 15 µH inductor and 3 × 22 µF of output capacitance instead of 10 µH and 3 × 15 µF. The automotive qualification on the AQ part is a real benefit — just make it a decision rather than an accident of what was in the cart.
   instead of the 1 MHz-table values used in §2.2).
 - **Display FPC contact side (top vs. bottom).** Not stated in the extracted display spec, and a
   top-contact FPC connector would mirror the pinout — check the mechanical drawing before selecting

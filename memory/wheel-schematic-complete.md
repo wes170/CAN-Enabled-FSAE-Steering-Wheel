@@ -48,7 +48,7 @@
 | `R1` | Resistor 0402 | 10 kΩ 1 % | `NET_QGATE` → `GND` |
 | `D5` | Zener, SOD-323 | 12 V, 500 mW | Cathode → `NET_QGATE`; Anode → `GND` |
 | `D1` | **SMBJ33A** TVS unidirectional, SMB | 33 V standoff, V_CL 53.3 V @ 11.26 A | Cathode → `+12V_P`; Anode → `GND` |
-| `C5` | Ceramic 0603 | 100 nF, 50 V, X7R | `+12V_P` → `GND` |
+| `C5` | Ceramic 0603 | **100 nF, 100 V, X7R** | `+12V_P` → `GND` |
 
 > ### ⚠ Q1 orientation — get this right or the protection does nothing
 >
@@ -85,17 +85,35 @@ Pinout (from datasheet): `1,11 PGND` · `2,10 VIN` · `3 NC` · `4 BOOT` · `5 V
 | `U1.1`, `U1.11`, `U1.6` | — | `GND` (PGND ×2 and AGND all to GND) |
 | `U1.12` (SW) | — | `NET_SW` |
 | `U1.3` (NC) | — | **tie to `NET_SW`** — the datasheet says to do this so CBOOT routes cleanly |
-| `U1.9` (EN) | — | `+12V_P` (always enabled). **Why straight to VIN and not a divider:** a divider on EN would give a *programmable* start-up threshold (UVLO). We do not need one — the LMR36015 has its own internal UVLO, and there is no sequencing requirement on this board. The datasheet's only constraint is that EN must not exceed VIN by more than 0.3 V; tying them together satisfies that exactly. Fewer parts, nothing to get wrong |
+| `U1.9` (EN) | — | `+12V_P` (always enabled). **Why straight to VIN and not a divider:** a divider on EN would give a *programmable* start-up threshold (UVLO). We do not need one — the LMR36015 has its own internal UVLO, and there is no sequencing requirement on this board. The datasheet's Pin Functions table says of EN: *"Enable input to regulator. High = ON, low = OFF. **Can be connected directly to VIN; Do not float.**"* — so tying them together is the datasheet's own sanctioned arrangement. ⚠ An earlier revision of this table claimed the datasheet imposes a "must not exceed VIN by more than 0.3 V" rule. **It does not** — that was a misreading of the absolute-maximum table, where VIN-to-PGND (66 V) and EN-to-AGND (66.3 V) are two independent limits referenced to ground, not a relative constraint. Defect 8.11: a fabricated datasheet citation, which is worse than a missing one because it reads as verified |
 | `U1.8` (PG) | — | leave open, or `R_PG` 100 kΩ to `+3V3` if you want power-good sensing |
 | `C_BOOT` | 100 nF, 25 V, X7R, 0402 | `U1.4` (BOOT) → `NET_SW` |
 | `C_VCC` | 1 µF, 16 V, X7R, 0603 | `U1.5` (VCC) → `GND`. **Do not load VCC externally** |
 | `L1` | **10 µH**, I_sat ≥ 2 A, shielded | `NET_SW` → `+5V` |
-| `C1`,`C2` | 4.7 µF, 50 V, X7R, 1206 (×1) + 220 nF, 50 V, 0402 (×2) | `+12V_P` → `GND`, right at `U1.2/10` |
+| `C1`,`C2` | **4.7 µF, 100 V, X7R, 1206 (×1) + 220 nF, 100 V, 0402 (×2)** | `+12V_P` → `GND`, one 220 nF at **each** `VIN`–`PGND` pair. See the voltage-rating box below |
 | `C3`,`C4`,`C_O3` | **3 × 15 µF**, 16 V, X7R, 0805 | `+5V` → `GND` |
 | `R_FBT` | **100 kΩ** 1 %, 0402 | `+5V` → `NET_FB` |
 | `R_FBB` | **24.9 kΩ** 1 %, 0402 | `NET_FB` → `GND` |
 | `C_FF` | 20 pF, 0402 | across `R_FBT` (`+5V` → `NET_FB`). **This is a feed-forward capacitor** — it puts a zero in the feedback path to improve phase margin and transient response. 20 pF is TI's tabulated value **for this exact divider pair** (100 kΩ / 24.9 kΩ). It is not a value to re-derive or round: if you change `R_FBT`/`R_FBB`, go back to the datasheet table rather than keeping 20 pF |
 | `U1.7` (FB) | — | `NET_FB`. **Never float or ground FB** |
+
+> ### ⚠ Every capacitor on `+12V_P` must be rated 100 V, not 50 V (defect 8.10)
+>
+> `D1` is an SMBJ33A and it **clamps at 53.3 V**. Everything downstream of it sees that during a load
+> dump — which is not an edge case, it is the event the TVS exists to handle. A 50 V capacitor on this
+> rail is therefore under-rated against the design's own worst case.
+>
+> The LMR36015 datasheet (§10.2.1.2.6) asks for input capacitors *"rated for at least the maximum input
+> voltage that the application requires; **preferably twice** the maximum input voltage"*, and states
+> outright that *"the 220 nF must also be rated at **100 V** with an X7R dielectric."*
+>
+> This is defect 5.1 repeated one component further along: **sizing against the nominal rail instead of
+> the clamp.** The buck was raised to a 66 V part precisely because 53.3 V got through — and then the
+> capacitors sitting on the same node were left at 50 V. Applies to `C1`, `C2` and `C5` on the wheel and
+> the equivalent parts on the dash.
+>
+> (X7R also loses a large fraction of its capacitance under DC bias. Specifying 100 V here buys
+> retained capacitance at 12 V as well as survival at 53 V.)
 
 Values are TI Table 10-1, **1 MHz** row, 5 V output — correct for the recommended part.
 
@@ -254,7 +272,7 @@ Per line (UP and DOWN):
 | `R6` / `R7` | **150 kΩ** 1 %, 0402 | `PADDLE_UP` → `PADDLE_UP_SNS` / `PADDLE_DOWN` → `PADDLE_DN_SNS` |
 | **`R6b` / `R7b`** | **39 kΩ** 1 %, 0402 | **`PADDLE_UP_SNS` → `GND` / `PADDLE_DN_SNS` → `GND`** — the lower half of the divider. **Without this the pin sits at the full paddle-line voltage** (defect 1.8) |
 | `C14` / `C15` | 1 nF, 0402 | each `*_SNS` net → `GND`, at the MCU pin |
-| **`D14` / `D15`** | **BAV199** dual low-leakage silicon, SOT-23 | **`PADDLE_UP_SNS` → `+3V3` / `PADDLE_DN_SNS` → `+3V3`** (anode to the net, cathode to the rail). **Load-bearing, not belt-and-braces** — see the transient box below (defect 8.7). Same part and same reasoning as the dash DAQ clamps |
+| **`D14` / `D15`** | **BAV199** dual low-leakage silicon, SOT-23 | **Use BOTH halves on each net**, exactly as the dash DAQ clamps in `dash-schematic-complete.md` §3: **upper diode** anode → `*_SNS`, cathode → `+3V3`; **lower diode** cathode → `*_SNS`, anode → `GND`. The lower half is not optional — `D3`/`D4` are **bidirectional** SMAJ24CA parts, so a negative transient clamps at −38.9 V and the divider presents **−8.03 V** at the pin, against an absolute minimum of VSS − 0.3 V. **Load-bearing, not belt-and-braces** — see the transient box below (defect 8.7). Same part and same reasoning as the dash DAQ clamps |
 
 > ⚠ **The divider alone does not survive a paddle-line transient (defect 8.7).** `D3`/`D4` are
 > SMAJ24CA parts that clamp at **38.9 V**. The divider passes 38.9 × 39/189 = **8.03 V** to the pin —
@@ -482,10 +500,10 @@ against the 1 kΩ series resistor. The firmware bit is the fix; this box is what
 
 | Item | Why it is open | Closes by |
 |---|---|---|
-| LMR36015 variant fSW | Stocked variants are 1 MHz; a 400 kHz part needs `L=15 µH`, `COUT=3×22 µF` | Reading the ordering table for the part you actually buy |
+| LMR36015 variant fSW | **CLOSED — order `LMR36015FBRNXR` (1 MHz, FPWM).** ⚠ The part **LCSC stocks** is `LMR36015AQRNXRQ1`, which is **400 kHz, non-FPWM** — if you buy that one, `L1 = 15 µH` and `C_OUT = 3 × 22 µF`. An earlier version of this row said "stocked variants are 1 MHz", which is backwards and contradicted §2.2 in the same file (defect 8.12) | Reading the ordering table for the part you actually buy |
 | FPC contact side (top vs bottom) | Not stated in the extracted spec; a top-contact connector mirrors the pinout | Check the mechanical drawing before selecting `J3` |
 | HSE crystal part + load caps | Spec derived (≤50 ppm, CL 8–12 pF); exact part not chosen | Pick a part, then set `C_X1/2 = 2 × (CL − C_stray)` from **its** datasheet |
 | WS2812B-2020 exact current | Datasheet is image-only, no text layer | Bench measurement (assumption A3) — the 0.45 A firmware cap holds regardless |
-| SMAJ24CA / SMAJ5.0A / SMBJ5.0A parameters | Not read; low risk since standoff clearly exceeds their rails | Quick datasheet check at G6 |
+| SMAJ24CA / SMBJ5.0A parameters | Not read; low risk since standoff clearly exceeds their rails | Quick datasheet check at G6 |
 
 Nothing in this list blocks starting the schematic. All four are closable before the G6 pre-order gate.

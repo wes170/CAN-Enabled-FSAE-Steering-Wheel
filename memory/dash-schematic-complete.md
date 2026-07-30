@@ -32,7 +32,7 @@ Same as the wheel (§1 of `wheel-schematic-complete.md`), plus:
 
 | Dash sheet | Copy from | Changes to make |
 |---|---|---|
-| `dash-power.SchDoc` | `wheel-schematic-complete.md` §2.1–2.5 | **Two changes only:** `F1` becomes a **2 A hold / 4 A trip** polyfuse (1812) instead of 1.1 A; add the `+5V_SENS` branch in §4.3 below. Everything else — Q1/R1/D5/D1, the LMR36015 and all its passives, the AP2112K, FB1, the rail-monitor dividers — is identical |
+| `dash-power.SchDoc` | `wheel-schematic-complete.md` §2.1–2.5 | **⚠ The 3.3 V rail is the one deliberate difference: the dash uses the `AP63203` buck, not the wheel's `AP2112K` LDO (see §7). Otherwise, two changes only:** `F1` becomes a **2 A hold / 4 A trip** polyfuse (1812) instead of 1.1 A; add the `+5V_SENS` branch in §4.3 below. Everything else — Q1/R1/D5/D1, the LMR36015 and all its passives, FB1, the rail-monitor dividers — is identical |
 | `dash-mcu.SchDoc` | `wheel-schematic-complete.md` §3 | Identical, including **the HSE crystal on PF0/PF1 (§3.2 — mandatory for 1 Mbit CAN, not optional)** and **fitting nothing on BOOT0** (`PB8-BOOT0` is `FDCAN1_RX` on this board too). Rail monitors land on PB0/PB1 here instead of PA1/PA2 — see §8 |
 | `dash-can.SchDoc` | `wheel-schematic-complete.md` §4.1–4.2 | **Delete the paddle circuits (§4.3) entirely.** The dash has no paddles. Keep U3, its decoupling, D2 and the DNP termination |
 
@@ -254,7 +254,7 @@ Same fix, same place, both boards: `PWR->CR3 |= PWR_CR3_UCPD1_DBDIS;` before any
 **Bring-up gate:** with a debug adapter attached, confirm `EVE_INT` reads high while the display idles.
 
 **Cross-board note:** PB6/PB7 are the servo pair here and `ENC3_A/B` on the wheel; PB3/PB4 are display
-control here and `ENC4_B`/`PADDLE_UP_SNS` there. Different boards, no conflict — but the shared
+control here; on the wheel PB3 is `ENC4_B` and **PB4 is spare** (the paddle taps are PB0/PB1). Different boards, no conflict — but the shared
 firmware must gate these behind the board-personality `#define` and never assume a pin means the same
 thing on both.
 

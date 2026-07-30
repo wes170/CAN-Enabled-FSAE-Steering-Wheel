@@ -117,8 +117,16 @@ The same mechanism arms on PA9, which puts a 5.1 kΩ pull-down on **PB6** — he
 overpowers 5.1 kΩ without any trouble, wasting about 0.65 mA. It's worth knowing about for the same
 reason as PA10, even though it costs nothing here.
 
-**Fix:** firmware sets the `UCPD1_DBDIS` bit in the `PWR_CR3` register before configuring any GPIO
-pins — on both boards, since both share PA9/PA10 as debug pins. This disables the dead-battery
+**Fix:** firmware clears the dead-battery pull-downs before configuring any GPIO pins. It is **two**
+lines, not one — the PWR peripheral's clock is gated off at reset, so writing `PWR_CR3` without
+enabling that clock first is silently discarded and the hazard remains:
+
+```c
+RCC->APB1ENR1 |= RCC_APB1ENR1_PWREN;   /* PWR is clocked off at reset */
+PWR->CR3      |= PWR_CR3_UCPD1_DBDIS;
+```
+
+This runs — on both boards, since both share PA9/PA10 as debug pins. This disables the dead-battery
 pull-downs at the peripheral level before they can affect pin state; nothing on the schematic needs to
 change to accommodate it.
 
@@ -470,7 +478,7 @@ reference for which pin can do which job).
 |---|---|---|
 | PA4 / PA5 / PA6 / PA7 | `EVE_CS` / `EVE_SCK` / `EVE_MISO` / `EVE_MOSI` | a complete, genuine SPI1 hardware peripheral set (chip-select / clock / data-in / data-out) |
 | PB3 / PB4 | `EVE_PDN` / `EVE_INT` | plain digital I/O pins |
-| PA0–PA3, PC0–PC3 | `AIN1_ADC` … `AIN8_ADC` | all eight are reachable by ADC1 and/or ADC2, so one scan sequence (or ADC1+ADC2 running together) covers all eight — no channel is stuck on an ADC instance that can't be used together with the rest. Exact channel numbers are a CubeMX (ST's chip-configuration tool) detail, not a schematic one |
+| PA0–PA3, PC0–PC3 | `AIN1_ADC` … `AIN8_ADC` | all eight are reachable by ADC1 and/or ADC2, so one scan sequence (or ADC1+ADC2 running together) covers all eight — no channel is stuck on an ADC instance that can't be used together with the rest. **The exact channel numbers matter and are fixed:** PA0–PA3 are ADC channels **1, 2, 3, 4** and PC0–PC3 are **6, 7, 8, 9** (DS12288 Table 12). Do **not** derive them from the pin numbers and do **not** leave them to CubeMX to pick — assuming that was defect 8.3 on the wheel, where the 12 V monitor silently read a plausible 14.25 V from the wrong pin |
 | PB0 / PB1 | `V12_SENSE` / `V5_SENSE` | both ADC1/ADC2 capable. Not on PA1/PA2 as on the wheel because PA0–PA3 are all consumed here by DAQ channels `AIN1`–`AIN4` — pure pin pressure, no electrical reason, which is exactly why the two boards' pin maps must never be assumed identical |
 | **PB6 / PB7** | `SERVO1_PWM_3V3` / `SERVO2_PWM_3V3` | **TIM4_CH1 / TIM4_CH2** — both servo channels share one hardware timer, keeping their timebases in sync |
 | PA8 | `LED_DATA_3V3` | TIM1_CH1 — nothing else on this board competes for TIM1 |

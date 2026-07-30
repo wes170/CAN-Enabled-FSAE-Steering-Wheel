@@ -31,6 +31,14 @@
    the connector, on every line, both boards. No exceptions for "it's just a button."
 5. **Derating:** fuses at ≥1.5× continuous load; TVS standoff ≥ rail, clamp ≤ downstream abs-max
    (verified with a scope, not just datasheets); electrolytics/X7R voltage ≥2× rail; connector pins ≤50% rated current.
+5a. **"The rail" means the CLAMP voltage, not the nominal voltage, for everything downstream of a TVS.**
+   On `+12V_P` the number that matters is **53.3 V**, not 12 V — the clamp is not an abnormal condition,
+   it is the designed response to an event we expect. Rule 5 already implied this and was still missed:
+   four capacitor lines sat at 50 V on a 53.3 V-clamped rail, one of them annotated "50 V rating
+   deliberate for load-dump margin" (defect 8.10), and the buck on the same node had already been
+   changed to a 66 V part for exactly this reason (defect 5.1). **After any TVS is chosen, re-walk every
+   component on the protected net against the clamp figure.** A rule that is stated but not applied to
+   each part in turn is a rule that will be missed.
 6. **Protocol claims require two independent sources or one bench measurement.** (Applied: broadcast
    protocol = official spec; keypad = Blink manual + HPA forum + MaxxECU docs; IO12 = PT Motorsport
    emulator source — Box B remains open as A2.)
@@ -207,7 +215,7 @@
   60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
   covers both boards. **Verification is not only a hunt for defects — unverified numbers are
   padded numbers, and padding costs parts.**
-- **L19 (2026-07, updated):** **Twenty-four defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and nine more in the Step 2 design pass (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+- **L19 (2026-07, updated):** **Twenty-seven defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and twelve more in the Step 2 design pass (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
   were both **interactions between two correct-looking choices**, not errors in either one alone.
   PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
   combination. **Review pairs, not parts:** for every component, ask what else touches its net and
@@ -339,6 +347,31 @@
   an open question closed, and **a missing required component surfaced**. The note had been treated as
   a decoration for so long it stopped being read as a request. **Placeholder text must block a gate —
   G6 fails if any BOM line still contains "confirm", "TBD" or "select at capture" without an owner.**
+
+- **L36 (2026-07, audit of the audit):** **A correct conclusion can rest on invented evidence, and the
+  correctness is what protects the invention.** §2.2 justified tying the buck's EN pin to VIN by citing
+  a datasheet rule — "EN must not exceed VIN by more than 0.3 V" — that **does not exist** (defect
+  8.11). The circuit is right; the datasheet sanctions exactly that connection in as many words. But
+  the fabricated citation survived every review *because* the design it defended was sound, and it
+  reads identically to a verified one. Rule 1a says no number enters a document unless read from a
+  datasheet; this is its converse and it needs saying separately: **no *citation* either.** When
+  checking a document, verify the evidence against the source, not the design against the evidence —
+  those are different activities and only the first catches this.
+
+- **L37 (2026-07):** **A warning that points the wrong way is worse than no warning**, because the
+  reader acts on it. Three files said "stocked variants are 1 MHz" about the buck when the stocked part
+  is in fact the 400 kHz one (defect 8.12) — so a reader trusting the note buys the wrong variant and
+  fits passives sized for the other. The same file said it correctly two hundred lines earlier. **When
+  a fact appears in both a body section and a summary/open-items table, the table is the one that goes
+  stale**, because closing an item feels like finishing rather than like editing.
+
+- **L38 (2026-07):** **Ask the "what if this part is absent or wrong" question of the parts you just
+  added, not only the ones you inherited.** Reversing the BOM found five missing LMR36015 support parts
+  (8.5); walking the power tree then found a sixth on the other converter (8.8); an audit then found
+  that the check written to prevent recurrence **omitted that sixth part from its own list**. Each pass
+  fixed the thing in front of it and left the neighbouring instance. **When a defect has instances,
+  enumerate the instances explicitly and tick them off** — "fixed the buck" is not the same as "fixed
+  both bucks on both boards and the script that guards them".
 
 ## 5A. Planned future work (do not lose track of these)
 

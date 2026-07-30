@@ -123,15 +123,42 @@ def check_ucpd_hazard_documented():
 
 
 def check_buck_support_parts():
-    """Defect 8.5: the LMR36015's datasheet-required parts must be orderable BOM
-    lines, not prose inside another part's notes cell."""
+    """Defects 8.5 and 8.8: every part a converter datasheet calls *required* must
+    be an orderable BOM line, not prose inside another part's notes cell."""
+    # LMR36015 (both boards)
     REQUIRED = ["C_BOOT", "C_VCC", "R_FBT", "R_FBB", "C_FF"]
+    # AP63203 (dash only) -- C_BST2 was defect 8.8 and was originally left out of
+    # this list, which an audit caught: the check would have passed with the part
+    # deleted again.
+    DASH_EXTRA = ["C_BST2"]
     for f in [k for k in DOCS if k.endswith(".csv")]:
         refs = {r[0].strip() for r in csv.reader(DOCS[f].splitlines()) if r}
-        missing = [p for p in REQUIRED if p not in refs]
+        want = REQUIRED + (DASH_EXTRA if "dash" in f else [])
+        missing = [p for p in want if p not in refs]
         if missing:
-            fails.append(f"{f}: LMR36015 required parts missing as BOM lines: {missing}")
+            fails.append(f"{f}: datasheet-required parts missing as BOM lines: {missing}")
         print(f"  {f}: buck support parts {'OK' if not missing else 'MISSING ' + str(missing)}")
+
+
+def check_battery_rail_cap_ratings():
+    """Defect 8.10: the SMBJ33A clamps +12V_P at 53.3 V, so every capacitor on that
+    rail needs a rating above it. 50 V parts were specified for a long time."""
+    for f in [k for k in DOCS if k.endswith(".csv")]:
+        for row in csv.reader(DOCS[f].splitlines()):
+            if len(row) < 4 or not row[0].strip():
+                continue
+            desc, val = row[2].lower(), row[3]
+            # Only the 12 V entry stage sees the clamp. The 3.3 V buck's input sits
+            # on the regulated +5V rail, where 50 V is enormous margin -- an earlier
+            # version of this check flagged it and was wrong.
+            downstream_of_5v = "3v3" in desc or "3.3v" in desc
+            on_battery_rail = (not downstream_of_5v
+                               and ("buck input" in desc or "input decoupling" in desc
+                                    or "input bulk" in desc))
+            if on_battery_rail and "50V" in val.replace(" ", ""):
+                fails.append(f"{f}: {row[0]} is on the 53.3 V-clamped rail but rated 50V "
+                             f"({val.strip()}) - defect 8.10")
+    print("  battery-rail capacitor ratings checked against the 53.3 V clamp")
 
 
 def check_no_rejected_parts_as_live_spec():
@@ -201,6 +228,7 @@ def check_boms_parse():
 print("Cross-document consistency check\n")
 for fn in (check_wheel_pin_table, check_adc_channels, check_firmware_matches_schematic,
            check_ucpd_hazard_documented, check_buck_support_parts,
+           check_battery_rail_cap_ratings,
            check_no_rejected_parts_as_live_spec, check_stale_values, check_boms_parse):
     fn()
 

@@ -27,7 +27,7 @@ Buy the slow part first, build a shared parts library, draw the schematic and ch
 lay out the copper and check it physically, get a second human to look at all of it, order the boards
 and the assembly, then power each one up in small deliberate steps before it goes anywhere near the
 car. Every step in that sentence exists because skipping it has already cost this project real
-mistakes — eleven of them, found so far (lesson L19 in `engineering-rigor.md`), several of which
+mistakes — twenty-four of them, found so far (lesson L19 in `engineering-rigor.md`), several of which
 slipped past the person who wrote them.
 
 ## 1. Buy the long-lead part before you touch Altium at all
@@ -465,7 +465,7 @@ every test result attributable to a single cause.
 This project's own documentation is explicit that it is not ready to order boards, and the honest
 picture as of today looks like this:
 
-Nine tracked open assumptions, A1 through A9 in `PROJECT-LOG.md` §1, are open — with a note that A6
+Eight tracked open assumptions (A6 is partially closed), A1 through A9 in `PROJECT-LOG.md` §1, are open — with a note that A6
 (the ARB servo's actual torque and stall current, and whether it's even a PWM servo or a serial-bus
 one) must specifically be closed before dash layout, because the answer could change the servo output
 stage from analog PWM to a half-duplex UART interface entirely — a change that would ripple into the

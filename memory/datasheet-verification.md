@@ -593,7 +593,7 @@ instance question remain.
 `L = 10 µH` · `COUT = 3 × 15 µF` (2 × 15 µF minimum rated) · `CIN = 4.7 µF + 2 × 220 nF` ·
 `RFBT = 100 kΩ` · `RFBB = 24.9 kΩ` · `CFF = 20 pF` · `CBOOT = 100 nF` · `CVCC = 1 µF`.
 Pinout: 1,11 PGND · 2,10 VIN · 3 NC (tie to SW) · 4 BOOT · 5 VCC · 6 AGND · 7 FB · 8 PG · 9 EN · 12 SW.
-Stocked variants are 1 MHz; prefer the **non-PFM (FPWM) variant** for constant-frequency EMI next to
+⚠ **LCSC stocks the 400 kHz `LMR36015AQRNXRQ1`**, not a 1 MHz part; order `LMR36015FBRNXR` deliberately. Prefer the **FPWM variant** for constant-frequency EMI next to
 the analog front end. Confirm fSW of the exact ordered variant against Table 10-1 before capture.
 
 ### DMP3056L — reversing the earlier recommendation, with the reasoning
@@ -686,7 +686,7 @@ Every place two components talk to each other, checked against both datasheets:
 | MCU → 74AHCT2G125 → servo | Servo expects ~5 V pulse | Same AHCT translation | ✅ |
 | MCU → display SPI | **V_IH = VDD − 0.1 V** | Same `+3V3` rail as MCU | ✅ *provided the rails are common* (see §6B.1) |
 | MCU SPI clock rate | Display max **2.00 MHz** | Firmware must cap SPI1 ≤2 MHz | ⚠ **firmware constraint — the STM32 will happily run 20 MHz** |
-| LMR36015 EN | Must not exceed VIN by >0.3 V; abs max 66.3 V | Tied directly to `+12V_P` (= VIN) | ✅ equal, so within spec |
+| LMR36015 EN | *"Can be connected directly to VIN; Do not float."* (Pin Functions table). Abs max EN-to-AGND 66.3 V | Tied directly to `+12V_P` | ✅ the datasheet's own sanctioned arrangement. **An earlier row here invented a "must not exceed VIN by >0.3 V" rule that does not exist — defect 8.11** |
 | LMR36015 VIN | Abs max 66 V | SMBJ33A clamps 53.3 V | ✅ 12.7 V margin |
 | AP2112K VIN | From 5 V rail | LMR36015 output | ✅ |
 | ADC inputs | 0–3.3 V | Divider gives 0–2.5 V from 0–5 V sensors | ✅ 0.8 V headroom |
@@ -801,7 +801,7 @@ than appearing as a decision.
 
 ---
 
-## 9. Step 2 — second full design pass, **nine further defects**
+## 9. Step 2 — second full design pass, **twelve further defects**
 
 > The Step 2 pass deliberately used *different activities* rather than re-reading: a scripted
 > cross-document sweep, a signal-chain trace asking "what does the other end of this net do at
@@ -1033,6 +1033,75 @@ The wheel's 5 V margin is not a passive property — it is **enforced by the sin
 function** (`CAR 450 mA`, `SIM 350 mA`). That cap is a power-tree component, and any pattern code that
 bypasses it invalidates this row. This is why rule "all writes through one function" is a rigor rule
 and not a style preference.
+
+### Defect 8.10 — every capacitor on the clamped 12 V rail was under-rated (MAJOR)
+
+`D1` is an SMBJ33A: it **clamps `+12V_P` at 53.3 V**. Four BOM lines across the two boards specified
+**50 V** capacitors on that rail — `C1`/`C2`/`C5` on the wheel and `C1`/`C2`/`C3` on the dash — so
+they were rated *below* the voltage produced by the exact event the TVS exists to handle. One wheel
+note even called the 50 V rating *"deliberate for load-dump margin"*, which inverts the actual
+relationship.
+
+The LMR36015 datasheet §10.2.1.2.6 asks for input capacitors *"rated for at least the maximum input
+voltage that the application requires; **preferably twice** the maximum input voltage"*, and states
+outright that *"the 220 nF must also be rated at **100 V** with an X7R dielectric."*
+
+**This is defect 5.1 repeated one component further along.** That defect was the TVS clamping above
+the *buck's* absolute maximum; the fix raised the converter to a 66 V part. Nobody then asked the same
+question of the passives sitting on the same node. Corrected to 100 V, which also buys back a large
+amount of X7R capacitance lost to DC-bias derating at 12 V.
+
+Now enforced by `scripts/check-consistency.py`, which flags any input capacitor on the 12 V entry
+stage rated at 50 V.
+
+### Defect 8.11 — a fabricated datasheet citation (MAJOR, in kind rather than consequence)
+
+`wheel-schematic-complete.md` §2.2 and `datasheet-verification.md` §6C both stated that the LMR36015's
+*"only constraint is that EN must not exceed VIN by more than 0.3 V"*, and used that to justify tying
+EN to VIN.
+
+**No such constraint exists in the datasheet.** The Pin Functions table says only: *"Enable input to
+regulator. High = ON, low = OFF. Can be connected directly to VIN; Do not float."* §9.3.2 repeats it.
+The 0.3 V appears to be a misreading of the absolute-maximum table, where VIN-to-PGND (66 V) and
+EN-to-AGND (66.3 V) are two **independent** limits referenced to ground — the 0.3 V difference between
+those two numbers is not a relative rule.
+
+The circuit is correct: connecting EN to VIN is precisely what the datasheet sanctions. **The
+conclusion was right and the evidence was invented**, which is the dangerous combination — a
+fabricated citation reads exactly like a verified one, survives review because the design it defends
+is sound, and quietly licenses the next person to trust the rest of the row. Found by an audit agent
+that checked citations against the datasheet text rather than checking the design against the citation.
+
+### Defect 8.12 — the variant warning pointed the wrong way (MAJOR — a buying error)
+
+Three files said *"stocked variants are 1 MHz"* about the LMR36015. **The reverse is true:** LCSC
+stocks `LMR36015AQRNXRQ1`, the **400 kHz, non-FPWM** automotive variant, while the part every passive
+value in the design assumes is the 1 MHz `LMR36015FBRNXR`. §2.2 of the same wheel file said this
+correctly two hundred lines earlier; the open-items table at the end contradicted it.
+
+Acting on the wrong version means buying the 400 kHz part and fitting 10 µH / 3 × 15 µF instead of the
+15 µH / 3 × 22 µF it needs. Corrected everywhere, and stated as a *buying hazard that remains live*
+rather than a closed question — the decision is closed, the risk of picking up the wrong part from
+stock is not.
+
+### Also corrected in the same pass (documentation, no board consequence)
+
+- The wheel's `D14`/`D15` paddle clamps specified only one diode of the dual BAV199, leaving the third
+  pin undefined for whoever captures it. **Both halves are needed**: `D3`/`D4` are *bidirectional*
+  SMAJ24CA parts, so a negative transient puts −8.03 V on the pin against a VSS − 0.3 V minimum. Now
+  specified upper-and-lower, matching the dash DAQ clamps.
+- `dash-schematic-complete.md` §2 still listed the AP2112K among the parts the dash copies unchanged
+  from the wheel, three sections above §7 explaining that the AP63203 buck replacing it is *the*
+  deliberate difference between the boards.
+- `dash-schematic-complete.md` §8 claimed PB4 is `PADDLE_UP_SNS` on the wheel. It is spare there; the
+  paddle taps are PB0/PB1.
+- Both files still listed `SMAJ5.0A` as unread when §7 had closed it.
+- The build guide overstated what `check-consistency.py` covers in three specific ways, including
+  claiming it checks the plain-English guides (it does not) and that it covered the AP63203 bootstrap
+  capacitor (it did not — **now it does**, which is the one place the overstatement was worth fixing in
+  the script rather than the prose).
+- Stale counts and statuses in the build guide: "eleven defects" and A6 described as an open layout
+  blocker after `PROJECT-LOG.md` had recorded it closed.
 
 ### Recorded, not counted — one suspicion needing hardware
 
