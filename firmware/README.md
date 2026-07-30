@@ -48,6 +48,14 @@ Full write-up: `memory/datasheet-verification.md` defect 1.5.
 1. **`board_config.h` is downstream of the schematic definitions, never upstream.** If it disagrees
    with `memory/wheel-schematic-complete.md` §9 or `memory/dash-schematic-complete.md` §8, the
    schematic is right and this file is the bug. Do not reconcile in the wrong direction.
+
+   ⚠ **But do not apply that rule blindly.** Defect 8.1 was exactly this: §9 was the *stale* document,
+   and following this rule literally would have reverted a correct fix and reinstated defect 1.5.
+   A pointer to a source of truth is only safe if something checks the source is actually true.
+   **Before reconciling any mismatch, run `python3 scripts/check-consistency.py`** — it parses the pin
+   table for double-booked pins, encoder timers that cannot decode quadrature, and ADC channel numbers
+   against the datasheet. If the script is clean and you still disagree with it, go to the datasheet,
+   not to either file.
 2. **Anything protocol-shaped is a constant, not a literal in logic.** Node IDs, CAN IDs, scaling,
    LED thresholds. Assumption A1 (the keypad node ID) is the most likely thing to be wrong on first
    bring-up; it must be a one-line change, not a hunt.
