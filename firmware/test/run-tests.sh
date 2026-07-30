@@ -16,7 +16,9 @@ trap 'rm -rf "$OUT"' EXIT
 
 for BOARD in BOARD_WHEEL BOARD_DASH; do
     echo "== compile check: -D$BOARD =="
-    gcc $BASE -D$BOARD -c src/system_init.c -o "$OUT/si_$BOARD.o"
+    for SRC in src/*.c; do
+        gcc $BASE -D$BOARD -c "$SRC" -o "$OUT/$(basename $SRC .c)_$BOARD.o"
+    done
     echo "   ok"
 done
 
@@ -29,6 +31,11 @@ echo
 echo "== haltech_can tests =="
 gcc $BASE -DBOARD_WHEEL test/test_haltech_can.c src/haltech_can.c -o "$OUT/t_can"
 "$OUT/t_can"
+
+echo
+echo "== encoder tests =="
+gcc $BASE -DBOARD_WHEEL test/test_encoder.c src/encoder.c -o "$OUT/t_enc"
+"$OUT/t_enc"
 
 echo
 echo "All host tests passed."

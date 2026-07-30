@@ -45,7 +45,8 @@ memory. What does not exist yet is everything that needs hardware to test agains
 | `haltech_can.h` | Complete interface; frame layouts transcribed from primary sources |
 | `system_init.c` | Written and host-tested (clock tree, UCPD release, boot guard) |
 | `haltech_can.c` | Written and host-tested (keypad, IO12, broadcast decode) |
-| Encoder / debounce / LED / display drivers | Not written |
+| `encoder.c` | Written and host-tested (quadrature decode, detents, end-stops) |
+| Debounce / LED / display drivers | Not written |
 | Dash EVE display, DAQ, servo task | Not written |
 | USB HID (sim variant) | Not written |
 
