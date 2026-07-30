@@ -223,7 +223,7 @@
   60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
   covers both boards. **Verification is not only a hunt for defects — unverified numbers are
   padded numbers, and padding costs parts.**
-- **L19 (2026-07, updated):** **Twenty-seven defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and twelve more in the Step 2 design pass (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+- **L19 (2026-07, updated):** **Twenty-eight defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and thirteen more in the Step 2 design pass (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
   were both **interactions between two correct-looking choices**, not errors in either one alone.
   PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
   combination. **Review pairs, not parts:** for every component, ask what else touches its net and

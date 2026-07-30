@@ -68,7 +68,20 @@ explicitly because they're easy to get wrong on any STM32G4 board:
 - **The HSE crystal on pins PF0/PF1 is mandatory, not optional.** ("HSE" = high-speed external — an
   actual crystal oscillator, as opposed to the chip's internal, less precise clock.) CAN running at
   1 Mbit/s needs a timing reference accurate enough that the internal oscillator isn't good enough —
-  skip the crystal and the CAN bus will misbehave.
+  skip the crystal and the CAN bus will misbehave. Because this sheet is copied from the wheel's, the
+  dash gets the identical crystal circuit — same part, same load capacitors, same series resistor —
+  rather than a separate selection exercise.
+  - **Selected:** Abracon **ABM8** series, **16.000 MHz**, load capacitance `CL` = **8 pF**, ESR ≤ 70 Ω,
+    C0 ≤ 3 pF, ±30 ppm initial tolerance, ±30 ppm stability, −40…+85 °C, 3.2 × 2.5 mm package. Load
+    capacitors `C_X1`/`C_X2` = **6 pF ±0.25 pF, C0G, 0402**. `R_X1` = 0 Ω, 0402, in series between the
+    MCU's `OSC_OUT` pin and the crystal. The full reasoning — why this part, the load-capacitor math,
+    the startup-margin calculation — lives in `wheel-guide.md` §3.2; it isn't repeated here because the
+    circuit is identical, but two points are worth stating even in this shorter version:
+    - **`C_X2` goes on the CRYSTAL side of `R_X1`, not at the MCU pin.** `R_X1` and `C_X2` together are
+      the low-pass filter that limits how hard the MCU drives the crystal. With `C_X2` at the pin
+      instead, `R_X1` costs startup margin while limiting no drive at all.
+    - ⚠ **The ABM8G is not a substitute despite the near-identical name** — 80 Ω ESR and C0 ≤ 5 pF
+      instead of 70 Ω and 3 pF, which cuts the startup headroom from 4.4× to 2.7×.
   - **Fit nothing on BOOT0 — no pulldown, no strap, no test point.** On this chip PB8-BOOT0 is also
     `FDCAN1_RX`, so a pulldown there fights the CAN transceiver's RXD output: actively harmful, not
     merely redundant. And if BOOT0 is ever taken from the pin, an idle CAN bus sits recessive, which
@@ -174,6 +187,20 @@ With those, the dash's buck input/output capacitors are: **4.7 µF + 2 × 220 nF
 3 × 15 µF at the output** — identical to the wheel's LMR36015 stage. (Earlier notes describing 2 × 22 µF
 in and 2 × 47 µF out were values for a different converter candidate that was evaluated and rejected;
 those numbers do not apply to the part actually used here.)
+
+### 2.4 MCU decoupling: five capacitors, not six
+
+The LQFP-64 package has **exactly four `VDD` pins (16, 32, 48, 64)** and four `VSS` pins
+(15, 31, 47, 63), plus `VBAT` (1), `VDDA` (29), `VREF+` (28), and `VSSA` (27) — counted directly off the
+package drawing. An earlier bill-of-materials line called for "6 × 100 nF, one per VDD pin," a
+placeholder that was never actually checked against that drawing and simply doesn't match a four-VDD
+package.
+
+The correct count is **five**: `C16` at `VBAT`, `C17`–`C20` — one per `VDD` pin — with `VDDA` covered
+separately by the existing `C10`/`C11` pair already on this board, not by one of the five. Each
+100 nF cap sits as close to its pin as the layout allows, for the same reason any MCU decoupling cap
+does: it's the local charge reservoir that supplies the fast current spikes the digital logic pulls on
+every clock edge, faster than current can arrive from the regulator across the board.
 
 ---
 
@@ -473,6 +500,18 @@ so the dash keeps a switching converter (the AP63203) on this rail instead.
 
 This table has been checked against the STM32G474 datasheet's alternate-function table (the official
 reference for which pin can do which job).
+
+The table below covers only the pins that carry a functional signal. The authoritative file
+`memory/dash-schematic-complete.md` now carries the complete picture in its **§8.0 "Complete pin
+assignment"** table — all 64 physical pins of the LQFP-64, in package order, with the net on every
+single one, including the ones with nothing connected. That full table, not this summary, is what you
+capture the MCU symbol from in Altium.
+
+**The trap to watch for:** the dash uses the *same package and the same pin numbering* as the wheel —
+but almost entirely different nets on those pins. `dash-mcu.SchDoc` copies the wheel's sheet
+*structure* (the symbol, the sheet layout); the signal assignment is what differs, pin by pin, between
+the two boards. Do not copy the wheel's pin table across and assume it applies here — every pin still
+needs checking against §8.0 in `dash-schematic-complete.md` on its own terms.
 
 | Pin | Net | Why |
 |---|---|---|

@@ -242,13 +242,22 @@ ground clip can reach one near whatever you're probing).
 
 All `VDD` pins on the chip go to `+3V3`; all `VSS` pins go to `GND`. The analog supply pins
 (`VDDA`, `VREF+`) go to the filtered `+3V3A` rail instead, and their returns (`VSSA`, `VREF−`) go to
-`GND`. Six decoupling capacitors (small capacitors placed right next to a chip's power pins to
-supply the instantaneous current spikes a digital chip demands, which a regulator sitting far away
-on the board can't respond to fast enough), `C16`–`C21`, are 100 nF 0402 each, one per VDD pin,
-placed right at the pin. One larger 4.7 µF 16 V X7R 0805 capacitor, `C22`, sits near the MCU as a
-bulk reservoir for the whole chip. `VBAT` (the pin that would normally back up the real-time clock
-through a coin cell) just ties to `+3V3` — there's no coin cell on this board because the RTC isn't
-used.
+`GND`. Decoupling capacitors (small capacitors placed right next to a chip's power pins to supply
+the instantaneous current spikes a digital chip demands, which a regulator sitting far away on the
+board can't respond to fast enough) go at `VBAT` and at each `VDD` pin, 100 nF 0402 each, placed
+right at the pin. The LQFP-64 package has **exactly four `VDD` pins (16, 32, 48, 64)** and four
+`VSS` pins (15, 31, 47, 63), plus `VBAT` (pin 1), `VDDA` (29), `VREF+` (28) and `VSSA` (27) — so that
+is **five** decoupling capacitors, not six: `C16` at `VBAT`, and `C17`–`C20` one at each `VDD` pin.
+`VDDA` is covered separately by the existing `C8`/`C9` pair (§2.4). One larger 4.7 µF 16 V X7R 0805
+capacitor, `C22`, sits near the MCU as a bulk reservoir for the whole chip. `VBAT` (the pin that
+would normally back up the real-time clock through a coin cell) just ties to `+3V3` — there's no
+coin cell on this board because the RTC isn't used.
+
+A spare capacitor sitting unused in a BOM is harmless. A *count* — "six decoupling caps" — stated as
+fact and never checked against the package drawing is not: that number (this guide previously said
+`C16`–`C21`, six of them, "one per VDD pin," which doesn't match a package that only has four VDD
+pins) is exactly the kind of detail that gets copied into a layout review as evidence the decoupling
+was thought through, when it was actually never verified.
 
 ### 3.2 The HSE crystal — required, and it was missing from the first draft
 
@@ -268,8 +277,9 @@ controller gives up talking on the bus entirely) that get *worse* as the car hea
 "works perfectly on the bench, fails intermittently in the car" bug, and a nasty one to chase
 because it presents exactly like a software bug rather than a clock problem.
 
-A crystal rated at 50 ppm (parts per million) accuracy is 0.005% — a hundred times better than CAN
-needs — and standard crystals are cheap, so there's no reason to cut this corner.
+A crystal's accuracy is measured in ppm (parts per million), and even a modest one is vastly better
+than CAN needs — the exact margin for the part actually selected is worked out below, under
+"Frequency accuracy budget." Standard crystals are cheap, so there's no reason to cut this corner.
 
 **USB doesn't force this decision, but rides along for free.** The G4 chip can technically do
 USB without any crystal at all, using its HSI48 internal oscillator plus a feature called the Clock
@@ -280,20 +290,122 @@ and eliminate the whole question of clock accuracy in one move, rather than jugg
 clock sources for two peripherals.
 
 **How it's built.** The oscillator pins are `PF0-OSC_IN` (LQFP-64 pin 5) and `PF1-OSC_OUT` (pin 6).
-Both are confirmed bonded (i.e. actually connected to a physical pin) on this package.
+Both are confirmed bonded (i.e. actually connected to a physical pin) on this package. The crystal
+is selected and verified: Abracon **ABM8** series, **16.000 MHz**, load capacitance CL = 8 pF, ESR
+(equivalent series resistance — a measure of internal loss) ≤ 70 Ω, C0 (shunt capacitance, a small
+capacitance across the crystal's own terminals that isn't part of the load-capacitance calculation
+but does affect startup) ≤ 3 pF, ±30 ppm initial tolerance, ±30 ppm stability, rated −40…+85 °C, in a
+3.2 × 2.5 mm SMD package.
 
 | Ref | Part / value | Connection |
 |---|---|---|
-| `Y1` | HSE crystal, 8 MHz or 16 MHz, ≤50 ppm initial + temperature accuracy, load capacitance (CL) 8–12 pF, ESR (equivalent series resistance — a measure of internal loss) ≤80 Ω, SMD 3225 package | pin 1 → `OSC_IN` (PF0), pin 2 → `GND`, pin 3 → `OSC_OUT` (PF1), pin 4 → `GND` |
-| `C_X1`, `C_X2` | 2 × (CL − C_stray), C0G dielectric (a very stable, low-loss ceramic type used specifically for timing circuits), 0402 — roughly 18 pF for a 12 pF CL crystal, or roughly 10 pF for an 8 pF CL crystal | `OSC_IN` → `GND`, `OSC_OUT` → `GND` |
-| `R_X1` | 0 Ω, 0402 — a footprint reserved for a series damping resistor, not necessarily fitted at that value | in series between `OSC_OUT` and `Y1` pin 3 |
+| `Y1` | the ABM8 above | pin 1 → `NET_OSC_IN`, pin 2 → `GND`, pin 3 → `NET_XOUT`, pin 4 → `GND` |
+| `C_X1` | 6 pF ±0.25 pF, C0G, 0402 | `NET_OSC_IN` → `GND` |
+| `C_X2` | 6 pF ±0.25 pF, C0G, 0402 | `NET_XOUT` → `GND` — the CRYSTAL side of `R_X1`, NOT the MCU pin |
+| `R_X1` | 0 Ω, 0402 | in series, `NET_OSC_OUT` (PF1, pin 6) → `NET_XOUT` |
 
-**This is marked [OPEN — pick and verify a part]:** the crystal spec above (8/16 MHz, ≤50 ppm,
-CL 8–12 pF) is *derived* from what CAN needs, not copied from one specific datasheet. Once you pick
-an actual crystal part, recompute `C_X1`/`C_X2` from **that part's own CL** using
-`C = 2 × (CL − C_stray)`, with C_stray (stray capacitance from the PCB traces and pads) estimated at
-roughly 3–5 pF for this layout geometry. Do not just carry over the 18 pF figure above without
-redoing this calculation for the crystal you actually bought.
+This is three nets, not two, and the distinction is one a rushed layout pass could easily collapse
+into "OSC_IN and OSC_OUT with some caps on them": `NET_OSC_IN` (pin 5, `Y1` pin 1, `C_X1`) —
+`NET_OSC_OUT` (pin 6, `R_X1`) — `NET_XOUT` (`R_X1`, `Y1` pin 3, `C_X2`).
+
+No external feedback resistor is needed. The oscillator circuit inside the chip needs a resistor
+across its amplifier to bias it into its active region before it can start amplifying the crystal's
+signal at all — the STM32 already has one built in, an internal 200 kΩ resistor (DS12288 Table 41),
+so there is nothing to add here.
+
+**Why 16 MHz — the intuition about frequency is backwards.** Whether an oscillator circuit starts
+reliably comes down to a single number, the "critical transconductance" (`gm_crit`): roughly, how
+much gain the amplifier driving the crystal needs to have for oscillation to build up and sustain
+itself, rather than dying out. The formula is `gm_crit = 4 × ESR × (2πF)² × (C0 + CL)²`, and the
+STM32 datasheet (DS12288 Table 41) gives the chip's actual gain as **1.5 mA/V**. Lower `gm_crit`
+means more margin — the circuit's gain clears the bar by a wider margin, so the crystal starts more
+reliably, including in a cold car on a winter morning.
+
+The trap is that `gm_crit` scales with **frequency squared**, so the instinct is to pick a lower
+frequency — 8 MHz looks like the safe, gentle choice, and it's also the STM32's own commonly-quoted
+"reference" frequency. But ESR — the crystal's own internal loss — climbs *faster* than frequency
+squared as you go down in frequency on a small package, so a lower frequency actually makes startup
+*worse*, not better. The real numbers for the ABM8 series show this:
+
+| Frequency | ESR max | `gm_crit` at CL = 8 pF | Headroom vs 1.5 mA/V |
+|---|---|---|---|
+| 8 MHz | 400 Ω | 0.489 mA/V | 3.1× |
+| 12 MHz | 120 Ω | 0.330 mA/V | 4.5× |
+| **16 MHz** | **70 Ω** | **0.342 mA/V** | **4.4×** ← chosen |
+| 20 MHz | 50 Ω | 0.382 mA/V | 3.9× |
+
+**8 MHz is the worst of the four**, despite looking like the obvious, conservative pick. 16 MHz was
+kept — rather than 12 MHz, which has slightly more headroom — because the firmware's PLL (phase-
+locked loop) configuration already assumes a 16 MHz input; nothing in the firmware had to change.
+
+**Why CL = 8 pF — two constraints, and neither one is enough on its own.** Load capacitance is the
+capacitance the crystal "expects" to see connected to it in order to run exactly at its rated
+frequency; the two capacitors `C_X1`/`C_X2` provide that. There's a second, unavoidable capacitance
+sitting on the same nets: `C_stray`, the capacitance of the MCU pin itself plus the PCB trace,
+roughly 5 pF here — every board has this, whether or not anyone accounts for it. The external
+capacitor value needed works out to `C = 2 × (CL − C_stray)`.
+
+| CL | `gm_crit` | Headroom | External caps needed (C_stray ≈ 5 pF) |
+|---|---|---|---|
+| 6 pF | 0.229 mA/V | 6.5× (best) | **2 pF — not buildable**, stray capacitance would dominate the value |
+| **8 pF** | **0.342 mA/V** | **4.4×** | **6 pF ✓** |
+| 10 pF | 0.478 mA/V | 3.1× (fails) | 10 pF ✓ |
+
+The startup table on its own says pick 6 pF — best headroom. Buildability on its own says pick
+10 pF — comfortably real capacitor values. Only 8 pF satisfies both at once, which is why it's a
+specific number rather than a range. The OLD spec that used to live in this guide ("8/16 MHz, CL
+8–12 pF, ESR ≤ 80 Ω") was written as a range, not a specification — and a range like that allows
+combinations with as little as 2.1× headroom. Someone picking values from the middle of each range,
+in good faith, could have ended up with a board that starts unreliably when cold.
+
+**Why `C_X2` sits on the far side of `R_X1`, not at the MCU pin.** `R_X1` and `C_X2` together form a
+low-pass filter (a circuit that passes slow changes and attenuates fast ones), and that filter *is*
+the entire mechanism by which a series resistor reduces how hard the MCU drives the crystal — the
+resistor doesn't do anything useful on its own without the capacitor positioned past it. Put `C_X2`
+at the MCU pin instead, and `R_X1` still costs startup margin (see below) but no longer limits
+drive at all: you pay the cost and get no benefit, and no matter what value you fitted at `R_X1`, the
+drive-level measurement would not improve.
+
+**Two things that must be measured on the first board, not assumed from the datasheet.**
+
+1. **Drive level** — how hard the oscillator is actually driving the crystal, which matters because
+   crystals have a maximum power rating. Worst case, assuming the oscillator swings the full 3.3 V
+   rail: the current through the crystal works out to 1.29 mA, so power = I² × ESR = **117 µW against
+   the ABM8's 100 µW maximum**. The real figure is usually lower, because the STM32's oscillator has
+   automatic amplitude control that backs off once oscillation is established — but the worst-case
+   estimate lands *above* the limit, so it can't be waved through as "probably fine." `R_X1` exists
+   for exactly this measurement: fit it at 0 Ω, measure the drive level on the bench, and if it comes
+   out over 100 µW, raise `R_X1` (typically to somewhere in 100 Ω – 1 kΩ) and re-measure. Overdriving
+   a crystal doesn't break it immediately — it *ages* it: the frequency drifts over months of running
+   and the part eventually fails. That's a failure that shows up months after the car is running and
+   working, not one you'd catch at bring-up.
+2. **Cold start.** `gm_crit` is at its worst at low temperature, and startup time is 2 ms typical.
+   `R_X1` cuts both ways — raising it to fix drive level also reduces startup margin — and the
+   headroom here is 4.4×, not the 10× you might assume from a casual glance at the numbers. Any
+   non-zero `R_X1` fitted to fix drive level must be re-checked for cold starting, not assumed safe
+   because it fixed the drive-level number.
+
+**Frequency accuracy budget.** Initial tolerance ±30 ppm, plus stability over temperature ±30 ppm,
+plus aging ±2 ppm, plus ±29 ppm if the stray-capacitance estimate above is off by 1 pF, totals
+**±91 ppm = 0.0091%**. CAN needs roughly 5000 ppm of accuracy → **55× margin**. USB full-speed needs
+2500 ppm → 27× margin. The load-capacitor term is the largest one actually under your control here
+(the others are fixed properties of the part), which is the practical reason the layout rules demand
+short oscillator traces — a longer trace changes `C_stray`, which changes frequency, not just
+startup.
+
+**Substitution warning.** Any 3.2 × 2.5 mm 16 MHz crystal is fine, provided it meets all three of:
+ESR ≤ 70 Ω, C0 ≤ 3 pF, CL = 8 pF — those three numbers are what the whole analysis above depends on.
+⚠ **The ABM8G is NOT a drop-in despite the nearly identical name** — it's 80 Ω with C0 ≤ 5 pF, which
+works out to 0.547 mA/V and only 2.7× headroom.
+
+**Honest caveat.** ST's application note AN2867 (their oscillator design guide, which would settle
+this precisely) could not be downloaded while writing this — st.com timed out repeatedly. So the
+exact reading of the datasheet's phrase "maximum critical crystal transconductance" is ambiguous: it
+could mean "your crystal's `gm_crit` must be below 1.5 mA/V" (which this selection satisfies
+outright), or it could describe the oscillator's own gain, against which AN2867 is known to ask for
+roughly 5× margin (this selection sits just under that, at 4.4×). That's the reason bench
+measurement above is treated as the tie-breaker rather than a formality — it settles the question
+that the datasheet, read alone, leaves open.
 
 ### 3.3 Reset, boot, and debug
 
@@ -717,7 +829,16 @@ layout is **zero errors and zero unsuppressed warnings.**
 
 This table is the master list of which physical microcontroller pin does what — it has been checked
 against the STM32G474 datasheet's alternate-function table (Table 13) to make sure each assignment
-is actually valid, not just plausible-looking.
+is actually valid, not just plausible-looking. It only lists the pins that carry a signal, though —
+power, ground, and unused pins aren't rows here.
+
+**For drawing the actual schematic symbol, use `wheel-schematic-complete.md` §3.1, "Complete pin
+assignment" instead.** That table has a row for all 64 physical pins of the LQFP-64 package, in
+package order, including every `VDD`/`VSS` pin, `VBAT`, the analog supply pins, and the pins that
+carry nothing at all. That last part matters: when a pin with no connection has its own row saying
+so, "no connect" is a decision you can read off the table, rather than something you have to infer
+from a pin simply not showing up anywhere. Capture the MCU symbol from that table, not from this
+one.
 
 | Pin | Net | Peripheral justification |
 |---|---|---|
@@ -738,7 +859,7 @@ is actually valid, not just plausible-looking.
 | PA9 / PA10 | `DBG_TX` / `DBG_RX` | USART1. ⚠ **Also `UCPD1_DBCC1` / `UCPD1_DBCC2`** — a high level here arms the dead-battery pull-down on `PB6` (and `PB4`). See §3.5 |
 | PA1 / PA2 | `V12_SENSE` / `V5_SENSE` | **ADC12_IN2 / ADC1_IN3** |
 | PB0 / PB1 | `PADDLE_UP_SNS` / `PADDLE_DN_SNS` | **ADC1_IN15 / ADC1_IN12 — read as ADC, not GPIO** (§4.3) |
-| PF0 / PF1 | `OSC_IN` / `OSC_OUT` | HSE crystal — LQFP-64 pins 5 and 6, mandatory for reliable 1 Mbit/s CAN (§3.2 above) |
+| PF0 / PF1 | `NET_OSC_IN` / `NET_OSC_OUT` (→ `R_X1` → `NET_XOUT`) | HSE crystal — LQFP-64 pins 5 and 6, mandatory for reliable 1 Mbit/s CAN (§3.2 above) |
 | PA8, PB4, PB5, **PB14, PB15** | spare — PB14/PB15 were freed when `ENC5` moved off TIM15 (defect 1.5) | bring to test points if convenient. ⚠ If you ever use **PB4**, note it is `UCPD1_CC2` and carries the same dead-battery pull-down described in §3.5 |
 
 **Every encoder pair uses channels 1 and 2 (CH1/CH2) of a single timer, and that's not a
@@ -780,9 +901,9 @@ ordered (the "G6 pre-order gate"):
 - **Display FPC contact side (top vs. bottom).** Not stated in the extracted display spec, and a
   top-contact FPC connector would mirror the pinout — check the mechanical drawing before selecting
   the `J3` footprint.
-- **HSE crystal part number and load capacitors.** The spec (§3.2) is derived from CAN's timing
-  requirements, not copied from one datasheet — pick an actual part, then recompute `C_X1`/`C_X2`
-  from that part's own CL.
+- ~~HSE crystal part number and load capacitors~~ — **CLOSED.** §3.2 now has a selected, verified
+  part (Abracon ABM8, 16 MHz, CL = 8 pF) with the startup, drive-level, and cold-start numbers to
+  back it up.
 - **Exact WS2812B-2020 current draw.** The manufacturer's datasheet is image-only (no extractable
   text), so this needs a bench measurement rather than a datasheet read. The firmware's 0.45 A
   aggregate cap holds regardless of the exact per-LED figure.

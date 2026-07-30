@@ -275,11 +275,75 @@ def check_boms_parse():
               f"{'malformed ' + str(bad) if bad else 'well-formed'}")
 
 
+def _bom_designator_map(text):
+    """Designator -> description, expanding 'C8;C9' and 'C16-C20' forms."""
+    out = {}
+    for row in list(csv.reader(text.splitlines()))[1:]:
+        if len(row) < 3 or not row[0].strip():
+            continue
+        desig, desc = row[0].strip(), row[2].strip()
+        for part in desig.split(";"):
+            part = part.strip()
+            m = re.fullmatch(r"([A-Za-z_]+)(\d+)\s*[-–]\s*(?:[A-Za-z_]+)?(\d+)", part)
+            if m:
+                pre, a, b = m.group(1), int(m.group(2)), int(m.group(3))
+                for n in range(a, b + 1):
+                    out[f"{pre}{n}"] = desc
+            elif part:
+                out[part] = desc
+    return out
+
+
+def check_bom_note_crossrefs():
+    """Defect 8.13. The dash BOM's decoupling note was copied from the wheel's
+    and told the builder VDDA was covered by C8/C9 — true on the wheel, where
+    C8/C9 ARE the VDDA caps, and wrong on the dash, where they are the AP63203's
+    output caps. A wrong pointer is worse than a missing one: it reads as a
+    checked cross-reference. Nothing mechanically verified free text inside a BOM
+    cell, so nothing caught it.
+
+    The rule: if a note says '<rail> is covered by <D>', row <D> must actually be
+    that rail's part IN THIS BOM. Deliberately narrow — an earlier draft also
+    flagged every designator-shaped token a note mentioned, and produced
+    twenty-five notes per run on signal names (`PA0`, `AIN7`, `BTN5`), part
+    numbers (`ABM8`, `C0`) and lesson IDs (`L13`). A check nobody reads is worse
+    than no check, so that rule was removed rather than left noisy. Free text in
+    a BOM cell is still only partly machine-checkable; this covers the one
+    grammar that has actually gone wrong.
+    """
+    for f in [k for k in DOCS if k.endswith(".csv")]:
+        dmap = _bom_designator_map(DOCS[f])
+        checked = 0
+        for row in list(csv.reader(DOCS[f].splitlines()))[1:]:
+            if len(row) < 9:
+                continue
+            note, own = row[8], row[0].strip()
+            if not note.strip():
+                continue
+            m = re.search(r"\b(VDDA|VBAT|VREF\+?|NRST)\b[^.]{0,40}?covered by\s+"
+                          r"([A-Z]{1,3}\d{1,3})(?:\s*/\s*([A-Z]{1,3}\d{1,3}))?", note)
+            if m:
+                checked += 1
+                rail = m.group(1)
+                for d in (m.group(2), m.group(3)):
+                    if not d:
+                        continue
+                    if d not in dmap:
+                        fails.append(f"{f} [{own}]: note says {rail} is covered by "
+                                     f"{d}, which does not exist in this BOM")
+                    elif rail.rstrip("+").lower() not in dmap[d].lower():
+                        fails.append(f"{f} [{own}]: note says {rail} is covered by "
+                                     f"{d}, but {d} is '{dmap[d]}' on this board (defect 8.13)")
+        print(f"  {f}: {checked} BOM note cross-reference(s) resolved "
+              f"against {len(dmap)} designators")
+
+
 print("Cross-document consistency check\n")
 for fn in (check_wheel_pin_table, check_pin_table_complete, check_adc_channels, check_firmware_matches_schematic,
            check_ucpd_hazard_documented, check_buck_support_parts,
            check_battery_rail_cap_ratings,
-           check_no_rejected_parts_as_live_spec, check_stale_values, check_boms_parse):
+           check_no_rejected_parts_as_live_spec, check_stale_values, check_boms_parse,
+           check_bom_note_crossrefs):
     fn()
 
 print()

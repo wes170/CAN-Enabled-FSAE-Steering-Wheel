@@ -1084,6 +1084,24 @@ Acting on the wrong version means buying the 400 kHz part and fitting 10 µH / 3
 rather than a closed question — the decision is closed, the risk of picking up the wrong part from
 stock is not.
 
+### Defect 8.13 — a designator cross-reference copied between boards (MINOR, but a build error)
+
+The dash BOM's `C16-C20` note was copied verbatim from the wheel's and told the builder *"VDDA pin 29
+is covered by `C8`/`C9`."* True on the wheel. **On the dash, `C8`/`C9` are the AP63203's 2 × 22 µF
+output capacitors** — VDDA there is `C10`/`C11`, exactly as `dash-schematic-complete.md` §8.0 line 261
+and the dash guide both say.
+
+Consequence if acted on: someone reconciling the BOM against the schematic finds VDDA apparently
+double-decoupled and the 3.3 V rail apparently missing its output caps, and "fixes" whichever one they
+trust less. The number of parts is right; the pointer is wrong, which is worse than an omission
+because it reads as a checked cross-reference.
+
+**Found by a spot-check, not by the consistency script** — the script cross-checks values and pin
+tables, not free-text notes inside a BOM cell. Same class as 8.4/8.6: prose in one file describing
+another file, which nothing mechanically verifies. Found while verifying the plain-English guides,
+because the guide (correctly, from the schematic) said `C10`/`C11` and the BOM said `C8`/`C9` — the
+disagreement was only visible because two independently-written sources were read against each other.
+
 ### Also corrected in the same pass (documentation, no board consequence)
 
 - The wheel's `D14`/`D15` paddle clamps specified only one diode of the dual BAV199, leaving the third

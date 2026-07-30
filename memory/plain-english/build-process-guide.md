@@ -27,7 +27,7 @@ Buy the slow part first, build a shared parts library, draw the schematic and ch
 lay out the copper and check it physically, get a second human to look at all of it, order the boards
 and the assembly, then power each one up in small deliberate steps before it goes anywhere near the
 car. Every step in that sentence exists because skipping it has already cost this project real
-mistakes — twenty-four of them, found so far (lesson L19 in `engineering-rigor.md`), several of which
+mistakes — twenty-eight of them, found so far (lesson L19 in `engineering-rigor.md`), several of which
 slipped past the person who wrote them.
 
 ## 1. Buy the long-lead part before you touch Altium at all
@@ -171,6 +171,15 @@ directly to a lesson the project already learned the hard way (lesson L16, discu
 map that looks internally consistent isn't the same thing as a pin map that was checked against the
 actual chip, which is exactly why the verified tables now live in the schematic-definition files
 rather than being re-derived from memory each time.
+
+Both schematic-definition files now also go a level deeper than that functional summary: `wheel-
+schematic-complete.md` §3.1 and `dash-schematic-complete.md` §8.0 each carry a **complete per-pin
+table** — all 64 physical pins of the LQFP-64, in package order, one row per pin. Every pin gets a row,
+**including the ones with nothing connected**, so "no connect" is a decision stated on the table rather
+than something a reader has to infer from a pin's absence. `scripts/check-consistency.py` (§9 below)
+now checks that both of these complete tables are actually complete and that they agree with each
+other, with the summary pin maps above, and with the firmware's own pin assignments — not merely that
+each one is internally tidy on its own.
 
 The **BOOT0 pin gets no pulldown and no strap**, on both boards, because on this specific package
 `PB8`, which is normally a safe place to add a pulldown resistor, is *also* `FDCAN1_RX` — the CAN
@@ -360,8 +369,8 @@ the first write-up and was only caught on a re-read" — which the project's own
 the project log. This is the gate that exists because, plainly, **the author of a design cannot see
 their own blind spots.** It is not a formality layered on top of the other four gates — it's the
 recognition that a design can be self-consistent and still wrong in a way that only becomes visible to
-someone who didn't write it. This project's own defect history backs that up directly: eleven defects
-have been found across this design so far (lesson L19 in `engineering-rigor.md`), and multiple of them — the BOOT0/CAN conflict, the missing
+someone who didn't write it. This project's own defect history backs that up directly: twenty-eight
+defects have been found across this design so far (lesson L19 in `engineering-rigor.md`), and multiple of them — the BOOT0/CAN conflict, the missing
 EXTMODE strap, three errors in one supposedly-frozen pin table — passed an initial self-review by the
 person who wrote the section, and were only caught on a later, harder look. "Plausible-sounding detail
 is the most dangerous kind of wrong, because it survives review — a reviewer checks whether the pin
@@ -414,6 +423,36 @@ supply that can't reach the expected voltage — annoying, diagnosable, and safe
 board. Only after every rail checks out within about 3% of its expected value, with a thermal camera
 or a finger sweep checking that the buck inductor isn't running hot, does bring-up proceed to
 anything more active.
+
+**Step 2a confirms the HSE crystal is actually running correctly, not merely that the rails came up.**
+This sits between the power step and the debug step deliberately: a scope probe is enough to check it
+here, on the bench, before the board is asked to do anything else — checking it later means diagnosing
+it against a live CAN bus that's already misbehaving in a way that looks exactly like a firmware bug.
+Three checks, and each one is a real check, not a formality to tick off:
+
+1. **Confirm the crystal starts — and repeat the check at the cold extreme, not only at room
+   temperature.** The margin by which the MCU's oscillator circuit can actually get the crystal
+   swinging (the "startup margin," also called "gain margin") works out to **4.4×**, not the more
+   comfortable 10× a rule of thumb might suggest, and that margin is worst exactly when the board is
+   cold. A crystal that starts reliably on the bench at room temperature and fails to start at −10 °C
+   in the paddock on a cold morning is a real outcome this margin permits, not a theoretical one — so
+   cold starting has to be verified, not assumed from a single room-temperature test.
+2. **Measure the drive level** — how hard the oscillator circuit is actually driving the crystal. The
+   worst-case calculation for this circuit comes out to **117 µW against the crystal's 100 µW maximum
+   rating** — over budget. If the measured level comes out over, the fix is to increase `R_X1`
+   (typically in the **100 Ω – 1 kΩ** range) and then **re-check cold starting**, because `R_X1` trades
+   one property against the other: raising it lowers drive level but also eats into startup margin, so
+   a fix applied to satisfy this check can quietly break the previous one and has to be re-verified, not
+   just applied and trusted. The consequence of skipping this measurement entirely is not an immediate
+   failure: overdriving a crystal does not stop it working on day one — it *ages* the crystal, so its
+   resonant frequency drifts slowly over months of use, and the part fails long after the car is already
+   running and trusted. That slow, delayed failure mode is exactly why drive level gets measured on the
+   bench rather than assumed correct just because the board powers up and CAN looks fine today.
+3. **Measure the frequency**, and confirm it lands within **±100 ppm** of the crystal's rated frequency.
+   A larger error points at the load capacitors (`C_X1`/`C_X2`, nominally **6 pF**) being wrong for the
+   stray capacitance the actual board layout adds — the capacitor value assumes a certain amount of
+   parasitic capacitance from real traces and pads, and an as-built layout can differ from that
+   assumption enough to shift the frequency measurably.
 
 **Step 3 brings up the debug connection** (Tag-Connect SWD attach, read the MCU's ID, flash a trivial
 "blinky" program, confirm 3.3V holds up under load) — proving the microcontroller itself is alive and
