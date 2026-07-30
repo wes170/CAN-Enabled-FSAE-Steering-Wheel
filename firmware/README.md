@@ -32,11 +32,11 @@ The protocol tests are the valuable ones, because every failure they check for i
 hardware**: a keypad that transmits before NMT start is simply ignored, a byte-order slip produces
 plausible numbers, and a stale reading looks exactly like a live one.
 
-## Status: foundation only
+## Status: all eight drivers written, none run on hardware yet
 
-What exists is the part that could be written **correctly** today — the pin
-configuration and the CAN protocol layer, both derived from verified documents rather than from
-memory. What does not exist yet is everything that needs hardware to test against.
+Every driver in the Step 3 build order now exists and passes its host tests. **None of it has run on
+a board** — what the tests prove is the logic that can be proven at a desk, and the README is explicit
+about which claims are which.
 
 | Piece | State |
 |---|---|
@@ -51,7 +51,7 @@ memory. What does not exist yet is everything that needs hardware to test agains
 | `servo.c` | Written and host-tested (all four ARB safety rules) |
 | `daq.c` | Written and host-tested (8-channel scan, conversions, validity) |
 | `display_wheel.c` | Written and host-tested (JDI protocol, EXTCOMIN watchdog) |
-| `display_dash.c` (BT817 EVE) | Not written |
+| `display_dash.c` | Written and host-tested (EVE protocol, panel timing) |
 | USB HID (sim variant) | Not written |
 
 ## Writing the firmware already found a hardware defect

@@ -1161,6 +1161,40 @@ Recorded here rather than as a numbered defect because it was caught while writi
 any code depended on it. The test `test_display.c` now asserts the address is *not* bit-reversed, as
 a tripwire for anyone who later pastes in the Sharp version.
 
+### BT817Q EVE protocol and panel timing — VERIFIED (BT81X datasheet obtained)
+
+§5B closed the Riverdi module's *power* architecture but not how to drive it. Both halves are now
+read: the **BT81X datasheet BRT_000220 v1.0** was downloaded for the SPI protocol and register map,
+and the **Riverdi DS Rev 1.7** supplied the panel timing values.
+
+| Fact | Value | Source |
+|---|---|---|
+| SPI prefixes | **0b00 read · 0b10 write · 0b01 host command** · 0b11 undefined | §5 |
+| Address width | 22 bits, MSB first | §4.1.2 |
+| Read vs write | **A read has a dummy byte after the address; a write does not** | §4.1.3 / §4.1.4 |
+| Host command | 3 bytes: `[01\|cmd5:0]`, parameter, **0x00 fixed** | §4.1.5 |
+| Memory map | RAM_G 0x000000 · ROM 0x200000 · RAM_DL 0x300000 · RAM_REG 0x302000 · RAM_CMD 0x308000 (4 kB) | §5 |
+| `REG_ID` | 0x302000, always reads **0x7C** | register table |
+| `ACTIVE` command | 0x00 | Table 4-5 |
+| Panel timing | HSIZE 800 · VSIZE 480 · HCYCLE 816 · HOFFSET 8 · HSYNC0 0 · HSYNC1 4 · VCYCLE 496 · VOFFSET 8 · VSYNC0 0 · VSYNC1 4 · PCLK 1 · SWIZZLE 0 · PCLK_POL 1 · CSPREAD 0 · DITHER 0 | Riverdi DS, "REGISTER VALUES" |
+
+**A guessed register address was caught here.** A first draft of `display_dash.c` placed `REG_HSIZE`
+at `RAM_REG + 0x2C` by inferring even spacing from the base. The real address is `+0x34`; `+0x2C` is
+**`REG_HCYCLE`**. Writing 800 into HCYCLE and 480 into HOFFSET would have produced a display that
+lights up and shows a torn image — a symptom that reads as a faulty panel. **The register table has
+gaps and cannot be walked arithmetically.** All seventeen addresses are now read individually and
+asserted in `test_display_dash.c`.
+
+**One item stays [OPEN], and it is the EVE3/EVE4 boundary.** The datasheet obtained covers
+**BT815/6 (EVE3)**; the module carries a **BT817Q (EVE4)**. The SPI protocol, memory map and register
+addresses are common to both. `REG_PCLK` is not: EVE3 defines it as a straight divisor —
+*"PCLK frequency = System Clock frequency / REG_PCLK"* — under which Riverdi's `REG_PCLK = 1` would
+run the panel at the full system clock. On EVE4 that value selects the separate `REG_PCLK_FREQ`
+register instead. The arithmetic supports the EVE4 reading: 816 × 496 = 404,736 pixel clocks per
+frame, so 60 Hz needs **24.3 MHz**, not 72 MHz. Confirm `REG_PCLK_FREQ` against the BT817/818
+datasheet or Riverdi's published init sequence before bring-up. Failure mode is loud — no image or a
+badly wrong refresh rate — so it is safe to discover on the bench.
+
 ### Recorded, not counted — one suspicion needing hardware
 
 `LED_DATA_3V3` (PA6) has no pull-down, and the 74AHCT1G125 buffer has `/OE` hard-tied to GND, so the
