@@ -208,12 +208,17 @@ its receiver uses, and the servo BEC stars to power ground. Do not "tidy" the se
   5 V would burn 0.5 × 1.7 = **0.85 W in a SOT-25**, which is why the dash keeps a switcher here while
   the wheel (≈100 mA, 0.17 W) uses the AP2112K LDO. **The two boards deliberately differ on this one
   part** — do not "harmonise" them.
-- **5 V total ≈ 0.6 A direct + 0.37 A reflected from the 3.3 V LDO ≈ 1.0 A** → LMR36015 (1.5 A) ✅
-- **12 V input ≈ (1.65 W + 3.0 W)/0.85/12 V ≈ 0.46 A** → 2 A polyfuse ✅
+- **5 V total ≈ 0.56 A direct + 0.37 A reflected from the 3.3 V *buck* ≈ 0.93 A** → LMR36015 (1.5 A) ✅
+  (0.353 backlight + 0.20 sensor excitation + 0.01 servo buffers = 0.563 A direct. The reflected term
+  is a **buck**, not an LDO, so it is power-conserving, not current-conserving:
+  0.5 A × 3.3 V / 5 V / 0.9 = 0.37 A. Through an LDO it would have been the full 0.5 A.)
+- **12 V input ≈ 4.65 W / 0.85 / 12 V ≈ 0.46 A** → 2 A polyfuse ✅ (4.3× margin)
 
-> Note the LDO dissipation: 0.5 A × (5 − 3.3) V = **0.85 W** in a SOT-25. That is a lot for that
-> package. At the 98 mA typical case it is 0.17 W and fine. **This is the one number on the dash worth
-> re-checking against your real display current before capture** — flagged above as [OPEN].
+> **The 0.85 W LDO-dissipation worry does not apply here** and earlier revisions of this section left
+> text implying it did. The dash's 3.3 V rail is the **AP63203 buck**; an LDO at 0.5 A would have
+> burned 0.5 × 1.7 = 0.85 W in a small package, which is *why* this board uses a switcher while the
+> wheel (≈100 mA, 0.17 W) uses the AP2112K LDO. **The two boards deliberately differ on this one
+> part — do not "harmonise" them.** Closed, not open.
 
 ---
 

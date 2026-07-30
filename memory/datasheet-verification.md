@@ -18,7 +18,7 @@
 | Haltech CAN broadcast protocol | VERIFIED | Read in full; §2.3 table transcribed from it |
 | Blink PKP2600SI CANopen | VERIFIED | Read in full; keypad frames transcribed from it |
 | WS2812B-2020 | **UNVERIFIED** | Datasheet is image-only, not text-extractable. See §4 |
-| AP63205 / AP63203 | **VERIFIED** | **CRITICAL defect — 35 V abs max cannot face a vehicle battery.** See §5 |
+| AP63205 / AP63203 | **VERIFIED** | **CRITICAL defect — 35 V abs max cannot face a vehicle battery.** See §5. AP63203 datasheet fully read in Step 2: 35 V confirmed, L2 = 4.7 µH closed, **missing bootstrap capacitor found** — see §9 defects 8.8/8.8b |
 | SMBJ33A vs buck abs-max | **VERIFIED** | **CRITICAL — TVS clamps 18 V above what the wheel buck survives.** See §5 |
 | LMR33630 | **PARTIAL** | **REJECTED** on abs-max grounds (§5). Step 2 found it still specified as live in the dash capture instructions — see §9 defect 8.4 |
 | **AMS1117-3.3** | **VERIFIED** | **Defect — datasheet requires a tantalum output cap; BOM specifies ceramic.** See §5C |
@@ -801,7 +801,7 @@ than appearing as a decision.
 
 ---
 
-## 9. Step 2 — second full design pass, **six further defects**
+## 9. Step 2 — second full design pass, **nine further defects**
 
 > The Step 2 pass deliberately used *different activities* rather than re-reading: a scripted
 > cross-document sweep, a signal-chain trace asking "what does the other end of this net do at
@@ -963,6 +963,76 @@ while the 150 kΩ upper leg limits diode current to (38.9 − 3.9)/150 kΩ = **0
 BAV199. BAV199 rather than a Schottky for the same reason as the DAQ front end — leakage into a
 high-impedance node *is* signal error (defect 5.2). This makes the wheel consistent with the dash,
 where the equivalent clamp was already declared load-bearing (defect 1.7).
+
+### Defect 8.8 — the dash 3.3 V buck had no bootstrap capacitor (MAJOR)
+
+Found by the power-tree walk (lens 3), which re-derives each rail instead of re-reading it. Walking
+`+5V` → `U2` (AP63203) → `+3V3` meant listing what `U2` needs to switch, and the bootstrap capacitor
+was not in the BOM.
+
+AP63203 datasheet **Table 2** (recommended components, 3.3 V output) lists four parts: `L` 3.9 µH,
+`C1` 10 µF, `C2` 2 × 22 µF, **`C3` 100 nF — the BST-to-SW bootstrap capacitor**. The dash BOM had the
+inductor and both capacitor banks and **no C3**. Without it the high-side FET cannot be driven and the
+3.3 V rail never comes up — the MCU, the display logic and the whole analog front end are on that rail.
+
+Identical failure mode to defect 8.5 on the other converter, and identical cause: the support parts a
+switcher needs are easy to see when you ask "what does this chip require?" and invisible when you read
+down a BOM. Added as `C_BST2`.
+
+### 8.8b — AP63203 now VERIFIED, and the open L2 item is closed
+
+The datasheet had never been read (`bom-FSAE-DASH-revB.csv` literally said *"CONFIRM against AP63203
+datasheet"*). Read now:
+
+| Parameter | Datasheet | Design | Verdict |
+|---|---|---|---|
+| VIN absolute maximum | **35 V DC** (40 V for 400 ms) | Fed from the regulated `+5V`, **not** `+12V_P` | ✅ — and this is exactly why the re-source was mandatory. On the raw rail the SMBJ33A's 53.3 V clamp would destroy it, the same mechanism as defect 5.1 |
+| Switching frequency | **1.1 MHz** | — | — |
+| Inductor range | "approximately 2.2 µH to 10 µH", DCR < 100 mΩ | `L2` = **4.7 µH** | ✅ in range |
+| Table 2 tabulated L @ 3.3 V | 3.9 µH | 4.7 µH | ✅ acceptable — see derivation |
+| C1 input | 10 µF | 2 × 10 µF | ✅ |
+| C2 output | 2 × 22 µF | 2 × 22 µF | ✅ exact |
+| Output setpoint | Tables 2/3 list **no R1/R2** — the AP63203 is **fixed 3.3 V** | no external FB divider drawn | ✅ correct, and *not* an omission like 8.5 |
+
+**L2 derivation at our actual operating point** (Eq. 7, `L = V_OUT(V_IN − V_OUT) / (V_IN · ΔI_L · f_SW)`).
+The tabulated 3.9 µH assumes a higher input voltage; ours is 5 V:
+
+- For the datasheet's 30–50 % ripple target on a 2 A part (ΔI_L = 0.8 A): L = 3.3 × 1.7 / (5 × 0.8 × 1.1 MHz) = **1.28 µH**
+- At the fitted **4.7 µH**: ΔI_L = 3.3 × 1.7 / (5 × 4.7 µH × 1.1 MHz) = **0.217 A**
+- I_peak = 0.5 + 0.217/2 = **0.61 A** against an `I_sat ≥ 3 A` specification
+
+So 4.7 µH is comfortably inside the recommended range and gives *less* ripple than the target. That is
+deliberate rather than sloppy: this rail runs at 0.5 A, a quarter of the part's capability, and the
+datasheet says *"use a larger inductance for improved efficiency under light load conditions."*
+**Open item closed — keep 4.7 µH.**
+
+### Defect 8.9 — the dash power budget described a converter the board does not have (MINOR)
+
+`dash-schematic-complete.md` §7 said *"0.37 A reflected from the 3.3 V **LDO**"* and carried a note —
+*"the LDO dissipation: 0.5 A × (5 − 3.3) V = 0.85 W in a SOT-25 … the one number on the dash worth
+re-checking"* — three lines below a bullet correctly stating the rail is *"supplied by the AP63203
+buck, **not** an LDO"*, and while §9 already recorded the concern as **closed**. The same section
+asserted and denied the same fact.
+
+No board consequence: the **0.37 A figure is right for a buck** (0.5 A × 3.3/5 / 0.9), and an LDO would
+have reflected the full 0.5 A. But a reader chasing a flagged 0.85 W thermal problem would be chasing
+a rejected architecture. Rewritten with the derivation shown and the comparison explicitly labelled as
+the rejected alternative.
+
+**Re-derived power tree, both boards (lens 3):**
+
+| Rail | Source | Worst-case load | Rating | Margin |
+|---|---|---|---|---|
+| Dash `+3V3` | AP63203 buck from `+5V` | 0.098 A display logic (0.384 abs max) + 0.10 A MCU/CAN/analog → **0.5 A** worst case | 2 A | 4× |
+| Dash `+5V` | LMR36015 from `+12V_P` | 0.353 backlight + 0.20 sensor excitation + 0.01 servo buffers = 0.563 A direct, **+ 0.37 A** reflected = **0.93 A** | 1.5 A | 1.6× |
+| Dash `+12V_P` | J1 via polyfuse | 4.65 W / 0.85 / 12 V = **0.46 A** | 2 A hold | 4.3× |
+| Wheel `+3V3` | AP2112K LDO from `+5V` | ≈0.10 A → 0.17 W dissipation | 600 mA | 6× |
+| Wheel `+5V` | LMR36015 from `+12V_P` | LEDs capped at **450 mA** in firmware + MCU/CAN | 1.5 A | — |
+
+The wheel's 5 V margin is not a passive property — it is **enforced by the single LED current-cap
+function** (`CAR 450 mA`, `SIM 350 mA`). That cap is a power-tree component, and any pattern code that
+bypasses it invalidates this row. This is why rule "all writes through one function" is a rigor rule
+and not a style preference.
 
 ### Recorded, not counted — one suspicion needing hardware
 

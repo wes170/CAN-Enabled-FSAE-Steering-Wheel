@@ -16,9 +16,10 @@ R_FBT,1,Buck feedback divider top,100k 1%,0402,spec,Commodity,Stock,"Was missing
 R_FBB,1,Buck feedback divider bottom,24.9k 1%,0402,spec,Commodity,Stock,"Was missing entirely. 100k/24.9k = 5.0V"
 C_FF,1,Buck feed-forward capacitor,20pF C0G,0402,spec,Commodity,Stock,"Across R_FBT. TI tabulated value for the 100k/24.9k pair specifically"
 U2,1,Synchronous buck **5V**->3.3V,3.3V / 2A / 3.8-32Vin (35V abs max),TSOT-26,AP63203WU-7,Active,Stock,"*** RE-SOURCED FROM +5V not +12V_P (35V abs max must never face the battery). Real 3.3V load is only ~0.5A (MCU + module VDD 98mA typ) -- the 1.2A backlight is NOT on this rail. 2A part is now heavily oversized but harmless."
-L2,1,Buck inductor,4.7uH / Isat >=3A,shielded,spec — select at capture,Commodity,Stock,CONFIRM against AP63203 datasheet
-C6;C7,2,3V3 buck input cap,10uF 50V X7R,1206,spec,Commodity,Stock,
-C8;C9,2,3V3 buck output cap,22uF 16V X7R,0805,spec,Commodity,Stock,
+L2,1,Buck inductor,4.7uH / Isat >=3A,shielded,spec,Commodity,Stock,"CONFIRMED against the AP63203 datasheet. Table 2 tabulates 3.9uH for 3.3V out; Eq.7 at OUR operating point (5V in not 12V, fSW 1.1MHz) gives 1.28uH for the datasheet's 30-50% ripple target, and the text recommends 2.2-10uH generally. 4.7uH sits in range and gives only 0.217A ripple at our 0.5A load -- deliberate, since the datasheet says use a larger inductance for light-load efficiency and this rail runs at a quarter of the part's capability. Ipeak = 0.61A vs >=3A Isat"
+C_BST2,1,AP63203 bootstrap capacitor,100nF 16V X7R,0402,spec,Commodity,Stock,"*** WAS MISSING (defect 8.8): AP63203 datasheet Table 2 column C3, BST to SW. Without it the high-side FET cannot be driven and the 3.3V rail never comes up. Found by walking the power tree, not by reading the BOM"
+C6;C7,2,3V3 buck input cap,10uF 50V X7R,1206,spec,Commodity,Stock,"Datasheet Table 2 C1 = 10uF; 2x here. Fed from +5V so 50V rating is spare margin"
+C8;C9,2,3V3 buck output cap,22uF 16V X7R,0805,spec,Commodity,Stock,"Datasheet Table 2 C2 = 2 x 22uF -- matches exactly"
 FB1,1,Ferrite bead for VDDA,600 ohm @ 100MHz,0603,spec,Commodity,Stock,
 C10;C11,2,VDDA decoupling,1uF + 100nF,0603,spec,Commodity,Stock,
 F2,1,Sensor supply fuse,200mA hold,0805,spec,Commodity,Stock,Protects +5V_SENS at J2

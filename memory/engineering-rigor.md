@@ -53,7 +53,7 @@
 | **G3 — Paper build** | 1:1 print taped to the real wheel/panel; hands on it; encoder/button reach test with gloves |
 | **G4 — Netlist cross-check** | Independent re-derivation of J1/J2 pinouts from the schematic vs. §0 tables vs. harness drawing — **including which ground each signal references** (see L13) |
 | **G5 — Peer sign-off** | A second person reviews G1–G4 evidence; their name goes in the log |
-| **G6 — Pre-order** | BOM availability **and lifecycle** re-checked same-day; variants' fitted lists diffed; gerbers visually inspected in a third-party viewer (not Altium); **Q1 source/drain confirmed against the DMP3056L pinout on the drawn schematic** (defect 5.5) |
+| **G6 — Pre-order** | BOM availability **and lifecycle** re-checked same-day; variants' fitted lists diffed; gerbers visually inspected in a third-party viewer (not Altium); **Q1 source/drain confirmed against the DMP3056L pinout on the drawn schematic** (defect 5.5); **`scripts/check-consistency.py` passes**; **no BOM line still says "confirm", "TBD" or "select at capture"** — placeholder text blocks the gate (L35, which is how defect 8.8 hid) |
 
 ## 3. Design-for-safety specifics of this project (do not lose these)
 
@@ -207,7 +207,7 @@
   60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
   covers both boards. **Verification is not only a hunt for defects — unverified numbers are
   padded numbers, and padding costs parts.**
-- **L19 (2026-07, updated):** **Twenty-two defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and seven more in the Step 2 design pass (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+- **L19 (2026-07, updated):** **Twenty-four defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and nine more in the Step 2 design pass (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
   were both **interactions between two correct-looking choices**, not errors in either one alone.
   PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
   combination. **Review pairs, not parts:** for every component, ask what else touches its net and
@@ -314,6 +314,31 @@
   highest-priority place to update, not the lowest** — and say explicitly what NOT to fit, since the
   stale version may already be in someone's head.
 
+
+- **L33 (2026-07, Step 2 lens 3):** **Walk the power tree forwards; do not read the BOM.** The dash
+  3.3 V buck had no bootstrap capacitor (defect 8.8) — the rail would never have come up, taking the
+  MCU, the display and the whole analog front end with it. Reading down the BOM, the entry is simply
+  not there, and absence is invisible. Walking `+5V → U2 → +3V3` forces the question *"what does U2
+  need in order to switch?"*, and the answer comes from the datasheet's recommended-components table,
+  where the missing part is a labelled column. **For every active device, enumerate its required
+  support parts from its own datasheet table and tick them off against the BOM one at a time.** Two
+  converters on two boards had this same class of omission (8.5, 8.8) and every prior review passed
+  both.
+
+- **L34 (2026-07, Step 2 lens 3):** **A document that states and denies the same fact is worse than
+  one that is simply wrong** — the reader believes whichever half they hit first. The dash power
+  budget called the 3.3 V rail a buck in one bullet and an LDO two lines later, and flagged a 0.85 W
+  thermal problem that a *different* section had already recorded as closed (defect 8.9). Nothing was
+  unsafe; someone's afternoon was. **When an architecture changes, the arithmetic that justified the
+  old one has to change with it or be explicitly labelled as the rejected alternative** — keeping the
+  comparison is genuinely useful, but only if it says which side is real.
+
+- **L35 (2026-07, Step 2):** **A "confirm this later" note in a shipping document is an unexploded
+  defect, not a to-do.** `L2` sat in the dash BOM reading *"CONFIRM against AP63203 datasheet"* across
+  every review. Reading it took ten minutes and produced three results at once: the value was fine,
+  an open question closed, and **a missing required component surfaced**. The note had been treated as
+  a decoration for so long it stopped being read as a request. **Placeholder text must block a gate —
+  G6 fails if any BOM line still contains "confirm", "TBD" or "select at capture" without an owner.**
 
 ## 5A. Planned future work (do not lose track of these)
 

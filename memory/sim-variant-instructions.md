@@ -21,9 +21,9 @@ is needed to keep both use cases (a dual 5V-or-12V input pin would have required
 | Difference | Base-schematic provision | CAR variant | SIM variant |
 |---|---|---|---|
 | Power from USB VBUS | `R_VBUS` 0 Ω link after BAT60A Schottky OR-ing VBUS into the `+5V` rail **downstream of the buck** | **DNP** (car power never backfeeds a PC; port is data/DFU only) | **Fitted** — board runs from USB |
-| 12V input stage (Rev B) | polyfuse, P-FET, SMBJ33A, AP63205 buck | Fitted | **DNP** — no 12V on a desk; USB feeds the 5V rail directly. This is a *bonus* of the 12V change: the sim build gets simpler and cheaper, not harder |
+| 12V input stage (Rev B) | polyfuse, P-FET, SMBJ33A, **LMR36015** buck | Fitted | **DNP** — no 12V on a desk; USB feeds the 5V rail directly. This is a *bonus* of the 12V change: the sim build gets simpler and cheaper, not harder |
 | CAN unused | TJA1051 + PESD2CAN + termination | Fitted | **DNP** (saves cost; FDCAN pins idle) |
-| Paddles read by MCU | 100 k sense taps `PADDLE_*_SNS` always routed | MCU passively observes ECU-pulled lines | MCU enables internal pull-ups; paddle switches short to GND through the same J1 pins — **wire the paddle switches to J1 pins 4/5 and GND pin 6 exactly as in the car** |
+| Paddles read by MCU | 150 k/39 k sense dividers + BAV199 clamps, `PADDLE_*_SNS` always routed | MCU passively observes ECU-pulled lines | MCU enables internal pull-ups; paddle switches short to GND through the same J1 pins — **wire the paddle switches to J1 pins 4/5 and GND pin 6 exactly as in the car** |
 | Paddle TVS | SMAJ24CA | Fitted | Fitted (harmless) |
 | USB port protection | USBLC6-2SC6 on D+/D−, CC pull-downs | Fitted | Fitted — in SIM this is the *only* input protection left, and it now guards a PC's USB port, so never DNP it |
 
@@ -39,8 +39,12 @@ footprint `R_CC_SNS` provided) to detect a 1.5 A/3 A source and lift the cap.
 2. Add variant `SIM` (base design = car build; also add explicit variant `CAR` if you want both labeled).
 3. For `SIM`, set **Not Fitted**: `U_CAN` (TJA1051), `D_CANTVS` (PESD2CAN), `R_T1`, `R_T2`, `C_T1`
    (already DNP in base), **plus the whole 12V input stage** (input polyfuse, reverse P-FET + its gate
-   parts, SMBJ33A, AP63205 buck, its inductor and in/out caps); and set **Fitted**: `R_VBUS`.
-   Keep the AMS1117-3.3 fitted in both — it regulates from the 5V rail regardless of where 5V came from.
+   parts, SMBJ33A, the **LMR36015** buck `U1` and everything that serves only it — `L1`, `C1`–`C4`,
+   `C_O3`, `C_BOOT`, `C_VCC`, `R_FBT`, `R_FBB`, `C_FF`); and set **Fitted**: `R_VBUS`.
+   Keep the **AP2112K-3.3** LDO `U2` fitted in both — it regulates from the 5 V rail regardless of
+   where that 5 V came from. (***Not* the AMS1117**, which needs a tantalum output capacitor and was
+   rejected as defect 5.4. ***Not* the AP63205** for `U1`, whose 35 V absolute maximum cannot face a
+   vehicle battery — defect 5.1.)
 4. For `CAR`, set **Not Fitted**: `R_VBUS`.
 5. Title block: place a special string `.VariantName` on silk/assembly drawing so built boards are identifiable.
 6. Outputs: in the OutJob, duplicate the BOM + pick-and-place outputs and set each one's **Variant**

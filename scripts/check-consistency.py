@@ -139,9 +139,13 @@ def check_no_rejected_parts_as_live_spec():
     a live instruction. Scope is limited to the files someone BUILDS from —
     verification and selection records are comparative by nature (defect 8.4)."""
     REJECTED = ["AP63205", "AMS1117", "BAT54S", "LMR33630"]
+    # Anything someone captures, assembles or orders from. sim-variant-instructions.md
+    # belongs here and was originally missed -- it carries live "fit this / do not
+    # fit that" steps and, unlike the two Altium files, no superseded banner.
     BUILD_FILES = [k for k in DOCS
                    if k.endswith("-altium-instructions.md")
                    or k.endswith("-schematic-complete.md")
+                   or k.endswith("sim-variant-instructions.md")
                    or k.endswith(".csv")]
     # A rejected part may be NAMED as long as the line makes clear it is not the
     # choice. These verbs are what "explaining why we didn't use it" looks like.
@@ -165,9 +169,13 @@ def check_stale_values():
         ("LMR33630ADDAR", "rejected buck (defect 5.1)"),
         ("nBOOT_SEL", "bit name does not exist on STM32G4 (defect 1.6)"),
     ]
+    # Anything someone captures, assembles or orders from. sim-variant-instructions.md
+    # belongs here and was originally missed -- it carries live "fit this / do not
+    # fit that" steps and, unlike the two Altium files, no superseded banner.
     BUILD_FILES = [k for k in DOCS
                    if k.endswith("-altium-instructions.md")
                    or k.endswith("-schematic-complete.md")
+                   or k.endswith("sim-variant-instructions.md")
                    or k.endswith(".csv") or k.endswith(".h")]
     for token, why in STALE:
         for f in BUILD_FILES:
