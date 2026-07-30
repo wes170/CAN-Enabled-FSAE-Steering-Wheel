@@ -50,7 +50,8 @@ memory. What does not exist yet is everything that needs hardware to test agains
 | `led.c` | Written and host-tested (WS2812 DMA + the global current cap) |
 | `servo.c` | Written and host-tested (all four ARB safety rules) |
 | `daq.c` | Written and host-tested (8-channel scan, conversions, validity) |
-| Display drivers (JDI wheel, BT817 dash) | Not written |
+| `display_wheel.c` | Written and host-tested (JDI protocol, EXTCOMIN watchdog) |
+| `display_dash.c` (BT817 EVE) | Not written |
 | USB HID (sim variant) | Not written |
 
 ## Writing the firmware already found a hardware defect

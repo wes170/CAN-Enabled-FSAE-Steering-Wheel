@@ -1128,6 +1128,39 @@ It is affordable, computed from figures that *are* in DS12288:
 Trading 1 % of a timer for an open datasheet question is a good trade. The previous value (92.5
 cycles) was written from memory and marked unverified — a liability that does not expire on its own.
 
+### JDI LPM013M126A serial protocol — VERIFIED (was never read)
+
+§6B closed the *electrical* selection of the colour panel but not its **wire protocol**, which was
+still unread when the driver was written. The timing charts are images and did not survive text
+extraction, so the pages were rendered and read directly. Everything below is now from the spec
+(Ver.01 §6.1 single-line update, §6.8 all clear, §4.3 power sequence):
+
+| Fact | Value |
+|---|---|
+| Frame structure | `M0 M1 M2 M3 M4 M5` (6 clk) · `AG9…AG0` (10 clk) · pixel data · 16 clk dummy |
+| Bit order | **MSB first throughout**, including the address |
+| Address width | **10 bits**, not 8 |
+| Line numbering | **one-based**, "1 to 176" |
+| Mode bits, single-line 3-bit update | M0 = H, M2 = L, M3 = L, M4 = L; M1 and M5 don't care |
+| Mode bits, all clear (§6.8) | M0 = **L**, M2 = **H** |
+| Pixel order | R-G-B within a pixel, pixel 1 first, 3 bits each |
+| Line size | 176 × 3 = 528 bits = **exactly 66 bytes**, no padding |
+| Multi-line mode | 6 clocks between gate lines, 16 after the last |
+| Power-on | T2 ≥ 1 ms memory init · T3 ≥ 30 µs latch release · T4 ≥ 30 µs COM init |
+| Supply ordering | "VDD and VDDA should rise simultaneously **or VDD should rise first**" — satisfied because both tie to `+3V3`; a separate filtered VDDA rail would break it |
+
+**The trap this avoided.** The obvious way to write this driver is to reuse a Sharp memory-LCD
+driver — they are everywhere, the panel is pin-compatible, and §6B already notes the two parts are
+pin-for-pin identical. But the Sharp part sends an **8-bit line address, bit-reversed (LSB first)**.
+This panel sends a **10-bit address MSB-first**. A driver carrying that assumption **works** — the
+panel accepts every frame and displays cleanly — it simply writes to the wrong lines. Line 1 becomes
+line 128. That presents as a UI layout problem, not a bus problem, and the pin-compatibility of the
+two parts actively encourages the wrong guess.
+
+Recorded here rather than as a numbered defect because it was caught while writing the driver, before
+any code depended on it. The test `test_display.c` now asserts the address is *not* bit-reversed, as
+a tripwire for anyone who later pastes in the Sharp version.
+
 ### Recorded, not counted — one suspicion needing hardware
 
 `LED_DATA_3V3` (PA6) has no pull-down, and the 74AHCT1G125 buffer has `/OE` hard-tied to GND, so the

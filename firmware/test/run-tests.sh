@@ -53,4 +53,9 @@ gcc $BASE -DBOARD_DASH test/test_daq.c src/daq.c -o "$OUT/t_daq"
 "$OUT/t_daq"
 
 echo
+echo "== display tests (wheel panel) =="
+gcc $BASE -DBOARD_WHEEL test/test_display.c src/display_wheel.c -o "$OUT/t_disp"
+"$OUT/t_disp"
+
+echo
 echo "All host tests passed."
