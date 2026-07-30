@@ -43,4 +43,9 @@ gcc $BASE -DBOARD_WHEEL test/test_input_led.c src/input.c src/led.c -o "$OUT/t_i
 "$OUT/t_io"
 
 echo
+echo "== servo tests (dash personality) =="
+gcc $BASE -DBOARD_DASH test/test_servo.c src/servo.c -o "$OUT/t_servo"
+"$OUT/t_servo"
+
+echo
 echo "All host tests passed."

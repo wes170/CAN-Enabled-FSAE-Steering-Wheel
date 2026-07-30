@@ -373,6 +373,24 @@
   enumerate the instances explicitly and tick them off** — "fixed the buck" is not the same as "fixed
   both bucks on both boards and the script that guards them".
 
+- **L39 (2026-07, writing servo.c):** **A rate limit expressed in "per second" and applied at a
+  per-millisecond tick is an integer-truncation trap.** 500 µs/s at a 1 ms tick is 0.5 µs, which
+  truncates to **zero**, and the servo never moves at all — no error, no alarm, no symptom except an
+  ARB that does nothing. I wrote a comment in the header warning about exactly this trap and then
+  implemented the trap directly underneath it, which is worth recording on its own: **knowing about a
+  failure mode is not the same as having avoided it, and only the test told the difference.** The fix
+  is a fractional accumulator carried between ticks, plus a rule that it resets when parked at the
+  target so no free jump is banked.
+
+- **L40 (2026-07, writing servo.c tests):** **Three of the four "failures" in the first servo test run
+  were the test's fault, and each one was the firmware being right.** The tests commanded a position
+  once and then ran the task for four seconds, so rule 1 correctly declared a CAN loss; and they never
+  fed feedback, so rule 4 correctly raised a divergence alarm. **Safety rules that fire in your own
+  tests are a good sign, but only if you read the failure before "fixing" it.** The tempting response
+  — loosening a timeout so the test goes green — would have disabled a rule that was working. Write the
+  test to keep the system in the state you mean to test, and treat an unexpected safety trip as
+  evidence before treating it as noise.
+
 ## 5A. Planned future work (do not lose track of these)
 
 | Item | Status | Where specified |

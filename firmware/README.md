@@ -49,7 +49,8 @@ memory. What does not exist yet is everything that needs hardware to test agains
 | `input.c` | Written and host-tested (integrating debounce with hysteresis) |
 | `led.c` | Written and host-tested (WS2812 DMA + the global current cap) |
 | Display drivers | Not written |
-| Dash EVE display, DAQ, servo task | Not written |
+| `servo.c` | Written and host-tested (all four ARB safety rules) |
+| Dash EVE display, DAQ | Not written |
 | USB HID (sim variant) | Not written |
 
 ## Writing the firmware already found a hardware defect
