@@ -391,6 +391,14 @@
   test to keep the system in the state you mean to test, and treat an unexpected safety trip as
   evidence before treating it as noise.
 
+- **L41 (2026-07, writing daq.c):** **When a datasheet value is unobtainable, ask whether the extreme
+  choice is affordable — it often closes the question outright.** The ADC sample-time minimum for a
+  5 kΩ source sat marked UNVERIFIED for weeks because it lives in a reference manual ST's server would
+  not serve (four attempts). Selecting the hardware's *longest* sample time costs 1% of the scan
+  budget and makes the lookup irrelevant: if the maximum is not enough, nothing is, and the fallback
+  buffer is required regardless. **An unverified number is a liability that never expires on its own;
+  a conservative extreme is a decision that closes.** Check the cost before assuming you have to wait.
+
 ## 5A. Planned future work (do not lose track of these)
 
 | Item | Status | Where specified |

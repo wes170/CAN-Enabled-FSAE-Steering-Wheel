@@ -48,4 +48,9 @@ gcc $BASE -DBOARD_DASH test/test_servo.c src/servo.c -o "$OUT/t_servo"
 "$OUT/t_servo"
 
 echo
+echo "== daq tests (dash personality) =="
+gcc $BASE -DBOARD_DASH test/test_daq.c src/daq.c -o "$OUT/t_daq"
+"$OUT/t_daq"
+
+echo
 echo "All host tests passed."

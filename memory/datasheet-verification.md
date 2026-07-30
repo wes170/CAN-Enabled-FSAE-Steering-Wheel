@@ -1103,6 +1103,31 @@ stock is not.
 - Stale counts and statuses in the build guide: "eleven defects" and A6 described as an open layout
   blocker after `PROJECT-LOG.md` had recorded it closed.
 
+### Closed by construction — the ADC sample-time question (was blocked on RM0440)
+
+`AIN_SAMPLE_CYCLES` had carried an `UNVERIFIED` marker since Step 1: the DAQ front end presents a
+5 kΩ Thévenin source, and the minimum sample time for that impedance lives in an RM0440 table that
+has never been readable — **ST's server has now failed four download attempts**, so this was not going
+to resolve by waiting.
+
+**Closed by choosing the extreme instead of looking up the value.** Use the longest sample time the
+hardware offers, `SMP = 111 = 640.5 cycles`, on every channel. If that is insufficient for 5 kΩ then
+no setting is and the DNP `TLV9004` buffer must be fitted — so the choice cannot be wrong in the
+dangerous direction, which is the property an unverified number does not have.
+
+It is affordable, computed from figures that *are* in DS12288:
+
+| Quantity | Value | Source |
+|---|---|---|
+| f_ADC max | **52 MHz** | Range 1, all ADCs, single-ended, VDDA ≥ 2.7 V |
+| Sampling rate | f_ADC / (t_s + resolution + 0.5) | DS12288 ADC characteristics |
+| One conversion | (640.5 + 12.5) / 52 MHz = **12.56 µs** | computed |
+| Full 8-channel scan | **100 µs** | × 8 |
+| Duty at a 100 Hz scan rate | **1.0 %** | computed, and asserted in `test_daq.c` |
+
+Trading 1 % of a timer for an open datasheet question is a good trade. The previous value (92.5
+cycles) was written from memory and marked unverified — a liability that does not expire on its own.
+
 ### Recorded, not counted — one suspicion needing hardware
 
 `LED_DATA_3V3` (PA6) has no pull-down, and the 74AHCT1G125 buffer has `/OE` hard-tied to GND, so the

@@ -246,11 +246,30 @@
 #define AIN_ARB_FB_FRONT 6u             /* index of AIN7 */
 #define AIN_ARB_FB_REAR  7u             /* index of AIN8 */
 
-/*  ADC sample time must respect the 5k Thevenin source impedance of the
- *  front end. Use a long sample time (>= 92.5 cycles) or the reading will
- *  not settle to 12-bit accuracy.  [UNVERIFIED — this figure came from
- *  memory, not the reference manual. Confirm in RM0440 before trusting it.] */
-#define AIN_SAMPLE_CYCLES 92u
+/*  ADC sample time. The front end presents a 5 kohm Thevenin source, and a
+ *  sample time too short for that impedance gives a reading that has not
+ *  settled -- an error that scales with source impedance and looks exactly
+ *  like a miscalibrated sensor.
+ *
+ *  RESOLVED BY CHOOSING THE EXTREME rather than by looking up the table.
+ *  The correct minimum lives in an RM0440 source-impedance table that has not
+ *  been readable (ST's server has failed four download attempts). Instead of
+ *  carrying an unverified number, use the LONGEST sample time the hardware
+ *  offers: SMP = 111 = 640.5 cycles. If that is not enough for 5 kohm then no
+ *  setting is, and the DNP TLV9004 buffer has to be fitted -- so this choice
+ *  cannot be wrong in the dangerous direction.
+ *
+ *  It costs nothing. DS12288 gives fADC(max) = 52 MHz (Range 1, all ADCs,
+ *  single-ended, VDDA >= 2.7 V) and fs = fADC / (t_s + resolution + 0.5), so
+ *  one channel is (640.5 + 12 + 0.5) / 52 MHz = 12.56 us and a full 8-channel
+ *  scan is 100 us. At a 100 Hz DAQ rate that is 1% of the time budget.
+ *
+ *  Trading 1% of a timer for an open datasheet question is a good trade; the
+ *  earlier value here (92.5 cycles) was written from memory and marked
+ *  UNVERIFIED, which is a liability that never expires on its own. */
+#define AIN_SMP_REGVAL     7u      /* SMP = 111 */
+#define AIN_SAMPLE_CYCLES  640u    /* 640.5, rounded down for arithmetic */
+#define ADC_MAX_CLOCK_HZ   52000000u
 
 /* ARB servo outputs — TIM4 CH1/CH2, so both share a timebase. */
 #define SERVO_TIM        TIM4

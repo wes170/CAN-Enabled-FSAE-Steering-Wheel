@@ -48,9 +48,9 @@ memory. What does not exist yet is everything that needs hardware to test agains
 | `encoder.c` | Written and host-tested (quadrature decode, detents, end-stops) |
 | `input.c` | Written and host-tested (integrating debounce with hysteresis) |
 | `led.c` | Written and host-tested (WS2812 DMA + the global current cap) |
-| Display drivers | Not written |
 | `servo.c` | Written and host-tested (all four ARB safety rules) |
-| Dash EVE display, DAQ | Not written |
+| `daq.c` | Written and host-tested (8-channel scan, conversions, validity) |
+| Display drivers (JDI wheel, BT817 dash) | Not written |
 | USB HID (sim variant) | Not written |
 
 ## Writing the firmware already found a hardware defect
@@ -89,7 +89,9 @@ Full write-up: `memory/datasheet-verification.md` defect 1.5.
    requirements with reasons written next to them in the headers. Read the reason before changing
    the value.
 4. **Uncertainty is marked in the code.** Where a figure came from memory rather than a datasheet it
-   says so inline — see `AIN_SAMPLE_CYCLES`. Do not quietly promote those to fact.
+   says so inline. Do not quietly promote those to fact — but do ask whether a conservative extreme
+   closes the question instead of waiting. `AIN_SAMPLE_CYCLES` was resolved that way (lesson L41), and
+   the two remaining markers are in `system_init.c`, both bench-verifiable and both loud on failure.
 
 ## Before any of this runs on hardware
 
