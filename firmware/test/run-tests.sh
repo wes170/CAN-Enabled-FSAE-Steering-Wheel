@@ -38,4 +38,9 @@ gcc $BASE -DBOARD_WHEEL test/test_encoder.c src/encoder.c -o "$OUT/t_enc"
 "$OUT/t_enc"
 
 echo
+echo "== input + led tests =="
+gcc $BASE -DBOARD_WHEEL test/test_input_led.c src/input.c src/led.c -o "$OUT/t_io"
+"$OUT/t_io"
+
+echo
 echo "All host tests passed."

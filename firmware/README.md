@@ -46,7 +46,9 @@ memory. What does not exist yet is everything that needs hardware to test agains
 | `system_init.c` | Written and host-tested (clock tree, UCPD release, boot guard) |
 | `haltech_can.c` | Written and host-tested (keypad, IO12, broadcast decode) |
 | `encoder.c` | Written and host-tested (quadrature decode, detents, end-stops) |
-| Debounce / LED / display drivers | Not written |
+| `input.c` | Written and host-tested (integrating debounce with hysteresis) |
+| `led.c` | Written and host-tested (WS2812 DMA + the global current cap) |
+| Display drivers | Not written |
 | Dash EVE display, DAQ, servo task | Not written |
 | USB HID (sim variant) | Not written |
 
