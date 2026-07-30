@@ -26,4 +26,9 @@ gcc $BASE -DBOARD_WHEEL test/test_system_init.c src/system_init.c -o "$OUT/t_sys
 "$OUT/t_sys"
 
 echo
+echo "== haltech_can tests =="
+gcc $BASE -DBOARD_WHEEL test/test_haltech_can.c src/haltech_can.c -o "$OUT/t_can"
+"$OUT/t_can"
+
+echo
 echo "All host tests passed."

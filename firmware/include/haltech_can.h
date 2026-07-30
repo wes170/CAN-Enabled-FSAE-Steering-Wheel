@@ -71,6 +71,10 @@ keypad_state_t keypad_state(void);
  *  the tuner's existing NSP LED configuration just works. */
 void keypad_on_led_frame(uint16_t can_id, const uint8_t *data, uint8_t len);
 
+/* Latest LED state the ECU asked for (keys 1-8 for red/blue, 1-4 for green).
+ * The LED driver reads this; keypad_on_led_frame() only stores it. */
+void keypad_get_leds(uint8_t *red, uint8_t *green, uint8_t *blue);
+
 /* ===========================================================================
  * 2. IO12 expander emulation — encoder positions as AVI voltages
  *
@@ -141,7 +145,16 @@ static inline float bc_lambda(uint16_t raw)           { return raw * 0.001f;    
 typedef struct {
     uint16_t raw;
     uint32_t last_rx_ms;
+    bool     seen;        /* false until the first frame carrying this channel */
 } bc_channel_t;
+
+/*  `seen` is not redundant with `last_rx_ms`. Without it, a channel that has
+ *  NEVER been received reads as last_rx_ms = 0, and at power-on now_ms is also
+ *  near 0 — so (now - last) < 500 ms and the channel reports FRESH. The dash
+ *  would then display 0 rpm, 0 kPa and −273 °C as though they were live
+ *  measurements during the first half second after boot, which is precisely
+ *  the failure the stale-data requirement exists to prevent. "Never arrived"
+ *  and "arrived, reading zero" must be distinguishable. */
 
 typedef struct {
     bc_channel_t rpm, map_kpa, tps;
@@ -157,6 +170,23 @@ typedef struct {
 bool bc_channel_is_stale(const bc_channel_t *ch, uint32_t now_ms);
 void haltech_decode(uint16_t can_id, const uint8_t *data, uint8_t len,
                     uint32_t now_ms, haltech_data_t *out);
+
+/* ===========================================================================
+ * 4. Transmit hook
+ *
+ * The protocol modules never touch FDCAN registers. They call this, and the
+ * board layer supplies it. That keeps every state machine in this file
+ * testable on a host with no hardware — which matters, because assumption A1
+ * (the keypad node ID) means the first bring-up attempt is expected to fail
+ * and the question will be "is my state machine wrong or is the ID wrong?".
+ * Being able to answer the first half at a desk narrows that considerably.
+ *
+ * Return false if the frame could not be queued; callers treat that as
+ * non-fatal and retry on the next tick.
+ * ========================================================================= */
+typedef bool (*can_tx_fn)(uint16_t can_id, const uint8_t *data, uint8_t len);
+
+void haltech_set_tx(can_tx_fn fn);
 
 /* Big-endian helper — the Haltech bus is big-endian throughout and the STM32
  * is little-endian, so every 16-bit field needs this. */

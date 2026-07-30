@@ -8,9 +8,29 @@ one toolchain, one CAN stack, one set of bugs to fix.
 firmware/
 ├── include/
 │   ├── board_config.h     pin map for both boards — the single source of truth
+│   ├── clock_config.h     PLL/CAN timing, with datasheet limits as static asserts
+│   ├── system_init.h
 │   └── haltech_can.h      keypad emulation, IO12 emulation, broadcast decode
-└── src/                   (to be written)
+├── src/
+│   ├── system_init.c      clock tree, UCPD dead-battery release, boot guard
+│   └── haltech_can.c      the three protocols, hardware-free
+└── test/
+    └── run-tests.sh       host tests — no board, no cross-compiler needed
 ```
+
+## Running the tests
+
+```sh
+./firmware/test/run-tests.sh
+```
+
+Compiles every source file for **both** `-DBOARD_WHEEL` and `-DBOARD_DASH` under
+`-Werror` (a change that only builds for one board breaks the other silently), then runs the logic
+that can be proven at a desk. Register writes compile out via `FIRMWARE_HOST_BUILD`.
+
+The protocol tests are the valuable ones, because every failure they check for is **silent on real
+hardware**: a keypad that transmits before NMT start is simply ignored, a byte-order slip produces
+plausible numbers, and a stale reading looks exactly like a live one.
 
 ## Status: foundation only
 
@@ -21,8 +41,10 @@ memory. What does not exist yet is everything that needs hardware to test agains
 | Piece | State |
 |---|---|
 | `board_config.h` | Complete, from the verified pin maps |
+| `clock_config.h` | Complete — PLL values checked against DS12288 Table 46 by static assertion |
 | `haltech_can.h` | Complete interface; frame layouts transcribed from primary sources |
-| CAN implementation (`.c`) | Not written |
+| `system_init.c` | Written and host-tested (clock tree, UCPD release, boot guard) |
+| `haltech_can.c` | Written and host-tested (keypad, IO12, broadcast decode) |
 | Encoder / debounce / LED / display drivers | Not written |
 | Dash EVE display, DAQ, servo task | Not written |
 | USB HID (sim variant) | Not written |
