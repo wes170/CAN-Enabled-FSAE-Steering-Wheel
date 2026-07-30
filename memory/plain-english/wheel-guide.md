@@ -141,6 +141,22 @@ range — everything downstream of it lives in a much gentler 5 V/3.3 V world.
 | `C_FF` | 20 pF, 0402 | across `R_FBT` (i.e. `+5V` → `NET_FB`) — a feed-forward capacitor that improves the converter's transient response. 20 pF is TI's tabulated value for this exact divider pair (100 kΩ / 24.9 kΩ) — not a value to re-derive or round. If you change `R_FBT` or `R_FBB`, go back to the datasheet table rather than keeping 20 pF. |
 | `U1.7` (FB) | — | `NET_FB`. **Never float or ground FB** — the feedback pin is how the chip senses its own output voltage to regulate it; grounding or floating it will send the output voltage to the wrong place (potentially destructively high) |
 
+**Five of these parts are not optional trim — TI's datasheet marks them required, and it's worth
+spelling out why, because a part that only exists as a note in a "comments" cell is exactly the kind
+of thing a distracted BOM pass drops:**
+
+| Part | Value | What it actually does |
+|---|---|---|
+| `C_BOOT` | 100 nF | Bootstrap capacitor between `BOOT` and `SW`. The high-side switch inside the chip needs a gate voltage *above* the input voltage to turn on — `C_BOOT` is the small charge reservoir that supplies that boosted voltage. Without it the converter cannot switch at all — not "inefficient," not "noisy," dead. |
+| `C_VCC` | 1 µF | Output capacitor for the chip's own small internal regulator, which powers its internal control circuitry. Don't connect anything else to this pin — it isn't a rail to draw current from, only a place for that internal regulator's own output. |
+| `R_FBT` / `R_FBB` | 100 kΩ / 24.9 kΩ | The feedback divider — this is how the chip is *told* what output voltage to produce. Without it, `FB` floats and there is no output setpoint at all. |
+| `C_FF` | 20 pF | Feed-forward capacitor across `R_FBT` that improves stability. This is TI's tabulated value for this exact resistor pair (100 kΩ / 24.9 kΩ) — if `R_FBT`/`R_FBB` ever change, go back to the datasheet table rather than keeping 20 pF. |
+
+The fifth required part is already in the `C1`/`C2` row above: the two 220 nF capacitors at the
+input. The datasheet says these "must" be fitted, one at each VIN/PGND pin pair — they're a
+high-frequency bypass for the chip's own internal control circuitry, a separate job from (and not a
+duplicate of) the bulk 4.7 µF capacitor that absorbs the larger switching current.
+
 These component values come from TI's own reference table (Table 10-1) for the 1 MHz switching
 frequency variant at 5 V output. **This is marked [OPEN — trivial] in the source:** confirm which
 switching-frequency variant you actually buy — if it turns out to be the 400 kHz variant instead of
@@ -305,6 +321,9 @@ bench with the bus disconnected and simply never start in the car.)
 | `J_SWD` | Tag-Connect **TC2030-CTX** footprint (just copper pads and 3 locating holes — no physical connector part to buy) | pin 1 `+3V3`, 2 `SWDIO` (PA13), 3 `NRST`, 4 `SWCLK` (PA14), 5 `GND`, 6 NC |
 | `J4` | JST-GH 3-pin, `SM03B-GHS-TB` | 1 `DBG_TX` (PA9), 2 `DBG_RX` (PA10), 3 `GND` |
 
+⚠ **`PA9`/`PA10` have a second job that bites the moment this connector is used — see §3.5, the UCPD
+dead-battery trap, before relying on the debug UART to diagnose anything.**
+
 ### 3.4 USB-C (for the simulator variant and DFU firmware updates)
 
 **What it does and why it exists.** The same board design can run in two contexts: bolted into the
@@ -330,6 +349,53 @@ is the point of the diode-OR arrangement (`D6` plus `R_VBUS`): when the sim vari
 USB with the buck converter unpopulated, USB's 5 V steps in to supply the board's `+5V` rail
 directly. Wiring USB power upstream of the buck instead would mean USB's 5 V has to fight or bypass
 a converter designed to take 12 V, which is not what it's for.
+
+### 3.5 The UCPD dead-battery trap — a firmware requirement hiding in the pin map
+
+**What it does and why it exists.** `PA9` and `PA10` do double duty on this chip. §3.3 already uses
+them as `DBG_TX`/`DBG_RX`, the debug UART — but they are also `UCPD1_DBCC1` and `UCPD1_DBCC2`, the
+"dead battery" sense inputs for USB Type-C Power Delivery. USB-C Power Delivery has a rule built into
+the spec: a device with a flat battery must still present a resistor on its CC pins, or a charger has
+no way to see it and offer power. ST wired that requirement directly into the silicon — whenever a
+DBCC pin reads HIGH, the chip switches a 5.1 kΩ pull-down resistor onto the matching CC pin, in
+hardware, on its own, **without the UCPD peripheral being enabled, configured, or used by firmware in
+any way.**
+
+**This board doesn't use USB Power Delivery at all. That doesn't help.** The pull-down is armed by
+*pin voltage*, not by software choosing to switch a peripheral on. `PA9` is the debug UART's transmit
+line, and an idle serial line sits HIGH. So the moment firmware switches on the debug UART, the chip
+arms a 5.1 kΩ pull-down on `PB6` — which, on this board, is `ENC3_A`, one half of encoder 3.
+
+`PB6`'s own conditioning cell (§5.1) already carries a 10 kΩ pull-up to `+3V3`. Put a 5.1 kΩ
+pull-down into that fight, and the idle voltage settles at 3.3 × 5.1/(10 + 5.1) = **1.11 V**. The pin
+needs to see at least 2.31 V (0.7 × `+3V3`) to register as a logic HIGH. It never gets there, so
+`ENC3_A` can never read high, and the timer decoding encoder 3 (TIM4, §9) stops counting.
+
+**The symptom is deliberately cruel.** Encoder 3 works perfectly in a normal build with the debug
+UART untouched. It breaks the instant you plug in a debug cable to find out why something else is
+wrong — it fails only while you are watching it, which is close to the worst possible way for a bug
+to behave.
+
+**The fix is two lines of firmware, and they must run before any pin is configured:**
+
+```c
+RCC->APB1ENR1 |= RCC_APB1ENR1_PWREN;
+PWR->CR3      |= PWR_CR3_UCPD1_DBDIS;   // release the dead-battery pull-downs on PB4/PB6
+```
+
+Treat this exactly the way §3.3 treats the `nSWBOOT0`/`nBOOT0` option bits: it's a provisioning
+setting, not a schematic connection, and it has to be right or the board misbehaves in a way that
+looks nothing like its actual cause.
+
+**There is no hardware fix.** Moving `ENC3_A` off `PB6` isn't an option — every timer pin pair on
+this package that can decode a quadrature encoder is already spoken for by ENC1–ENC6 (§9).
+Strengthening the pull-up to overpower the 5.1 kΩ pull-down doesn't work either: drop it to
+2.2 kΩ and the idle voltage lands at 3.3 × 5.1/(2.2 + 5.1) ≈ 2.31 V — dead on the logic-high
+threshold, with zero margin — and anything smaller than that breaks the pin's logic-LOW level
+instead, once the switch actually closes. The firmware bit is the only fix, and it has to run
+unconditionally, not only when a debugger happens to be attached.
+
+**Bring-up gate:** with a debug cable plugged in, confirm encoder 3 counts in both directions.
 
 ---
 
@@ -393,13 +459,40 @@ For each line (UP and DOWN):
 | Ref | Value | Connection |
 |---|---|---|
 | `D3` / `D4` | **SMAJ24CA**, a bidirectional TVS diode, SMA package | `PADDLE_UP` → `GND` / `PADDLE_DOWN` → `GND`, placed at the connector |
-| `R6` / `R7` | 100 kΩ, 1%, 0402 | `PADDLE_UP` → `PADDLE_UP_SNS` / `PADDLE_DOWN` → `PADDLE_DN_SNS` |
+| `R6` / `R7` | 150 kΩ, 1%, 0402 | `PADDLE_UP` → `PADDLE_UP_SNS` / `PADDLE_DOWN` → `PADDLE_DN_SNS` |
+| `R6b` / `R7b` | 39 kΩ, 1%, 0402 | `PADDLE_UP_SNS` → `GND` / `PADDLE_DN_SNS` → `GND` — the lower half of the divider. Without it, the pin sees the full paddle-line voltage instead of a safe fraction of it. |
 | `C14` / `C15` | 1 nF, 0402 | each `*_SNS` net → `GND`, at the MCU pin |
+| `D14` / `D15` | **BAV199**, a dual low-leakage silicon diode, SOT-23 package | anode → `PADDLE_UP_SNS` / `PADDLE_DN_SNS`, cathode → `+3V3` |
 
 `PADDLE_UP` and `PADDLE_DOWN` run as plain copper from `J1` pins 4 and 5 straight out to wherever
-they're going — nothing on this board switches or buffers them. The 100 kΩ resistors are
-observation-only taps: because the resistance is so high, at most about 50 µA can flow through them,
-which is far too little to influence or damage the ECU circuit on the other end.
+they're going — nothing on this board switches or buffers them. `R6`/`R7` and `R6b`/`R7b` together
+are a high-value observation divider, sized so the current they can ever draw stays far too small to
+influence or damage the ECU circuit on the other end.
+
+**Why D14 and D15 exist — the connector protection diode alone isn't enough.** `D3`/`D4` clamp a
+transient spike on the paddle lines before it reaches anything else, and they do that job correctly,
+clamping at 38.9 V. The problem is what happens *downstream* of that clamp: 38.9 V through the
+150 kΩ/39 kΩ divider still puts 38.9 × 39/189 = **8.03 V** on the MCU pin — and that pin is rated for
+a 4.0 V absolute maximum. The existing protection was letting through roughly double what the pin can
+survive.
+
+The chip can't rescue itself here either. These pins (the datasheet's `TT_a` class) have no internal
+protection diode routing excess voltage back to the 3.3 V rail — the datasheet states plainly that
+"positive current injection" (current flowing into the pin when its voltage rises above the chip's
+own supply, which a protection diode would normally shunt safely away) is "not possible" on them.
+That phrase reads as reassuring on a first pass; it actually means the mechanism that would have
+saved the pin during the TVS clamp event isn't there at all. The absence of a limit is the warning,
+not the all-clear.
+
+`D14`/`D15` supply the missing clamp directly at the pin: each one holds its sense net to about 3.9 V,
+comfortably under the 4.0 V limit, while the 150 kΩ upper leg of the divider limits the current
+through the diode to (38.9 − 3.9) / 150 kΩ = **0.23 mA** — nothing for a part rated for this.
+
+**Why BAV199 and not a Schottky diode.** On a high-impedance sensing node like this one, a diode's own
+leakage current doesn't stay contained — it flows into the same net you're trying to measure and
+becomes error in the reading. A Schottky diode leaks considerably more than a low-leakage silicon
+part like the BAV199, which is exactly the wrong trade on a node this high-impedance. This is the same
+reasoning already applied to the dash's analog inputs (see `datasheet-verification.md` defect 5.2).
 
 ---
 
@@ -457,6 +550,9 @@ The right-angle parts (ENC1–4) are for thumb-operated controls, where the whee
 roughly parallel to the main PCB and a thumb reaches in from the edge; the vertical parts (ENC5–6)
 are for faceplate-mounted rotary knobs a driver reaches with their fingers from the front. See
 `hardware-selections.md` §4.1–4.2 for the mechanical reasoning behind that split.
+
+**ENC3 carries an extra hazard the others don't.** Its `A` line shares a pin with a USB-C dead-battery
+sense function that can silently disable it — see §3.5, the UCPD dead-battery trap.
 
 ### 5.3 Buttons
 
@@ -627,7 +723,7 @@ is actually valid, not just plausible-looking.
 |---|---|---|
 | PC0 / PC1 | `ENC1_A` / `ENC1_B` | TIM1_CH1 / TIM1_CH2 |
 | PC6 / PC7 | `ENC2_A` / `ENC2_B` | TIM3_CH1 / TIM3_CH2 |
-| PB6 / PB7 | `ENC3_A` / `ENC3_B` | TIM4_CH1 / TIM4_CH2 |
+| PB6 / PB7 | `ENC3_A` / `ENC3_B` | TIM4_CH1 / TIM4_CH2. ⚠ **`PB6` is also `UCPD1_CC1`** — firmware must set `PWR_CR3.UCPD1_DBDIS`, or a 5.1 kΩ dead-battery pull-down kills this input. See §3.5 |
 | PA15 / PB3 | `ENC4_A` / `ENC4_B` | TIM2_CH1 / TIM2_CH2 |
 | **PB2 / PC2** | `ENC5_A` / `ENC5_B` | **TIM20_CH1 / TIM20_CH2** (TIM15 cannot decode encoders — defect 1.5) |
 | PA0 / PC12 | `ENC6_A` / `ENC6_B` | TIM5_CH1 / TIM5_CH2 |
@@ -635,15 +731,15 @@ is actually valid, not just plausible-looking.
 | PC13, PD2, PA3, PB10, PB11, PB12 | `BTN1`…`BTN6` | GPIO input |
 | PA6 | `LED_DATA_3V3` | TIM16_CH1 + DMA |
 | PA5 / PA7 / PA4 | `LCD_SCLK` / `LCD_SI` / `LCD_SCS` | SPI1_SCK / SPI1_MOSI / GPIO |
-| PC2 / PC3 | `LCD_DISP` / `LCD_EXTCOMIN` | GPIO (EXTCOMIN is a roughly 1 Hz software toggle) |
+| PB13 / PC3 | `LCD_DISP` / `LCD_EXTCOMIN` | GPIO (EXTCOMIN is a roughly 1 Hz software toggle) |
 | PB8 / PB9 | `CAN_RX` / `CAN_TX` | FDCAN1 — the only option once USB claims PA11/PA12 |
 | PA11 / PA12 | `USB_DM` / `USB_DP` | USB FS |
 | PA13 / PA14 | `SWDIO` / `SWCLK` | debug |
-| PA9 / PA10 | `DBG_TX` / `DBG_RX` | USART1 |
-| PA1 / PA2 | `V12_SENSE` / `V5_SENSE` | ADC1_IN3 / ADC1_IN4 |
-| PB0 / PB1 | `PADDLE_UP_SNS` / `PADDLE_DN_SNS` | GPIO input |
+| PA9 / PA10 | `DBG_TX` / `DBG_RX` | USART1. ⚠ **Also `UCPD1_DBCC1` / `UCPD1_DBCC2`** — a high level here arms the dead-battery pull-down on `PB6` (and `PB4`). See §3.5 |
+| PA1 / PA2 | `V12_SENSE` / `V5_SENSE` | **ADC12_IN2 / ADC1_IN3** |
+| PB0 / PB1 | `PADDLE_UP_SNS` / `PADDLE_DN_SNS` | **ADC1_IN15 / ADC1_IN12 — read as ADC, not GPIO** (§4.3) |
 | PF0 / PF1 | `OSC_IN` / `OSC_OUT` | HSE crystal — LQFP-64 pins 5 and 6, mandatory for reliable 1 Mbit/s CAN (§3.2 above) |
-| PA8, PB2, PB4, PB5, PB13 | spare | bring to test points if convenient |
+| PA8, PB4, PB5, **PB14, PB15** | spare — PB14/PB15 were freed when `ENC5` moved off TIM15 (defect 1.5) | bring to test points if convenient. ⚠ If you ever use **PB4**, note it is `UCPD1_CC2` and carries the same dead-battery pull-down described in §3.5 |
 
 **Every encoder pair uses channels 1 and 2 (CH1/CH2) of a single timer, and that's not a
 coincidence — it's a hard requirement.** The STM32's hardware "encoder mode," which does quadrature
@@ -653,6 +749,24 @@ without re-checking that the replacement pair is still CH1+CH2 of one timer — 
 encoder pairs were assigned to invalid pin pairs in an earlier draft for exactly this reason (see
 `datasheet-verification.md` §1, defect 1.1), and the failure mode is subtle: it configures without
 obvious error, but the encoder simply doesn't count correctly, or at all.
+
+**A pin's ADC channel number is a different question from which pin it is — and the rail monitors
+above got caught by exactly that gap.** The STM32G474's ADC channels are numbered independently of
+the GPIO numbers they land on. Per DS12288 Table 12: `PA0` is `ADC12_IN1`, `PA1` is `ADC12_IN2`,
+`PA2` is `ADC1_IN3`, and `PA3` is `ADC1_IN4` — the channel count is offset by one from the pin count,
+in both directions, so a quick "PA1 must be channel 1" check looks self-consistent and is wrong.
+Firmware originally configured channel 3 and channel 4 for `V12_SENSE`/`V5_SENSE`, on the assumption
+that those channel numbers reached `PA1`/`PA2`. They didn't: channel 3 is actually `PA2`, which is
+`V5_SENSE`, and channel 4 is actually `PA3`, which on this board is `BTN3`.
+
+Both resulting failures were quiet ones. The "12 V" reading became the 5 V divider's 2.5 V multiplied
+by the 12 V channel's own 5.7× ratio — 2.5 × 5.7 = **14.25 V**, a thoroughly plausible
+charging-system voltage that never looks wrong on a dashboard. The "5 V" reading became `BTN3`: idle
+high through its pull-up reads 3.3 × 2 = **6.6 V** (a plausible 5 V rail), dropping to **0 V** the
+instant someone presses button 3 — a phantom rail collapse timed to a button press. Neither number
+looks broken, which is exactly what makes this class of bug dangerous: "is this pin connected to an
+ADC?" and "which channel number is this pin?" are different questions, and the first one passing
+feels exactly like the second one passing. (See `datasheet-verification.md` defect 8.3.)
 
 ---
 
@@ -673,9 +787,10 @@ ordered (the "G6 pre-order gate"):
 - **Exact WS2812B-2020 current draw.** The manufacturer's datasheet is image-only (no extractable
   text), so this needs a bench measurement rather than a datasheet read. The firmware's 0.45 A
   aggregate cap holds regardless of the exact per-LED figure.
-- **SMAJ24CA / SMAJ5.0A / SMBJ5.0A exact clamp parameters.** Not yet read from a datasheet; judged
-  low risk because their standoff voltage clearly exceeds the rails they sit on, but worth a quick
-  check.
+- **SMAJ5.0A / SMBJ5.0A exact clamp parameters.** Not yet read from a datasheet; judged low risk
+  because their standoff voltage clearly exceeds the rails they sit on, but worth a quick check.
+  (`SMAJ24CA`'s clamp voltage is now confirmed at 38.9 V — see §4.3 — and it's exactly what drove the
+  addition of `D14`/`D15`.)
 
 ---
 

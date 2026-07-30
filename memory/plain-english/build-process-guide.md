@@ -278,7 +278,45 @@ The recommended order quantity is **at least 3 assembled boards plus 2 bare boar
 exist because bring-up testing sometimes destroys a board, and having a bare PCB on hand means a
 mistake costs a hand-soldering session, not a second fab run.
 
-## 9. The review gates — and what each one is actually for
+## 9. Run the automated consistency check
+
+There is a script, `scripts/check-consistency.py`, run from the repo root with
+`python3 scripts/check-consistency.py`. Run it before every commit that touches a schematic-definition
+file, a pin table, a bill of materials, or firmware pin/timer assignments. It is now a required check,
+not an optional one — a board order does not go out unless this script passes (this is now part of the
+G6 pre-order checklist in §10 below).
+
+What it checks:
+
+- The authoritative MCU pin table: no pin assigned to two different jobs at once, and every encoder
+  input sits on a timer that can actually decode a quadrature signal in hardware.
+- ADC channel numbers used in the firmware against the STM32G474 datasheet's channel table.
+- The firmware's timer assignments against what the schematic documents actually say.
+- That the UCPD dead-battery hazard warning (§2.1 of `dash-guide.md`, and the equivalent note in the
+  wheel's own documentation) still exists in every file that needs to carry it.
+- That the buck converters' required support parts — the bootstrap capacitors, feedback dividers, and
+  the rest of the parts described in `dash-guide.md` §2.2–2.3 — are present as real bill-of-materials
+  lines, not left described only in prose somewhere.
+- That no rejected part (an earlier candidate that was evaluated and dropped) is named as a live
+  specification in any file someone would actually build from.
+- That superseded values — like an old `TIM15` encoder assignment that was corrected once already —
+  haven't crept back into a table somewhere.
+- That the bill-of-materials CSV files still parse correctly as CSV.
+
+**Why this exists is the useful part, and it is worth understanding rather than only running the
+command.** A real defect got past this project's own human review once: a fix was applied to one
+table, and the identical fact, written out again in a differently formatted table elsewhere in the
+project, was silently missed — and the table that got missed was the one people were actually told to
+build from. A human reviewer reads for meaning; two tables that say the same true thing in different
+words or a different layout both read as "correct" and the eye glides past the fact that they say it
+*differently*, which is exactly the condition under which one of them can quietly go stale without
+anyone noticing. A script does not read for meaning — it compares values byte-for-byte across every
+file that claims to state the same fact, so a format difference cannot hide a content difference from
+it the way it can from a person. State this plainly: every single check in the list above exists
+because a real defect of exactly that shape got past a human review first. The script is not a
+theoretical safeguard; it is a documented list of ways this project has already been wrong once.
+
+## 10. The review gates — and what each one is actually for
 
 `engineering-rigor.md` defines six gates, G1 through G6, that must pass **in order**, and `PROJECT-LOG.md`
 is where each one gets signed and dated — not silently checked off in someone's head. The log file
@@ -340,7 +378,21 @@ blind spot in Altium's own rendering isn't the last line of defense. This gate e
 availability and correctness both have a shelf life — a BOM checked weeks ago can be stale by order
 day, and a part in stock today can have gone EOL since you selected it.
 
-## 10. Bring-up: powering a board on is a story, not a switch flip
+Two items belong on this same pre-order checklist, added after this gate caught its own gaps:
+
+- **`scripts/check-consistency.py` must pass** (§9). It is a real, mechanical pass/fail condition for
+  this gate now, not a suggestion — a BOM diff and a gerber viewer both check whether the design is
+  *correct*; this script checks whether every file that describes the design still *agrees with
+  itself*, which is a different failure mode and needs its own check.
+- **No bill-of-materials line may still contain the words "confirm," "TBD," or "select at capture"
+  without a named owner attached to it.** This is not paperwork for its own sake: one BOM line reading
+  "CONFIRM against AP63203 datasheet" sat through every review this project ran, unresolved, until
+  someone finally sat down and actually read the datasheet — which took about ten minutes and
+  immediately turned up the missing bootstrap capacitor described in `dash-guide.md` §2.2. A "confirm"
+  with nobody's name on it is a task that looks done because it's written down, and that is exactly how
+  it survived every review before that one.
+
+## 11. Bring-up: powering a board on is a story, not a switch flip
 
 Once boards and assemblies arrive, the process explicitly does **not** go straight to bolting the
 board into the car. `engineering-rigor.md` §4 lays out a staged bring-up procedure, and it's worth
@@ -367,13 +419,25 @@ anything more active.
 "blinky" program, confirm 3.3V holds up under load) — proving the microcontroller itself is alive and
 programmable before asking it to do anything specific.
 
-**Step 4 tests CAN in isolation** — first an external loopback test — the MCU transmits through the
+**Step 4 confirms the UCPD dead-battery pull-downs are actually cleared, with the debug adapter still
+attached.** First confirm the firmware sets `UCPD1_DBDIS` before it configures any GPIO pins (see
+`dash-guide.md` §2.1 for the full mechanism). Then, deliberately keeping the debug adapter connected
+from Step 3 rather than removing it, check the one fault that only shows up in that exact
+configuration: on the wheel, encoder 3 must count cleanly in both directions; on the dash, `EVE_INT`
+must read HIGH while the display sits idle. This step exists, and is written to be tested with the
+debugger attached, because this particular fault is invisible unless a debug cable is plugged in —
+which is backwards from how almost every other hardware bug behaves. Normally the cabled-up bench
+configuration is the safe, convenient one to test in, and problems turn up later in the field
+configuration; here it is reversed, so the awkward configuration is the one that has to be tested, not
+skipped in favor of the convenient one.
+
+**Step 5 tests CAN in isolation** — first an external loopback test — the MCU transmits through the
 real transceiver and reads its own frames back, which proves the transceiver and its wiring rather
 than just the peripheral — then a real two-node bench bus using the USB-CAN sniffer from step 2 of
 the whole build, checking bit timing on a scope, where the scope check confirms the sample point lands
 at roughly 80%. This proves the CAN hardware works *before* it's asked to talk to a real ECU.
 
-**Step 5 closes out the protocol assumptions** — the emulated keypad against a bench ECU (closing A1),
+**Step 6 closes out the protocol assumptions** — the emulated keypad against a bench ECU (closing A1),
 IO12 frames checked in the ECU software (closing A2 for Box B), broadcast data checked against known
 values — using exactly the sniffer-based bench setup the assumptions were designed to be closed with,
 just now validated against the real, assembled hardware instead of a laptop-only bench test.

@@ -86,6 +86,87 @@ transceiver chip `U3`, its decoupling capacitors, the protection diode `D2`, and
 resistor footprint (populated or not, "DNP" — do not populate — depending on where this board sits on
 the bus).
 
+### 2.1 The UCPD dead-battery trap — a hazard hiding on the debug pins
+
+Pins **PA9** and **PA10** are wired here as the debug serial port — `DBG_TX` and `DBG_RX` on USART1
+(see the pin table in §8). But on the STM32G474, those same two physical pins are *also*
+`UCPD1_DBCC1` and `UCPD1_DBCC2` — the "dead battery" sense inputs for USB Type-C Power Delivery, and
+this dual identity is not optional or configurable away; it's built into the pin at the silicon level.
+
+USB-C Power Delivery requires that a device with a completely flat battery must still present a
+resistor on its CC (configuration channel) pins, so a charger can detect it and start supplying power
+even though nothing on the device is running yet. ST built a hardware fallback for exactly this into
+the chip: if a DBCC pin reads HIGH, the silicon switches a 5.1 kΩ pull-down onto the matching CC pin —
+**in hardware, without the UCPD peripheral being enabled and without any firmware running at all.** It
+is armed purely by the voltage present on the pin, not by software choosing to arm it.
+
+On this board, PA10 going high arms a pull-down on **PB4**, which is `EVE_INT` — the display's
+interrupt line (§5). The Riverdi module pulls that same line up internally with 47 kΩ. Put a 5.1 kΩ
+pull-down against a 47 kΩ pull-up and the node settles at 3.3 × 5.1/(47+5.1) ≈ **0.32 V**. `EVE_INT`
+is active-LOW, so the MCU reads that as a permanently asserted interrupt — the firmware believes the
+display is continuously raising an interrupt, even when the display is sitting idle.
+
+The trap is specifically that PA10 is the debug **receive** pin, so this only arms when a debug
+adapter is physically attached — the adapter's own transmit line idles high, which is what drives
+PA10 high and arms the pull-down. A board tested on the bench with no debugger connected looks
+completely fine; plug a debug adapter in to investigate something unrelated, and the display interrupt
+line goes stuck low for a reason that has nothing to do with whatever you were actually debugging.
+
+The same mechanism arms on PA9, which puts a 5.1 kΩ pull-down on **PB6** — here that's
+`SERVO1_PWM_3V3` (§4). This one is harmless: PB6 is a push-pull MCU output, not a sensed input, and it
+overpowers 5.1 kΩ without any trouble, wasting about 0.65 mA. It's worth knowing about for the same
+reason as PA10, even though it costs nothing here.
+
+**Fix:** firmware sets the `UCPD1_DBDIS` bit in the `PWR_CR3` register before configuring any GPIO
+pins — on both boards, since both share PA9/PA10 as debug pins. This disables the dead-battery
+pull-downs at the peripheral level before they can affect pin state; nothing on the schematic needs to
+change to accommodate it.
+
+**Bench check:** with a debug adapter attached, confirm `EVE_INT` reads HIGH while the display is idle
+(the bring-up procedure in `build-process-guide.md` now includes this check explicitly, precisely
+because it is invisible unless a debugger is connected).
+
+### 2.2 The AP63203 was missing its bootstrap capacitor
+
+The 3.3 V buck converter `U2` (`AP63203WU-7`, §7) needs a small support part that was missing from the
+bill of materials entirely: `C_BST2`, a 100 nF capacitor between the converter's `BST` and `SW` pins.
+
+The mechanism: the high-side switch inside the converter has to turn on harder than its own input
+rail — its gate needs a voltage *higher* than the chip's own supply to fully close that switch. The
+bootstrap capacitor is the small charge reservoir that supplies that extra voltage, topped up fresh on
+every switching cycle from the SW node swinging low.
+
+Without it, the converter cannot switch at all. The 3.3 V rail never comes up — and that rail feeds
+the MCU, the display's logic supply, and the entire analog front end (§3). The board would be
+completely dead, not degraded.
+
+Worth noting how this was found: not by reading the bill of materials, where a missing line is
+invisible by definition, but by walking the power tree forward and asking "what does this chip need in
+order to switch at all?" — at which point the datasheet's recommended-components table has `C_BST2`
+sitting right there as a labelled column.
+
+### 2.3 The 5 V converter (`LMR36015`) needs five required support parts beyond the obvious ones
+
+The dash uses the same `LMR36015` 12 V → 5 V converter as the wheel (§2 above). Five parts its own
+datasheet marks as *required* were described only in prose in earlier project notes and never actually
+turned into bill-of-materials lines:
+
+| Ref | Value | Role |
+|---|---|---|
+| `C_BOOT` | 100 nF | bootstrap capacitor — the same mechanism as `C_BST2` in §2.2 above, on the 5 V converter rather than the 3.3 V one |
+| `C_VCC` | 1 µF | output capacitor for the chip's internal control-circuit regulator; nothing else may be tied to this pin |
+| `R_FBT` | 100 kΩ | top half of the feedback divider — sets the converter's output voltage setpoint |
+| `R_FBB` | 24.9 kΩ | bottom half of the same feedback divider — without this pair, the converter has no output setpoint to regulate to |
+| `C_FF` | 20 pF | feed-forward capacitor across `R_FBT`, improving loop stability — TI's own tabulated value for this exact resistor pair |
+
+There are also two 220 nF capacitors at the input, one at each `VIN`/`PGND` pin pair, which the
+datasheet says "must" be fitted as a high-frequency bypass separate from the bulk input capacitor.
+
+With those, the dash's buck input/output capacitors are: **4.7 µF + 2 × 220 nF at the input, and
+3 × 15 µF at the output** — identical to the wheel's LMR36015 stage. (Earlier notes describing 2 × 22 µF
+in and 2 × 47 µF out were values for a different converter candidate that was evaluated and rejected;
+those numbers do not apply to the part actually used here.)
+
 ---
 
 ## 3. The DAQ front end — reading eight sensors safely (`dash-afe.SchDoc`)
@@ -139,7 +220,16 @@ temperature and pressure signals, which change slowly; if a future channel needs
 fast, `Cf` is the value to retune, per channel.
 
 **Fault behaviour:** if a sensor wire is accidentally shorted to the car's 12 V rail, the current that
-flows into the ADC pin works out to (12 − 3.3 − 0.7) / 10 kΩ ≈ **0.the STM32 does **not** have a sanctioned way to absorb a positive overvoltage: the datasheet permits only *negative* injection (−5 mA), and caps these pins at a **4.0 V absolute maximum input**. So the clamp diodes are not a backup — they are the primary protection, and must never be left off the board. The 10 kΩ resistor's job is to keep the fault current low enough (about 0.8 mA) that the clamp can hold the pin under that 4.0 V limit.
+flows into the ADC pin works out to (12 − 3.3 − 0.7) / 10 kΩ ≈ **0.8 mA** — small, because the 10 kΩ
+series resistor is what makes it small.
+
+That current has to go somewhere, and this is the part worth understanding: the STM32 does **not**
+have a sanctioned way to absorb a positive overvoltage. The datasheet permits only *negative*
+injection (−5 mA) and caps these pins at a **4.0 V absolute maximum input**. It says positive
+injection is "not possible" on them, which sounds reassuring but actually means there is no internal
+diode to the 3.3 V rail to carry the current away. **So the clamp diodes are not a backup — they are
+the primary protection, and must never be left off the board.** The 10 kΩ resistor's job is to hold
+the fault current low enough (that 0.8 mA) for the clamp to keep the pin under 4.0 V.
 
 **Grounding:** all eight channels' `Rg` and `Cf` return paths go to a dedicated analog ground pour
 (a solid copper fill reserved for these returns), which ties back to the main board ground at **one
@@ -388,7 +478,7 @@ reference for which pin can do which job).
 | PB8 / PB9 | `CAN_RX` / `CAN_TX` | FDCAN1 — **fit nothing on BOOT0**, per §2 |
 | PA11 / PA12 | `USB_DM` / `USB_DP` | USB full-speed |
 | PA13 / PA14 | `SWDIO` / `SWCLK` | debug/programming interface |
-| PA9 / PA10 | `DBG_TX` / `DBG_RX` | USART1 |
+| PA9 / PA10 | `DBG_TX` / `DBG_RX` | USART1 — also `UCPD1_DBCC1`/`UCPD1_DBCC2`; see the dead-battery hazard in §2.1 |
 | **PF0 / PF1** | `OSC_IN` / `OSC_OUT` | the HSE crystal, physically pins 5/6 on the LQFP-64 package — required for correct CAN bit timing (§2) |
 
 **One cross-board note worth remembering:** PB6/PB7 carry the servo signals on the dash, but on the
@@ -405,7 +495,8 @@ both boards.
 
 | Item | Why it matters | How to close it |
 |---|---|---|
-| LMR36015 exact ordered variant | the 400 kHz version of this part needs a 15 µH inductor and 3× 22 µF output capacitors — different from the values used elsewhere | Look up the ordering table for whichever exact variant gets purchased |
+| LMR36015 exact ordered variant | Closed **as a decision**, but still a live buying hazard. Order the **`LMR36015FBRNXR`** — the 1 MHz, forced-PWM part — and use 10 µH with 4.7 µF + 2 × 220 nF in and 3 × 15 µF out, identical to the wheel (§2.3). ⚠ **The variant LCSC stocks (`LMR36015AQRNXRQ1`, LCSC C2863325) is the 400 kHz non-FPWM part**, and if you buy that one the passives must change to **15 µH and 3 × 22 µF**. The automotive qualification on the AQ part is a genuine benefit — the point is to make it a decision rather than an accident of whatever was in stock | Confirm the exact ordering code at purchase |
+
 | SMAJ5.0A / SMBJ5.0A TVS diode parameters | considered low risk because their standoff voltage clearly exceeds the 5 V rail, so they cannot conduct in normal operation — the rule is standoff ≥ rail, clamp ≤ downstream absolute max (`engineering-rigor.md` rule 5) | Worth a quick confirming check |
 
 None of these are blockers — they're flagged so nobody forgets to close them before the board is
