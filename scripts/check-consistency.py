@@ -63,6 +63,56 @@ def check_wheel_pin_table():
           f"{'DUPLICATES' if dupes else 'no duplicates'}")
 
 
+def check_pin_table_complete():
+    """§3.1 lists all 64 physical pins of the LQFP-64 and is what people capture
+    from. Two failure modes: a pin listed twice or missing entirely, and §3.1
+    disagreeing with the signal-level map in §9. The second is defect 8.1's
+    exact shape -- two tables stating the same fact in different formats."""
+    src = DOCS.get("memory/wheel-schematic-complete.md", "")
+    if "### 3.1 Complete pin assignment" not in src:
+        fails.append("wheel §3.1 pin table not found")
+        return
+    sec = src.split("### 3.1 Complete pin assignment")[1].split("#### Power-pin summary")[0]
+
+    seen, by_port = [], {}
+    for m in re.finditer(r"^\| (\d+) \| `([^`]+)` \| (.+?) \|", sec, re.M):
+        seen.append(int(m.group(1)))
+        port = re.match(r"(P[A-F]\d{1,2})", m.group(2))
+        if port:
+            nets = re.findall(r"`([^`]+)`", m.group(3))
+            by_port[port.group(1)] = (nets[0] if nets else
+                                      ("spare" if "spare" in m.group(3).lower() else m.group(3)))
+
+    missing = [i for i in range(1, 65) if i not in seen]
+    dupes = sorted({i for i in seen if seen.count(i) > 1})
+    if missing: fails.append(f"wheel §3.1: pins missing from the table: {missing}")
+    if dupes:   fails.append(f"wheel §3.1: pins listed more than once: {dupes}")
+
+    # Cross-check against §9. Grouped rows using an ellipsis are expanded only in
+    # §3.1, so they are skipped here rather than mis-paired.
+    sec9 = src.split("## 9.")[1].split("## 10.")[0]
+    n = 0
+    for line in sec9.splitlines():
+        if not line.startswith("|") or "---" in line or "| Pin " in line:
+            continue
+        c = line.split("|")
+        if len(c) < 3 or "\u2026" in c[2] or "..." in c[2]:
+            continue
+        pins = re.findall(r"P[A-F]\d{1,2}\b", c[1])
+        nets = re.findall(r"`([^`]+)`", c[2])
+        if "spare" in c[2].lower():
+            for pin in pins:
+                n += 1
+                if "spare" not in (by_port.get(pin) or "").lower():
+                    fails.append(f"§9 says {pin} is spare, §3.1 says '{by_port.get(pin)}'")
+        else:
+            for pin, net in zip(pins, nets):
+                n += 1
+                if by_port.get(pin) != net:
+                    fails.append(f"{pin}: §9 '{net}' vs §3.1 '{by_port.get(pin)}'")
+    print(f"  wheel §3.1 pin table: {len(seen)}/64 pins, {n} cross-checked against §9")
+
+
 def check_adc_channels():
     """Defect 8.3: channel numbers are not pin numbers. Verified DS12288 Table 12."""
     TRUTH = {"PA0": 1, "PA1": 2, "PA2": 3, "PA3": 4,
@@ -226,7 +276,7 @@ def check_boms_parse():
 
 
 print("Cross-document consistency check\n")
-for fn in (check_wheel_pin_table, check_adc_channels, check_firmware_matches_schematic,
+for fn in (check_wheel_pin_table, check_pin_table_complete, check_adc_channels, check_firmware_matches_schematic,
            check_ucpd_hazard_documented, check_buck_support_parts,
            check_battery_rail_cap_ratings,
            check_no_rejected_parts_as_live_spec, check_stale_values, check_boms_parse):

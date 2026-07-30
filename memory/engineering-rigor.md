@@ -91,6 +91,14 @@
 
 1. **Visual + meter:** solder inspection under magnification; continuity: all GNDs; resistance rail-to-GND (expect >100 Ω) *before* first power.
 2. **Power-only:** bench supply, current-limited (**both boards now 12 V**; wheel @ 150 mA limit first, dash @ 200 mA). Check every rail ±3% — on the wheel that is `+12V_P`, `+5V`, `+3V3`; thermal camera / finger sweep, paying attention to the buck inductor.
+2a. **Oscillator verification — before trusting any timing.** With the board powered:
+   (a) confirm HSE starts, and **repeat at the cold extreme** (`gm_crit` is worst cold; headroom is
+   4.4×, not 10×); (b) **measure drive level** — the worst-case estimate is 117 µW against the ABM8's
+   100 µW maximum, so this is a real check, not a formality. If over, raise `R_X1` and **re-verify
+   cold start**, because `R_X1` trades drive level against startup margin; (c) measure the frequency
+   and confirm it is within ±100 ppm — a large error means `C_X1`/`C_X2` are wrong for the stray
+   capacitance of this layout. Overdriving a crystal does not fail now; it ages the part and fails
+   months later, which is why this is measured rather than assumed.
 3. **SWD + option bytes:** Tag-Connect attach, read MCU ID, flash blinky, verify 3.3 V under load.
    **Then set and verify the boot option bytes with STM32CubeProgrammer: `nSWBOOT0` = 0, `nBOOT0` = 1.**
    Without this the board boots to the system bootloader whenever the CAN bus is live (defect 1.3),
@@ -398,6 +406,26 @@
   budget and makes the lookup irrelevant: if the maximum is not enough, nothing is, and the fallback
   buffer is required regardless. **An unverified number is a liability that never expires on its own;
   a conservative extreme is a decision that closes.** Check the cost before assuming you have to wait.
+
+- **L42 (2026-07, crystal selection):** **A range is not a specification.** The crystal had sat as
+  "8–16 MHz, CL 8–12 pF, ESR ≤ 80 Ω" — which reads like a spec and is actually a set of combinations
+  whose startup margin varies by 3×, from 6.5× down to 2.1×. Someone picking the middle of each range
+  gets a board that starts unreliably cold. **When a part is specified as ranges, compute the corner
+  cases before calling it selected**, and if the corners disagree, the ranges are hiding the real
+  constraint. Here the real constraint was a single point: 16 MHz, CL 8 pF.
+
+- **L43 (2026-07, crystal selection):** **"Slower is easier to start" is false for a small crystal.**
+  `gm_crit` scales with F², so intuition says drop the frequency — but ESR climbs faster than F² falls
+  in a 3225 package (ABM8: 400 Ω at 8 MHz vs 70 Ω at 16 MHz). 8 MHz, the STM32's own reference
+  frequency and the obvious "safe" choice, is the **worst** of the four candidates. **Two parameters
+  moving in opposite directions need the arithmetic done, not a heuristic** — and the heuristic here
+  pointed confidently the wrong way.
+
+- **L44 (2026-07, crystal selection):** **Two independent constraints can pin a value that neither
+  pins alone.** The transconductance table says CL = 6 pF; buildability (stray capacitance is ~5 pF,
+  so 6 pF CL needs 2 pF external caps) says CL = 10 pF. Only 8 pF satisfies both, and neither
+  analysis on its own would have found it. **When a value looks over-determined, check whether you
+  have applied every constraint — and when it looks free, you probably have not.**
 
 ## 5A. Planned future work (do not lose track of these)
 

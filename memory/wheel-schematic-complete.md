@@ -167,42 +167,235 @@ Divider maths: 12 V × 10/57 = 2.11 V and 5 V × ½ = 2.5 V, both inside the 3.3
 
 **U4 = STM32G474RET6, LQFP-64** (LCSC C521608).
 
-### 3.1 Power pins and decoupling
-- All `VDD` pins → `+3V3`; all `VSS` pins → `GND`.
-- `VDDA`, `VREF+` → `+3V3A`. `VSSA`, `VREF−` → `GND`.
-- `C16`–`C21`: 6 × 100 nF 0402, one per VDD pin, placed at the pin.
-- `C22`: 4.7 µF 16 V X7R 0805, one per board, near the MCU.
-- `VBAT` → `+3V3` (no coin cell; RTC not used).
+### 3.1 Complete pin assignment — **all 64 pins, in package order**
 
-### 3.2 HSE crystal — **required, and missing from the first draft**
+Pin numbers are from **DS12288 Rev 6, Figure 7 "STM32G474xB/xC/xE LQFP64 pinout"** (top view).
+Every physical pin of the package appears below exactly once. Type the net names literally.
+
+**Nothing is left implicit: if a pin has no net, the row says what to do with it.**
+
+| Pin | Pin name | Net | Notes |
+|---|---|---|---|
+| 1 | `VBAT` | `+3V3` | No coin cell; RTC unused. **Must not float** — tie to `+3V3`. `C16` 100 nF at the pin |
+| 2 | `PC13` | `BTN1` | Conditioning cell §5.1 |
+| 3 | `PC14-OSC32_IN` | *no connect* | No LSE crystal fitted. Leave the pad open; firmware configures it as analog |
+| 4 | `PC15-OSC32_OUT` | *no connect* | As above |
+| 5 | `PF0-OSC_IN` | `NET_OSC_IN` | `Y1` pin 1 and `C_X1` — §3.2 |
+| 6 | `PF1-OSC_OUT` | `NET_OSC_OUT` | → `R_X1` → `NET_XOUT` → `Y1` pin 3; `C_X2` on `NET_XOUT` — §3.2 |
+| 7 | `PG10-NRST` | `NRST` | `C23` 100 nF to `GND`. **No external pull-up** — there is one inside |
+| 8 | `PC0` | `ENC1_A` | TIM1_CH1 |
+| 9 | `PC1` | `ENC1_B` | TIM1_CH2 |
+| 10 | `PC2` | `ENC5_B` | TIM20_CH2 |
+| 11 | `PC3` | `LCD_EXTCOMIN` | ~1 Hz software toggle. **Stops toggling → panel destroyed** (§7) |
+| 12 | `PA0` | `ENC6_A` | TIM5_CH1 |
+| 13 | `PA1` | `V12_SENSE` | **ADC12_IN2** — 47 k/10 k divider from `+12V_P` |
+| 14 | `PA2` | `V5_SENSE` | **ADC1_IN3** — 10 k/10 k divider from `+5V` |
+| 15 | `VSS` | `GND` | |
+| 16 | `VDD` | `+3V3` | `C17` 100 nF at the pin |
+| 17 | `PA3` | `BTN3` | |
+| 18 | `PA4` | `LCD_SCS` | GPIO, **active HIGH** — cannot be SPI1 hardware NSS (§7) |
+| 19 | `PA5` | `LCD_SCLK` | SPI1_SCK, **≤ 2 MHz** |
+| 20 | `PA6` | `LED_DATA_3V3` | TIM16_CH1 + DMA → `U6` level shifter |
+| 21 | `PA7` | `LCD_SI` | SPI1_MOSI |
+| 22 | `PC4` | `ENC1_SW` | |
+| 23 | `PC5` | `ENC2_SW` | |
+| 24 | `PB0` | `PADDLE_UP_SNS` | **ADC1_IN15**, `TT_a` 4.0 V abs max. Divider + `D14` clamp — §4.3 |
+| 25 | `PB1` | `PADDLE_DN_SNS` | **ADC1_IN12**, same treatment, `D15` |
+| 26 | `PB2` | `ENC5_A` | TIM20_CH1 |
+| 27 | `VSSA` | `GND` | Analog ground — one point back to `GND` |
+| 28 | `VREF+` | `+3V3A` | |
+| 29 | `VDDA` | `+3V3A` | Via `FB1`. `C8` 1 µF + `C9` 100 nF within 5 mm. **VDDA must never exceed VDD** |
+| 30 | `PB10` | `BTN4` | |
+| 31 | `VSS` | `GND` | |
+| 32 | `VDD` | `+3V3` | `C18` 100 nF at the pin |
+| 33 | `PB11` | `BTN5` | |
+| 34 | `PB12` | `BTN6` | |
+| 35 | `PB13` | `LCD_DISP` | H = show memory, L = black (image retained) |
+| 36 | `PB14` | **spare** | Bring to a test point |
+| 37 | `PB15` | **spare** | Bring to a test point |
+| 38 | `PC6` | `ENC2_A` | TIM3_CH1 |
+| 39 | `PC7` | `ENC2_B` | TIM3_CH2 |
+| 40 | `PC8` | `ENC3_SW` | |
+| 41 | `PC9` | `ENC4_SW` | |
+| 42 | `PA8` | **spare** | Bring to a test point |
+| 43 | `PA9` | `DBG_TX` | USART1_TX → `J4`. ⚠ Also `UCPD1_DBCC1` — see §9.1 |
+| 44 | `PA10` | `DBG_RX` | USART1_RX → `J4`. ⚠ Also `UCPD1_DBCC2` — see §9.1 |
+| 45 | `PA11` | `USB_DM` | To `U5` USBLC6 |
+| 46 | `PA12` | `USB_DP` | To `U5` USBLC6 |
+| 47 | `VSS` | `GND` | |
+| 48 | `VDD` | `+3V3` | `C19` 100 nF at the pin |
+| 49 | `PA13` | `SWDIO` | TC2030 pad |
+| 50 | `PA14` | `SWCLK` | TC2030 pad |
+| 51 | `PA15` | `ENC4_A` | TIM2_CH1 |
+| 52 | `PC10` | `ENC5_SW` | |
+| 53 | `PC11` | `ENC6_SW` | |
+| 54 | `PC12` | `ENC6_B` | TIM5_CH2 |
+| 55 | `PD2` | `BTN2` | |
+| 56 | `PB3` | `ENC4_B` | TIM2_CH2 |
+| 57 | `PB4` | **spare** | ⚠ If ever used, it is `UCPD1_CC2` — see §9.1 |
+| 58 | `PB5` | **spare** | Bring to a test point |
+| 59 | `PB6` | `ENC3_A` | TIM4_CH1. ⚠ `UCPD1_CC1` — firmware **must** set `PWR_CR3.UCPD1_DBDIS` (§9.1) |
+| 60 | `PB7` | `ENC3_B` | TIM4_CH2 |
+| 61 | `PB8-BOOT0` | `CAN_RX` | FDCAN1_RX. ⚠ **Fit nothing else on this pin** — defect 1.3 |
+| 62 | `PB9` | `CAN_TX` | FDCAN1_TX |
+| 63 | `VSS` | `GND` | |
+| 64 | `VDD` | `+3V3` | `C20` 100 nF at the pin |
+
+#### Power-pin summary — and a correction
+
+Counted off Figure 7, the LQFP-64 has **exactly four `VDD` pins (16, 32, 48, 64)** and **four `VSS`
+pins (15, 31, 47, 63)**, plus `VBAT` (1), `VDDA` (29), `VREF+` (28) and `VSSA` (27).
+
+| Ref | Value | Placement |
+|---|---|---|
+| `C16` | 100 nF, 0402 | at `VBAT`, pin 1 |
+| `C17` | 100 nF, 0402 | at `VDD` pin 16 |
+| `C18` | 100 nF, 0402 | at `VDD` pin 32 |
+| `C19` | 100 nF, 0402 | at `VDD` pin 48 |
+| `C20` | 100 nF, 0402 | at `VDD` pin 64 |
+| `C22` | 4.7 µF, 16 V, X7R, 0805 | one per board, near the MCU |
+| `C8`, `C9` | 1 µF + 100 nF | at `VDDA`, pin 29 (already in §2.5) |
+| `C23` | 100 nF, 0402 | at `NRST`, pin 7 |
+
+⚠ **This supersedes the earlier "`C16`–`C21`: 6 × 100 nF, one per VDD pin".** There are four VDD
+pins, not six — the count was a placeholder that had never been checked against the package drawing,
+and it is now `C16`–`C20` = **five** 100 nF (four VDD plus VBAT). The decoupling capacitor nearest
+each VDD pin is the one that matters; a spare part in the BOM is harmless, but a *count* stated as
+fact and never verified is the kind of number that gets copied into a layout review as evidence.
+
+#### Placement rules
+- Every 100 nF sits **on the same side of the board as its pin**, with its own ground via. A shared
+  via between two decoupling caps re-introduces the inductance the cap exists to remove.
+- `C22` bulk near the MCU but not in place of the per-pin caps.
+- `VDDA`'s `FB1` ferrite and its two capacitors form the analog supply filter — keep that loop tight
+  and do not route digital signals through it.
+
+
+### 3.2 HSE crystal — **selected and verified**
 
 `PF0-OSC_IN` = **LQFP-64 pin 5**, `PF1-OSC_OUT` = **pin 6**. Both are bonded on this package.
 
 | Ref | Part / value | Connection |
 |---|---|---|
-| `Y1` | HSE crystal, **8 MHz or 16 MHz**, **≤50 ppm** initial + temp, CL 8–12 pF, ESR ≤80 Ω, SMD 3225 | pin 1 → `OSC_IN` (PF0), pin 2 → `GND`, pin 3 → `OSC_OUT` (PF1), pin 4 → `GND` |
-| `C_X1`, `C_X2` | `2 × (CL − C_stray)`, C0G, 0402 — **≈18 pF for a 12 pF CL crystal**, ≈10 pF for 8 pF CL | `OSC_IN` → `GND`, `OSC_OUT` → `GND` |
-| `R_X1` | 0 Ω, 0402 (footprint for a series damping resistor) | in series `OSC_OUT` → `Y1` pin 3 |
+| `Y1` | **Abracon ABM8 series, 16.000 MHz, CL = 8 pF, −40…+85 °C, ±30 ppm tol, ±30 ppm stability.** SMD 3.2 × 2.5 mm | pin 1 → `NET_OSC_IN` (PF0), pin 2 → `GND`, pin 3 → `NET_XOUT`, pin 4 → `GND` |
+| `C_X1` | **6 pF ±0.25 pF, C0G/NP0, 0402** | `NET_OSC_IN` → `GND` |
+| `C_X2` | **6 pF ±0.25 pF, C0G/NP0, 0402** | **`NET_XOUT` → `GND` — the CRYSTAL side of `R_X1`, not the MCU pin** |
+| `R_X1` | **0 Ω, 0402 — fit the footprint, and see the drive-level box** | series `NET_OSC_OUT` (PF1, pin 6) → `NET_XOUT` → `Y1` pin 3 |
 
-**Why a crystal is mandatory here — the internal RC is not good enough for 1 Mbit/s CAN.** The
-datasheet gives HSI16 as **−1 % / +1 % over 0…85 °C** and **−2 % / +1.5 % over −40…125 °C**
-(Table 43). CAN bit timing tolerates roughly **±0.5 %** per node in practice, and about ±1.58 % in
-the absolute best case with ideal sample-point placement — and that budget is shared with *every
-other node on the bus*. Two nodes each 1 % off can be 2 % apart. Running the wheel on HSI16 would
-give intermittent error frames and bus-off events that get worse as the car heats up: another
-"perfect on the bench, broken in the car" signature, and a maddening one to chase because it looks
-like software.
+No external feedback resistor: DS12288 Table 41 gives an **internal `R_F` of 200 kΩ typ**.
 
-A 50 ppm crystal is 0.005 % — a hundred times better than CAN needs, and standard crystals are
-cheap, so there is no reason to economise here.
+> **`C_X2` goes on the far side of `R_X1`, and that is not arbitrary.** `R_X1` and `C_X2` together
+> form the low-pass that limits how hard the MCU drives the crystal — that is the entire mechanism by
+> which a series resistor reduces drive level. Put `C_X2` on the MCU pin instead and `R_X1` is left in
+> series with nothing but the crystal, where it still costs startup margin but no longer limits drive.
+> You would then have paid the price of the resistor without getting the benefit, and the drive-level
+> measurement below would not improve no matter what value you fitted.
+>
+> Three nets, not two: `NET_OSC_IN` (pin 5 · `Y1`.1 · `C_X1`) — `NET_OSC_OUT` (pin 6 · `R_X1`) —
+> `NET_XOUT` (`R_X1` · `Y1`.3 · `C_X2`).
 
-**USB does not force this decision, but benefits from it.** The G4 can do crystal-less USB using
-HSI48 plus the Clock Recovery System trimming against USB SOF packets. Since CAN requires a crystal
-anyway, clock both from the HSE via the PLL and delete a whole class of clock-accuracy questions.
+**Why a crystal is mandatory — the internal RC is not good enough for 1 Mbit/s CAN.** HSI16 is
+**−1 %/+1 % over 0…85 °C** and **−2 %/+1.5 % over −40…125 °C** (Table 43). CAN tolerates roughly
+**±0.5 %** per node, and that budget is shared with every other node — two nodes each 1 % off are 2 %
+apart. Running on HSI16 gives intermittent error frames and bus-off events that worsen as the car
+heats up: "perfect on the bench, broken in the car", and it looks like a software fault.
 
-**[OPEN — pick and verify a part]** the crystal spec above is derived, not copied from a specific
-datasheet. Choose an actual part, then set `C_X1`/`C_X2` from **its** CL: `C = 2 × (CL − C_stray)`
-with `C_stray ≈ 3–5 pF` for this geometry. Do not carry over the 18 pF figure blindly.
+#### Why 16 MHz and CL = 8 pF, specifically
+
+The startup criterion is the **critical transconductance**:
+
+> `gm_crit = 4 · ESR · (2πF)² · (C0 + CL)²`
+
+DS12288 Table 41 gives **`Gm` = 1.5 mA/V max**, "maximum critical crystal transconductance". The
+whole selection is a fight between two terms that pull in opposite directions:
+
+- `gm_crit` scales with **F²**, so a *lower* frequency helps.
+- ESR rises steeply as frequency falls in a small package, so a lower frequency *hurts*.
+
+Real ABM8 numbers (datasheet Table 1) show where the optimum actually is:
+
+| F (MHz) | ESR max (Ω) | ESR·F² (relative) | `gm_crit` at CL = 8 pF | Headroom vs 1.5 mA/V |
+|---|---|---|---|---|
+| 8 | **400** | 25 600 | 0.489 mA/V | 3.1× |
+| 12 | 120 | 17 280 | 0.330 mA/V | 4.5× |
+| **16** | **70** | 17 920 | **0.342 mA/V** | **4.4×** |
+| 20 | 50 | 20 000 | 0.382 mA/V | 3.9× |
+
+**8 MHz is the worst choice, not the best** — the intuition that "slower is easier to start" is
+backwards here, because a 3225 crystal at 8 MHz is specified at 400 Ω. 12–16 MHz is the sweet spot,
+and 16 MHz is chosen because it is already what the PLL configuration assumes (`M = 4` → 4 MHz PLL
+input), so the firmware needs no change.
+
+**CL = 8 pF is forced from both sides**, which is why it is a specific number and not a range:
+
+| CL | `gm_crit` | Headroom | `C_ext = 2·(CL − C_stray)` at C_stray = 5 pF |
+|---|---|---|---|
+| 6 pF | 0.229 mA/V | 6.5× ✅ | **2 pF — not buildable** ❌ |
+| **8 pF** | **0.342 mA/V** | **4.4× ✅** | **6 pF ✅** |
+| 10 pF | 0.478 mA/V | 3.1× ❌ | 10 pF ✅ |
+
+6 pF gives the best startup margin and is the value you would pick from the transconductance table
+alone — but the STM32's pin capacitance plus trace is ~5 pF, so the external capacitors come out at
+2 pF, where stray capacitance dominates the value and the frequency is set by PCB tolerance rather
+than by the design. 10 pF is comfortably buildable but fails the startup criterion. **Only 8 pF
+satisfies both.**
+
+> #### ⚠ Two things that must be measured on the first board, not assumed
+>
+> **1. Drive level.** Worst case, assuming the oscillator swings the full rail at `OSC_OUT`:
+> `I_rms = 2πF(C0+CL)·V_rms` = 1.29 mA, so `DL = I²·ESR` = **117 µW against the ABM8's 100 µW
+> maximum.** The real figure is normally lower — the STM32's oscillator has internal amplitude
+> control and does not swing rail-to-rail in steady state — but the estimate lands *above* the limit,
+> so it cannot be waved through. **`R_X1` exists for this.** Fit 0 Ω, measure, and if drive level is
+> over 100 µW raise `R_X1` (typically 100 Ω – 1 kΩ) and re-check. Overdriving a crystal ages it: the
+> frequency drifts over months and the part eventually fails, which is a warranty-period failure, not
+> a bring-up failure.
+>
+> **⚠ `R_X1` cuts both ways.** It reduces drive level *and* reduces startup margin, and the headroom
+> here is 4.4×, not 10×. Any non-zero `R_X1` must be re-verified for startup at −40 °C, not just for
+> drive level at room temperature.
+>
+> **2. Startup.** DS12288 gives `tSU(HSE)` = **2 ms typ**. Confirm the oscillator starts at the cold
+> extreme, which is where `gm_crit` is worst. Failure to start is loud (the firmware's `clock_init()`
+> returns false on HSE timeout and refuses to bring CAN up), so this is safe to discover on a bench.
+
+#### Frequency budget — 55× more accuracy than CAN needs
+
+| Contribution | ppm |
+|---|---|
+| Initial tolerance @ 25 °C | ±30 |
+| Stability over −40…+85 °C | ±30 |
+| Aging, first year (ABM8: ±2 ppm) | ±2 |
+| Load-cap error, assuming C_stray is off by 1 pF | ±29 |
+| **Total worst case** | **±91 ppm = 0.0091 %** |
+
+CAN at 1 Mbit/s needs about **5 000 ppm** per node → **55× margin**. USB full-speed needs
+**2 500 ppm** → **27× margin**. The load-cap term is the largest controllable one, which is the
+practical reason to keep the `OSC_IN`/`OSC_OUT` traces short: stray capacitance is a *frequency* error
+here, not just a startup question.
+
+**USB does not force this decision but benefits from it.** The G4 can run crystal-less USB using
+HSI48 plus the Clock Recovery System. Since CAN requires a crystal anyway, clock both from the HSE
+and delete a whole class of clock-accuracy questions.
+
+#### Layout rules for this circuit
+
+1. `Y1`, `C_X1`, `C_X2` and `R_X1` go **as close to pins 5/6 as physically possible** — DS12288 says
+   so explicitly, "in order to minimize output distortion and startup stabilization time".
+2. **A ground guard under and around the crystal**, tied to `GND` with vias, and no signal routed
+   under the crystal on any layer. `OSC_IN`/`OSC_OUT` are the highest-impedance nets on the board.
+3. Keep the `+5V` buck's `NET_SW` node and the LED data line away from this corner. The buck switches
+   at 1 MHz with fast edges; coupling into a 16 MHz oscillator shows up as jitter, and CAN bit timing
+   is the thing that notices first.
+4. `C_X1`/`C_X2` grounds return to the same ground pour point, not to separate vias — a split return
+   puts the two load capacitors at different potentials.
+
+#### Second source
+
+Any 3.2 × 2.5 mm 16.000 MHz crystal is acceptable **provided it is checked against the same three
+numbers**: `ESR ≤ 70 Ω`, `C0 ≤ 3 pF`, `CL = 8 pF`. Those three are what the analysis above depends
+on. In particular the **ABM8G is *not* a drop-in** despite the similar name — it is 80 Ω and
+`C0 ≤ 5 pF`, which gives `gm_crit` = 0.547 mA/V and only **2.7× headroom**.
 
 ### 3.3 Reset, boot, debug
 
@@ -453,7 +646,7 @@ zero unsuppressed warnings before moving to layout.
 | PA9 / PA10 | `DBG_TX` / `DBG_RX` | USART1. ⚠ **Also `UCPD1_DBCC1` / `UCPD1_DBCC2`** — a high level here arms the dead-battery pull-down on PB6 / PB4. See defect 8.2 |
 | PA1 / PA2 | `V12_SENSE` / `V5_SENSE` | **ADC12_IN2 / ADC1_IN3** — channel *numbers*, verified in DS12288 Table 12. PA0 is IN1, so the sequence PA0→PA3 is IN1, IN2, IN3, IN4; it is **not** indexed from the pin number (defect 8.3) |
 | PB0 / PB1 | `PADDLE_UP_SNS` / `PADDLE_DN_SNS` | **ADC1_IN15 / ADC1_IN12 — read as ADC, never as GPIO** (defect 1.8). `TT_a` pins: 4.0 V absolute max, and a BAV199 clamp to `+3V3` is **required** (defect 8.7) |
-| **PF0 / PF1** | `OSC_IN` / `OSC_OUT` | **HSE crystal — LQFP-64 pins 5 and 6.** Mandatory for 1 Mbit CAN (§3.2) |
+| **PF0 / PF1** | `NET_OSC_IN` / `NET_OSC_OUT` | **HSE crystal — LQFP-64 pins 5 and 6.** Mandatory for 1 Mbit CAN (§3.2) |
 | PA8, PB4, PB5, **PB14, PB15** | spare — PB14/PB15 freed when ENC5 moved off TIM15 | bring to test points if convenient |
 
 **Every encoder pair is CH1+CH2 of one timer, *and that timer supports encoder mode*.** Both halves

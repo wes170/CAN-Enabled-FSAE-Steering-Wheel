@@ -35,8 +35,11 @@ D3,1,CAN bus TVS,dual-line 24V,SOT-23,PESD2CAN,Active,Stock,
 R_T1;R_T2,2,Split termination,60.4 ohm 1%,0805,spec,Commodity,Stock,DNP — populate only if dash is the physical end of bus
 C_T1,1,Split termination cap,4.7nF,0603,spec,Commodity,Stock,DNP
 ,,=== MCU ===,,,,,,
+Y1,1,HSE crystal,16.000MHz / CL 8pF / ESR <=70ohm / C0 <=3pF / +-30ppm tol / +-30ppm stab / -40..+85C,3.2x2.5mm SMD,"Abracon ABM8 series (e.g. ABM8-16.000MHZ-8-D-4-Y-T; confirm exact option string with the distributor)",Active,Stock,"SELECTED AND VERIFIED. gm_crit = 4*ESR*(2piF)^2*(C0+CL)^2 = 0.342 mA/V vs the 1.5 mA/V in DS12288 Table 41 = 4.4x headroom. *** ABM8G IS NOT A DROP-IN despite the name: 80ohm and C0 5pF give 0.547 mA/V and only 2.7x. Any substitute must meet ESR<=70 C0<=3 CL=8"
+C_X1;C_X2,2,Crystal load capacitors,6pF +-0.25pF C0G/NP0,0402,spec,Commodity,Stock,"C = 2*(CL - Cstray) with CL=8pF and Cstray~5pF (STM32 pin + short trace). NOT a generic 18pF -- that value belongs to an 18pF-CL crystal. Keep traces short: a 1pF stray error is ~29ppm of frequency"
+R_X1,1,Crystal series damping resistor,0 ohm 0402 -- FOOTPRINT IS LOAD-BEARING,0402,spec,Commodity,Stock,"Fit 0 ohm, then MEASURE DRIVE LEVEL at bring-up. Worst-case estimate is 117uW against the ABM8 100uW max. If over, raise R_X1 (100ohm-1k) and RE-VERIFY COLD START -- R_X1 cuts drive level AND startup margin, and headroom is only 4.4x"
 U4,1,Microcontroller,STM32G474RET6,LQFP-64,LCSC C521608,Active,Stock,Same part as the wheel — one platform one codebase
-C16-C21,6,MCU decoupling,100nF,0402,spec,Commodity,Stock,
+C16-C20,5,MCU decoupling,100nF 16V X7R,0402,spec,Commodity,Stock,"*** WAS 6 (one per VDD pin) -- COUNTED OFF DS12288 Figure 7: the LQFP-64 has FOUR VDD pins (16, 32, 48, 64), not six. C17-C20 go one at each VDD pin, C16 at VBAT (pin 1). VDDA pin 29 is covered by C8/C9. The old count was a placeholder that had never been checked against the package drawing"
 C22,1,MCU bulk,4.7uF 16V,0805,spec,Commodity,Stock,
 C23,1,NRST cap,100nF,0402,spec,Commodity,Stock,
 R6,0,**DELETED - BOOT0 pulldown**,do not fit,n/a,n/a,REMOVED,n/a,"*** HARMFUL: PB8-BOOT0 is also FDCAN1_RX -- same as the wheel. Use the nBOOT0 option bit. See datasheet-verification.md defect 1.3"

@@ -1195,6 +1195,97 @@ frame, so 60 Hz needs **24.3 MHz**, not 72 MHz. Confirm `REG_PCLK_FREQ` against 
 datasheet or Riverdi's published init sequence before bring-up. Failure mode is loud — no image or a
 badly wrong refresh rate — so it is safe to discover on the bench.
 
+### HSE crystal — SELECTED AND VERIFIED (was the last `[OPEN]` on the wheel MCU sheet)
+
+**Selected: Abracon ABM8 series, 16.000 MHz, CL = 8 pF, ESR ≤ 70 Ω, C0 ≤ 3 pF, ±30 ppm tolerance,
+±30 ppm stability, −40…+85 °C, 3.2 × 2.5 mm.** Load caps `C_X1`/`C_X2` = **6 pF C0G**.
+
+Sources read: **ABM8 datasheet (Abracon, rev 07-29-20)** for ESR/C0/CL/drive level, and **DS12288
+Table 41** for the oscillator side.
+
+#### The startup criterion, and why the obvious answer was wrong
+
+`gm_crit = 4 · ESR · (2πF)² · (C0 + CL)²`, against DS12288 Table 41's **`Gm` = 1.5 mA/V max**.
+
+The intuition "a slower crystal starts more easily" is **backwards for a small package**, because ESR
+climbs steeply as frequency falls and `gm_crit` only scales with F². The ABM8's own ESR table:
+
+| F (MHz) | ESR max (Ω) | `gm_crit` @ CL = 8 pF | Headroom |
+|---|---|---|---|
+| **8** | **400** | 0.489 mA/V | 3.1× |
+| 12 | 120 | 0.330 mA/V | 4.5× |
+| **16** | **70** | **0.342 mA/V** | **4.4×** ✅ |
+| 20 | 50 | 0.382 mA/V | 3.9× |
+
+8 MHz — the "default" STM32 reference frequency, and the one an earlier draft of this file would have
+led someone to — is the **worst** of the four. 16 MHz was kept because it is also what the PLL
+configuration already assumes (`M = 4` → 4 MHz PLL input), so no firmware changed.
+
+#### CL = 8 pF is pinned from both sides
+
+| CL | `gm_crit` | Headroom | `C_ext = 2(CL − C_stray)` at C_stray ≈ 5 pF |
+|---|---|---|---|
+| 6 pF | 0.229 mA/V | 6.5× ✅ | **2 pF — stray dominates, not buildable** ❌ |
+| **8 pF** | **0.342 mA/V** | **4.4× ✅** | **6 pF ✅** |
+| 10 pF | 0.478 mA/V | 3.1× ❌ | 10 pF ✅ |
+
+The transconductance table alone would pick 6 pF; the buildability constraint alone would pick 10 pF.
+Only 8 pF satisfies both. **This is why the old "CL 8–12 pF, ESR ≤ 80 Ω" range was not a
+specification** — it permitted combinations down to 2.1× headroom, and a reader picking the middle of
+each range would have landed on a crystal that starts unreliably cold.
+
+#### Interpretation caveat, stated rather than hidden
+
+DS12288 names the 1.5 mA/V figure *"maximum critical crystal transconductance"*. That reads as "your
+crystal's `gm_crit` must be ≤ 1.5", but ST's AN2867 method instead compares the oscillator's `gm`
+against `gm_crit` and asks for a **5× gain margin**. **AN2867 could not be retrieved** (st.com timed
+out repeatedly, the same failure as RM0440), so the ambiguity is unresolved. The design therefore
+targets `gm_crit` ≤ 0.3 mA/V *where achievable*, which satisfies both readings; the selected point is
+0.342 mA/V, which satisfies the literal reading outright and sits just under a 5× margin on the
+stricter one. **Bench measurement at bring-up is the tie-breaker**, and it is in the staged procedure.
+
+#### Two bench measurements this selection requires
+
+1. **Drive level.** Worst case (full-rail swing assumed at OSC_OUT): `I_rms` = 1.29 mA →
+   `DL = I²·ESR` = **117 µW against the ABM8's 100 µW maximum**. The real figure is normally lower —
+   the STM32 oscillator has amplitude control — but the estimate lands *above* the limit and cannot be
+   assumed away. Overdriving ages a crystal: it drifts over months and eventually fails, i.e. a
+   warranty-period failure, not a bring-up one.
+2. **Cold start.** `gm_crit` is worst at low temperature. `tSU(HSE)` is 2 ms typ.
+
+**`R_X1` is the adjustment for (1) and it cuts both ways** — it reduces drive level *and* startup
+margin. With only 4.4× headroom, any non-zero `R_X1` must be re-verified cold.
+
+#### A circuit error caught while writing this up
+
+The first draft placed `C_X2` **at the MCU pin**, on the near side of `R_X1`. That is wrong: `R_X1`
+and `C_X2` together form the low-pass that limits drive, so `C_X2` must sit on the **crystal** side.
+With it at the pin, `R_X1` costs startup margin and delivers no drive reduction — and the bench
+measurement would not improve no matter what value was fitted, which is a maddening thing to debug.
+Corrected: three nets, `NET_OSC_IN` — `NET_OSC_OUT` — `NET_XOUT`.
+
+#### Frequency budget
+
+±30 tolerance + ±30 stability + ±2 aging + ±29 (1 pF load-cap error) = **±91 ppm**. CAN needs
+~5 000 ppm → **55× margin**; USB full-speed needs 2 500 ppm → 27×. The load-cap term is the largest
+controllable one, which is the practical reason the layout rules demand short oscillator traces.
+
+#### ⚠ The ABM8G is NOT a substitute despite the near-identical name
+
+80 Ω and `C0 ≤ 5 pF` give `gm_crit` = 0.547 mA/V — **2.7× headroom**. Any second source must be
+checked against all three numbers: **ESR ≤ 70 Ω, C0 ≤ 3 pF, CL = 8 pF.**
+
+### LQFP-64 VDD pin count — closed, and it was six in the BOM
+
+Both BOMs specified `C16`–`C21`, "6 × 100 nF, one per VDD pin". **Counted off DS12288 Figure 7, the
+LQFP-64 has four `VDD` pins — 16, 32, 48 and 64** — plus `VBAT` (1), `VDDA` (29), `VREF+` (28) and
+four `VSS` (15, 31, 47, 63). Corrected to `C16`–`C20` = five: one at each VDD, one at VBAT, with
+VDDA covered by the existing `C8`/`C9` pair.
+
+A spare capacitor in a BOM is harmless. A *count* asserted as fact and never checked against the
+package drawing is not — it gets copied into a layout review as evidence that the decoupling was
+thought about. This was flagged as a known guess in the Step 1 plan and had survived since.
+
 ### Recorded, not counted — one suspicion needing hardware
 
 `LED_DATA_3V3` (PA6) has no pull-down, and the 74AHCT1G125 buffer has `/OE` hard-tied to GND, so the

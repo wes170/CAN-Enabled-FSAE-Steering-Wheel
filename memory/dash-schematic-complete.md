@@ -222,7 +222,95 @@ its receiver uses, and the servo BEC stars to power ground. Do not "tidy" the se
 
 ---
 
-## 8. Complete MCU pin assignment (verified against STM32G474 datasheet Table 13)
+### 8.0 Complete pin assignment — **all 64 pins, in package order**
+
+Pin numbers from **DS12288 Rev 6, Figure 7 "LQFP64 pinout"** (top view). Same package and same
+numbering as the wheel — but **the nets are different**, so do not copy the wheel's pin table across.
+`dash-mcu.SchDoc` copies the wheel's *sheet structure*; the signal assignment below is what changes.
+
+| Pin | Pin name | Net | Notes |
+|---|---|---|---|
+| 1 | `VBAT` | `+3V3` | No coin cell. **Must not float.** `C16` 100 nF at the pin |
+| 2 | `PC13` | **spare** | Free on the dash (it is `BTN1` on the wheel) |
+| 3 | `PC14-OSC32_IN` | *no connect* | No LSE fitted |
+| 4 | `PC15-OSC32_OUT` | *no connect* |  |
+| 5 | `PF0-OSC_IN` | `NET_OSC_IN` | `Y1`.1 + `C_X1` — same crystal circuit as the wheel |
+| 6 | `PF1-OSC_OUT` | `NET_OSC_OUT` | → `R_X1` → `NET_XOUT` → `Y1`.3 + `C_X2` |
+| 7 | `PG10-NRST` | `NRST` | `C23` 100 nF to `GND` |
+| 8 | `PC0` | `AIN5_ADC` | ADC12_IN6 |
+| 9 | `PC1` | `AIN6_ADC` | ADC12_IN7 |
+| 10 | `PC2` | `AIN7_ADC` | ADC12_IN8 — **ARB front position feedback** |
+| 11 | `PC3` | `AIN8_ADC` | ADC12_IN9 — **ARB rear position feedback** |
+| 12 | `PA0` | `AIN1_ADC` | ADC12_IN1 |
+| 13 | `PA1` | `AIN2_ADC` | ADC12_IN2 |
+| 14 | `PA2` | `AIN3_ADC` | ADC1_IN3 |
+| 15 | `VSS` | `GND` |  |
+| 16 | `VDD` | `+3V3` | `C17` 100 nF at the pin |
+| 17 | `PA3` | `AIN4_ADC` | ADC1_IN4 |
+| 18 | `PA4` | `EVE_CS` | SPI1_NSS — driven as GPIO |
+| 19 | `PA5` | `EVE_SCK` | SPI1_SCK, **≤ 30 MHz** |
+| 20 | `PA6` | `EVE_MISO` | SPI1_MISO |
+| 21 | `PA7` | `EVE_MOSI` | SPI1_MOSI |
+| 22 | `PC4` | **spare** |  |
+| 23 | `PC5` | **spare** |  |
+| 24 | `PB0` | `V12_SENSE` | **ADC1_IN15** — 47 k/10 k divider |
+| 25 | `PB1` | `V5_SENSE` | **ADC1_IN12** — 10 k/10 k divider |
+| 26 | `PB2` | **spare** |  |
+| 27 | `VSSA` | `GND` | Analog ground, one point back to `GND` |
+| 28 | `VREF+` | `+3V3A` |  |
+| 29 | `VDDA` | `+3V3A` | Via `FB1`; `C10` 1 µF + `C11` 100 nF |
+| 30 | `PB10` | **spare** |  |
+| 31 | `VSS` | `GND` |  |
+| 32 | `VDD` | `+3V3` | `C18` 100 nF at the pin |
+| 33 | `PB11` | **spare** |  |
+| 34 | `PB12` | **spare** |  |
+| 35 | `PB13` | **spare** |  |
+| 36 | `PB14` | **spare** |  |
+| 37 | `PB15` | **spare** |  |
+| 38 | `PC6` | **spare** |  |
+| 39 | `PC7` | **spare** |  |
+| 40 | `PC8` | `BTN1` | Local button, conditioning cell as the wheel |
+| 41 | `PC9` | `BTN2` |  |
+| 42 | `PA8` | `LED_DATA_3V3` | TIM1_CH1 + DMA → alarm strip buffer |
+| 43 | `PA9` | `DBG_TX` | USART1_TX → `J5`. ⚠ `UCPD1_DBCC1` — see §8.1 |
+| 44 | `PA10` | `DBG_RX` | USART1_RX → `J5`. ⚠ `UCPD1_DBCC2` — see §8.1 |
+| 45 | `PA11` | `USB_DM` | To `U5` USBLC6 |
+| 46 | `PA12` | `USB_DP` | To `U5` USBLC6 |
+| 47 | `VSS` | `GND` |  |
+| 48 | `VDD` | `+3V3` | `C19` 100 nF at the pin |
+| 49 | `PA13` | `SWDIO` | TC2030 pad |
+| 50 | `PA14` | `SWCLK` | TC2030 pad |
+| 51 | `PA15` | **spare** |  |
+| 52 | `PC10` | `BTN3` |  |
+| 53 | `PC11` | **spare** |  |
+| 54 | `PC12` | **spare** |  |
+| 55 | `PD2` | **spare** |  |
+| 56 | `PB3` | `EVE_PDN` | Active low; module pulls up 47 kΩ internally — **drive it** |
+| 57 | `PB4` | `EVE_INT` | Active low, 47 kΩ internal pull-up. ⚠ `UCPD1_CC2` — firmware **must** set `PWR_CR3.UCPD1_DBDIS` (§8.1) |
+| 58 | `PB5` | **spare** |  |
+| 59 | `PB6` | `SERVO1_PWM_3V3` | TIM4_CH1 → `U7` buffer. ⚠ `UCPD1_CC1` — benign here (push-pull output) but see §8.1 |
+| 60 | `PB7` | `SERVO2_PWM_3V3` | TIM4_CH2 → `U7` buffer |
+| 61 | `PB8-BOOT0` | `CAN_RX` | FDCAN1_RX. ⚠ **Fit nothing else on this pin** |
+| 62 | `PB9` | `CAN_TX` | FDCAN1_TX |
+| 63 | `VSS` | `GND` |  |
+| 64 | `VDD` | `+3V3` | `C20` 100 nF at the pin |
+
+#### Power pins
+The LQFP-64 has **four `VDD` pins (16, 32, 48, 64)** and **four `VSS` pins (15, 31, 47, 63)**, plus
+`VBAT` (1), `VDDA` (29), `VREF+` (28) and `VSSA` (27). Decoupling: `C16` at `VBAT`, `C17`–`C20` one
+at each `VDD`, `C10`/`C11` at `VDDA`, `C22` 4.7 µF bulk, `C23` 100 nF at `NRST`.
+
+#### Spare pins on this board
+`PC13`, `PC4`, `PC5`, `PB2`, `PB10`–`PB15`, `PC6`, `PC7`, `PA15`, `PC11`, `PC12`, `PD2`, `PB5` — the
+dash uses far fewer I/O than the wheel. Bring a few to test points; leave the rest unconnected and
+configure them as analog inputs in firmware (lowest leakage for an unused pin).
+
+⚠ **`PB4` is spare-adjacent but is `EVE_INT`, and `PB6` is `UCPD1_CC1`.** If you ever repurpose a
+spare pin, re-read §8.1 first.
+
+---
+
+## 8. MCU signal map (summary — the authoritative per-pin table is §8.0 above) (verified against STM32G474 datasheet Table 13)
 
 | Pin | Net | Justification |
 |---|---|---|
