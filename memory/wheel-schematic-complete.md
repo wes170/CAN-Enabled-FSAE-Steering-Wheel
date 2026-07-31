@@ -528,16 +528,72 @@ is a reason to reverse the choice — they are work the change creates:
    they are through-hole or SMT.** Through-hole tabs make this a non-issue; SMT tabs make it a layout
    concern worth extra copper and a keep-out for flex.
 
-#### `[OPEN — needs the Molex drawing]` — `J2` pad map
+#### `J2` pad map — **CLOSED**, from the Molex drawing
 
-**The pin-to-pad mapping for `204711-0001` has not been read**, and neither had the HRO part's before
-it. This file cannot yet tell you which pad is `CC1` versus `CC2`, or how the library symbol numbers
-the signal pins across its sub-parts. That is exactly what mirrors a footprint.
+Source: **Molex Product Customer Drawing `2047110001`, revision B, sheet 2 of 3** — released
+2026-05-14, saved in this repo at `hardware/lib/datasheets-2047110001-molex-vertical-usbc.pdf`.
+Transcribed verbatim; it matches the USB Type-C standard receptacle assignment.
 
-**This blocks G6** under rule L35 — placeholder text in a build-from document stops the pre-order
-gate, which is the system working rather than an inconvenience. To close it: read the Molex product
-drawing, transcribe the pad map into this section as a table, and confirm the library footprint's pad
-numbering matches it rather than assuming the vendor symbol is right.
+| Pad | Signal | Pad | Signal | This board |
+|---|---|---|---|---|
+| **A1** | GND | **B1** | GND | → `GND` |
+| A2 | TX1+ | B2 | TX2+ | **unused** |
+| A3 | TX1− | B3 | TX2− | **unused** |
+| **A4** | Vbus | **B4** | Vbus | → `NET_VBUS` |
+| **A5** | **CC1** | B5 | **CC2** | → `R9` / `R10`, 5.1 kΩ to `GND` |
+| **A6** | **D+** | **B6** | **D+** | → `USB_DP_CON` (A6 **and** B6 together) |
+| **A7** | **D−** | **B7** | **D−** | → `USB_DM_CON` (A7 **and** B7 together) |
+| A8 | SBU1 | B8 | SBU2 | **unused** |
+| **A9** | Vbus | **B9** | Vbus | → `NET_VBUS` |
+| A10 | RX2− | B10 | RX1− | **unused** |
+| A11 | RX2+ | B11 | RX1+ | **unused** |
+| **A12** | GND | **B12** | GND | → `GND` |
+
+**Note the B row runs backwards on the drawing** (B12 … B1, left to right), which is how the USB-C
+spec draws it and is a good way to transpose a pinout if you read the table as a grid instead of as
+labelled pairs. `CC1` is **A5**; `CC2` is **B5**. `SBU2` is **B8**, diagonally opposite `SBU1` at A8.
+
+**14 pads used, 10 unused**: TX1±, TX2±, RX1±, RX2± (the SuperSpeed pairs) and SBU1/SBU2.
+
+> ⚠ **The unused pads are left floating — do NOT tie them to `GND`.** They look like spare copper and
+> they are not. A full-featured USB-C cable carries live SuperSpeed differential signals on TX/RX
+> whenever the host attempts a SuperSpeed link, and grounding them loads the host's transmitter.
+> "Unused on this board" is not "unused on the cable."
+
+#### `J2` mechanical — from the same drawing
+
+| Property | Value | Where it lands |
+|---|---|---|
+| **Height above board** | **9.80 mm** | the number G2/G3 need against the faceplate; a mated cable adds much more |
+| Body footprint | 9.94 × 4.16 mm | |
+| Signal pads | 24 × 0.30 mm, **0.50 mm pitch**, two rows 2.15 mm apart | ordinary fab class; no fine-pitch surcharge |
+| **Mounting** | **6 through-hole anchors: 4 shell tabs (1.40 × 1.00 mm slots) + 2 middle-blade tabs (1.15 × 0.75 mm)** | **this closes the withdrawal-force question** |
+| Shell / middle blade | stainless steel, 1.25 µm solderable nickel | both are solderable |
+| Contact plating | 0.76 µm min gold | |
+| Compliance | RoHS **and ELV Directive 2000/53/EC** | the automotive end-of-life directive — a good sign for a vehicle part |
+| Further spec | **PS-105448-001** (product specification, not fetched) | where to look if a detail below is needed |
+
+**Withdrawal force is no longer a concern.** All six anchors are through-hole with gauge-controlled
+solder tails (drawing note 6), so pull-out load goes into barrels rather than peeling SMT pads. The
+earlier worry in this section was correct to raise and is now closed by evidence.
+
+> ### ⚠ The six `MNT` tabs are NOT all the same structure
+>
+> The symbol shows `MNT 1`–`MNT 6` as six identical pins. The drawing shows they are **two different
+> parts**: section A-A labels **`SHELL`** and **`MIDDLE BLADE`** separately, and the recommended
+> layout has 4 large corner slots (shell) and 2 smaller mid-height slots (middle blade).
+>
+> **The drawing does not state that they are electrically common.** In most USB-C receptacles the
+> middle blade is tied to the shell, but "most" is not this part's datasheet.
+>
+> **Do this:** put all six on `NET_SHIELD`. It is safe either way — if the blade is common to the
+> shell, nothing changes; if it is separate, it is still a grounded structure and `NET_SHIELD` is the
+> right place for it. What must **not** happen is tying either group directly to `GND`, which shorts
+> out `R11`/`C24`.
+>
+> **To settle it properly:** read `PS-105448-001`, or put a meter across a sample — shell tab to
+> middle-blade tab. Thirty seconds, and it is worth doing before layout freezes, because if they are
+> *not* common there is an argument for giving the middle blade its own via stitching.
 
 **The USB OR-diode feeds `+5V`, downstream of the buck** — never `+12V_P`.
 

@@ -62,7 +62,7 @@
    - Altium **Manufacturer Part Search** panel (place directly, then *right-click ▸ Add to library*),
    - SnapEDA / Ultra Librarian import (run **IPC-compliance check**: Reports ▸ Footprint comparison),
    - IPC Footprint Wizard (Tools menu in PcbLib) for anything missing — use datasheet nominal dims, density level **N**.
-3. Mandatory footprint checks (print datasheet page, tick off): STM32G474RET6 LQFP-64 (0.5 mm pitch — verify pad 0.28×1.5 mm class), TJA1051 SO-8, **PEC09 right-angle** (THT — verify the body sits flat against the board and the shaft exits *parallel* to the PCB at the intended edge; check shaft length 15/20/25 mm against the faceplate depth before committing), PEC11H (bushing hole Ø9.5 mm + anti-rotation slot **on the faceplate drawing too**), WS2812B-2020 (2.2×2.0 mm, pin-1 dot orientation), Sharp LCD 10-pin FPC 0.5 mm bottom-contact ZIF (contacts flip if you pick top-contact — check twice), USB-C 16-pin, KSC4 tactiles, JST-GH horizontal, TC2030 footprint (no part, copper+3 locating holes), **LMR36015 VQFN-HR-12 (RNX)** — 12 pads incl. the large SW/PGND thermal pads; verify against the datasheet package drawing, *not* a generic QFN-12 (defect 5.1 replaced the AP63205 TSOT-26 here), plus its inductor. AP2112K SOT-25.
+3. Mandatory footprint checks (print datasheet page, tick off): STM32G474RET6 LQFP-64 (0.5 mm pitch — verify pad 0.28×1.5 mm class), TJA1051 SO-8, **PEC09 right-angle** (THT — verify the body sits flat against the board and the shaft exits *parallel* to the PCB at the intended edge; check shaft length 15/20/25 mm against the faceplate depth before committing), PEC11H (bushing hole Ø9.5 mm + anti-rotation slot **on the faceplate drawing too**), WS2812B-2020 (2.2×2.0 mm, pin-1 dot orientation), Sharp LCD 10-pin FPC 0.5 mm bottom-contact ZIF (contacts flip if you pick top-contact — check twice), **Molex 204711-0001 vertical USB-C — 24 pads at 0.50 mm pitch PLUS six through-hole anchor slots** (4 shell + 2 middle blade); check against drawing 2047110001 rev B sheet 3, *not* against the dash's 16-pin part, which is a different connector. KSC4 tactiles, JST-GH horizontal, TC2030 footprint (no part, copper+3 locating holes), **LMR36015 VQFN-HR-12 (RNX)** — 12 pads incl. the large SW/PGND thermal pads; verify against the datasheet package drawing, *not* a generic QFN-12 (defect 5.1 replaced the AP63205 TSOT-26 here), plus its inductor. AP2112K SOT-25.
 4. For every JLC-assembled part, add parameters `LCSC = Cxxxxxx` and `JLC-Rotation` (fill after §7 check). Key numbers already verified: MCU `C521608`, LEDs `C965555`.
 
 ## 3. Schematic capture — ⚠ SUPERSEDED BY THE SCHEMATIC-DEFINITION FILE ⚠
@@ -109,7 +109,68 @@ This is now the *same input stage as the dash* (§1.1 of the dash doc). Copy tha
    analysis: `memory/datasheet-verification.md` §1 defect 1.3. DFU entry is via USB DFU or an
    SWD-triggered jump, never a BOOT0 strap.
 3. Tag-Connect TC2030-CTX wired SWDIO/SWCLK/NRST/3V3/GND.
-4. USB-C: VBUS → Schottky (BAT60A) OR-ing into `+5V` **through the 0 Ω link `R_VBUS`, FITTED on every board** (Rev B.5 — one build, two cables; see sim doc §2), CC1/CC2 → 5.1 kΩ to GND, D+/D− → **USBLC6-2SC6** → PA11/PA12. Shield to GND via 1 MΩ ∥ 4.7 nF.
+4. **USB-C — the full procedure is §3.2a below.** `J2` is a 24-position vertical Molex part drawn as a
+   multi-part symbol, and it has more ways to go wrong than one bullet can carry.
+
+### 3.2a `J2` USB-C — exact capture procedure
+
+Pad map and mechanical data: `wheel-schematic-complete.md` §3.4, transcribed from Molex drawing
+`2047110001` rev B (`hardware/lib/datasheets-2047110001-molex-vertical-usbc.pdf`).
+
+**Step 1 — place every sub-part.** `J2` is a multi-part component. `J2A` carries only the six `MNT`
+anchors; the signals are on the other sub-part(s). Place the component once per sub-part, set all of
+them to designator `J2`, and use the **Part** field in the Properties panel to select A, B, … Then
+turn on the compiler violation **"Unused sub-part in component"** (Project ▸ Project Options ▸ Error
+Reporting) and set it to **Fatal Error**. That check is the only thing standing between you and a
+board whose USB connector has no USB on it — a missed sub-part is silent otherwise.
+
+**Step 2 — wire the 14 pads that are used.**
+
+| From | To |
+|---|---|
+| A4, A9, B4, B9 (Vbus ×4) | `NET_VBUS` — all four, not one. They share the current |
+| A1, A12, B1, B12 (GND ×4) | `GND` — all four |
+| **A6 and B6** | `USB_DP_CON` — the two D+ pads tie together |
+| **A7 and B7** | `USB_DM_CON` — the two D− pads tie together |
+| A5 (CC1) | `R9` 5.1 kΩ → `GND` |
+| B5 (CC2) | `R10` 5.1 kΩ → `GND` |
+
+⚠ **Tie D+ to D+ and D− to D−, i.e. A6–B6 and A7–B7 — not A6–A7.** This is what makes the connector
+reversible: whichever way the plug goes in, the same MCU pin sees the same signal. Pairing them the
+other way shorts D+ to D−, which is a dead port that looks perfectly symmetrical on the schematic.
+
+⚠ **`CC1` is A5 and `CC2` is B5** — they are *not* adjacent, and the drawing prints the B row
+backwards (B12…B1, left to right). Read it as labelled pairs, not as a grid. Getting these two
+swapped happens to be harmless here — both are 5.1 kΩ to `GND` — but the same misreading applied one
+column over swaps `SBU2` (B8) with `CC2` (B5).
+
+**Step 3 — the ten unused pads stay floating.** TX1±, TX2±, RX1±, RX2± and SBU1/SBU2 get **No ERC
+markers** (Place ▸ Directives ▸ Generic No ERC), and **nothing else**.
+
+> **Do not tie them to `GND`.** They look like free copper to stitch down and they are not: a
+> full-featured USB-C cable carries live SuperSpeed differential signals on those pins whenever a
+> host attempts a SuperSpeed link, and grounding them loads the host's transmitter. "Unused on this
+> board" is not "unused on the cable." Leave them open and say so with a No ERC marker, so the intent
+> is visible rather than looking like an oversight someone will later "fix".
+
+**Step 4 — the six anchors go to `NET_SHIELD`, never straight to `GND`.** All of `MNT 1`–`MNT 6`.
+`NET_SHIELD` reaches `GND` only through `R11` (1 MΩ) ∥ `C24` (4.7 nF); tying the tabs to `GND`
+shorts both parts out and throws away the isolation on a board that still looks correct.
+
+The six are **not one structure** — the drawing labels `SHELL` and `MIDDLE BLADE` separately, 4 corner
+slots and 2 mid-height slots, and does not state they are common. `NET_SHIELD` is the right answer
+either way. If you want it settled, ohm a sample from a shell tab to a middle-blade tab, or read
+`PS-105448-001`.
+
+**Step 5 — verify the footprint against sheet 3, not against the vendor symbol.** 24 pads,
+0.30 mm × 0.50 mm pitch, two rows 2.15 mm apart, plus **six through-hole slots**: four at
+1.40 × 1.00 mm and two at 1.15 × 0.75 mm. Confirm which `MNT` number lands on which slot type — if the
+blade turns out to be electrically separate, that mapping is the thing you would need.
+
+**Step 6 — height.** The connector stands **9.80 mm** off the board and a mated cable much more.
+Check it in 3D against the faceplate STEP (G2) and on the 1:1 paper build (G3), answering
+specifically: *can a cable be inserted and removed with the wheel assembled, or is this bench-only?*
+Both answers are workable. Finding out after the faceplate is machined is not.
 5. Debug UART on JST-GH 3-pin (TX, RX, GND).
 
 ### 3.3 `wheel-can-io.SchDoc`
