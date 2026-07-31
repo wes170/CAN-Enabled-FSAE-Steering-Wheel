@@ -1,0 +1,440 @@
+<title>FSAE-WHEEL — J2 USB-C hook-up</title>
+
+<style>
+  :root{
+    --paper:#F5F7FA; --card:#FFFFFF; --ink:#101720; --muted:#5A6673;
+    --rule:#DCE3EB; --grid:#E7EDF3;
+    --power:#B4531B; --data:#1E50C8; --config:#6D28D9;
+    --shield:#3F6B5A; --nc:#9AA7B4; --hazard:#A61B1B;
+    --power-bg:#FBF0E8; --data-bg:#ECF1FD; --config-bg:#F3EEFC;
+    --shield-bg:#EDF3F0; --hazard-bg:#FBEDEC;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --serif:Charter,"Bitstream Charter","Iowan Old Style",Georgia,serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#0C1219; --card:#131C26; --ink:#E6EDF5; --muted:#93A3B4;
+      --rule:#243140; --grid:#1B2531;
+      --power:#E8925A; --data:#7DA3F5; --config:#B693F5;
+      --shield:#7FB79C; --nc:#64748B; --hazard:#F08A82;
+      --power-bg:#241811; --data-bg:#121B2E; --config-bg:#1D1630;
+      --shield-bg:#132019; --hazard-bg:#2A1513;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0C1219; --card:#131C26; --ink:#E6EDF5; --muted:#93A3B4;
+    --rule:#243140; --grid:#1B2531;
+    --power:#E8925A; --data:#7DA3F5; --config:#B693F5;
+    --shield:#7FB79C; --nc:#64748B; --hazard:#F08A82;
+    --power-bg:#241811; --data-bg:#121B2E; --config-bg:#1D1630;
+    --shield-bg:#132019; --hazard-bg:#2A1513;
+  }
+  :root[data-theme="light"]{
+    --paper:#F5F7FA; --card:#FFFFFF; --ink:#101720; --muted:#5A6673;
+    --rule:#DCE3EB; --grid:#E7EDF3;
+    --power:#B4531B; --data:#1E50C8; --config:#6D28D9;
+    --shield:#3F6B5A; --nc:#9AA7B4; --hazard:#A61B1B;
+    --power-bg:#FBF0E8; --data-bg:#ECF1FD; --config-bg:#F3EEFC;
+    --shield-bg:#EDF3F0; --hazard-bg:#FBEDEC;
+  }
+
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--serif); font-size:17px; line-height:1.65;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),
+                     linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:28px 28px;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:56px 24px 96px;
+        display:flex; flex-direction:column; gap:44px;}
+  .prose{max-width:68ch;}
+
+  .eyebrow{font-family:var(--sans); font-size:11.5px; font-weight:650;
+           letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin:0 0 10px;}
+  h1{font-family:var(--sans); font-size:clamp(28px,4.2vw,42px); font-weight:680;
+     letter-spacing:-.02em; line-height:1.12; margin:0 0 14px; text-wrap:balance;}
+  h2{font-family:var(--sans); font-size:20px; font-weight:660; letter-spacing:-.01em;
+     margin:0 0 6px; text-wrap:balance;}
+  p{margin:0 0 14px;}
+  code,.m{font-family:var(--mono); font-size:.87em;}
+  .lede{font-size:19px; color:var(--muted);}
+
+  section{display:flex; flex-direction:column; gap:16px;}
+  .panel{background:var(--card); border:1px solid var(--rule); border-radius:10px; padding:22px 24px;}
+
+  figure{margin:0; background:var(--card); border:1px solid var(--rule);
+         border-radius:10px; padding:18px; overflow-x:auto;}
+  figure svg{display:block; min-width:820px; width:100%; height:auto;}
+  figcaption{font-family:var(--sans); font-size:13px; color:var(--muted);
+             margin-top:14px; padding-top:12px; border-top:1px solid var(--rule);}
+
+  .key{display:flex; flex-wrap:wrap; gap:8px 18px; font-family:var(--sans);
+       font-size:12.5px; font-weight:600; letter-spacing:.02em;}
+  .key span{display:inline-flex; align-items:center; gap:7px;}
+  .key i{width:22px; height:3px; border-radius:2px; display:inline-block;}
+
+  table{border-collapse:collapse; width:100%; font-size:14.5px; font-family:var(--sans);}
+  th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--rule); vertical-align:top;}
+  th{font-size:11.5px; font-weight:650; letter-spacing:.09em; text-transform:uppercase;
+     color:var(--muted); border-bottom:1.5px solid var(--rule);}
+  td.pins{font-family:var(--mono); font-size:13px; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  td.net{font-family:var(--mono); font-size:13px; font-weight:600;}
+  .tbl{overflow-x:auto; background:var(--card); border:1px solid var(--rule);
+       border-radius:10px; padding:6px 18px 10px;}
+
+  .chip{display:inline-block; font-family:var(--sans); font-size:11px; font-weight:680;
+        letter-spacing:.07em; text-transform:uppercase; padding:2px 8px; border-radius:20px;
+        border:1px solid currentColor;}
+  .c-power{color:var(--power); background:var(--power-bg);}
+  .c-data{color:var(--data); background:var(--data-bg);}
+  .c-config{color:var(--config); background:var(--config-bg);}
+  .c-shield{color:var(--shield); background:var(--shield-bg);}
+  .c-nc{color:var(--nc);}
+
+  .hazards{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(290px,1fr));}
+  .haz{background:var(--card); border:1px solid var(--rule); border-left:4px solid var(--hazard);
+       border-radius:8px; padding:18px 20px;}
+  .haz h3{font-family:var(--sans); font-size:15.5px; font-weight:660; margin:0 0 8px;
+          color:var(--hazard); letter-spacing:-.005em;}
+  .haz p{font-size:15px; margin:0 0 10px;}
+  .haz p:last-child{margin-bottom:0;}
+
+  .note{border-left:4px solid var(--muted); background:var(--card);
+        border-radius:8px; padding:18px 20px; border-top:1px solid var(--rule);
+        border-right:1px solid var(--rule); border-bottom:1px solid var(--rule);}
+  .note h3{font-family:var(--sans); font-size:15.5px; font-weight:660; margin:0 0 8px;}
+  .note p{font-size:15px;}
+  .note p:last-child{margin-bottom:0;}
+
+  footer{font-family:var(--sans); font-size:13px; color:var(--muted);
+         border-top:1px solid var(--rule); padding-top:18px;}
+  a{color:inherit;}
+</style>
+
+<div class="wrap">
+
+  <header class="prose">
+    <p class="eyebrow">FSAE-WHEEL Rev B &middot; sheet <span class="m">wheel-usb.SchDoc</span></p>
+    <h1>Wiring <span class="m">J2</span> — the USB-C port</h1>
+    <p class="lede">Molex <span class="m">204711-0001</span>, a 24-position vertical receptacle. Fourteen
+      pads are used, ten are deliberately left floating, and six mounting tabs go somewhere that is
+      not ground.</p>
+  </header>
+
+  <section>
+    <figure>
+      <svg viewBox="0 0 880 660" role="img"
+           aria-label="Signal flow from the USB-C connector through protection to the STM32.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+                  orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="context-stroke"/>
+          </marker>
+        </defs>
+
+        <g font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12.5">
+
+        <!-- ================= J2 connector body ================= -->
+        <rect x="24" y="34" width="176" height="592" rx="7"
+              fill="none" stroke="currentColor" stroke-width="1.6" opacity=".85"/>
+        <text x="112" y="22" text-anchor="middle" font-size="14" font-weight="700"
+              fill="currentColor">J2 &mdash; USB-C, 24 pos</text>
+
+        <!-- GND group -->
+        <rect x="38" y="48" width="148" height="46" rx="5" fill="none" stroke="currentColor" opacity=".38"/>
+        <text x="50" y="66" fill="currentColor" font-weight="700">GND</text>
+        <text x="50" y="84" fill="currentColor" opacity=".7">A1 A12 B1 B12</text>
+
+        <!-- VBUS group -->
+        <rect x="38" y="106" width="148" height="46" rx="5" fill="var(--power-bg)" stroke="var(--power)"/>
+        <text x="50" y="124" fill="var(--power)" font-weight="700">VBUS</text>
+        <text x="50" y="142" fill="var(--power)" opacity=".8">A4 A9 B4 B9</text>
+
+        <!-- D+ -->
+        <rect x="38" y="164" width="148" height="34" rx="5" fill="var(--data-bg)" stroke="var(--data)"/>
+        <text x="50" y="186" fill="var(--data)" font-weight="700">D+ &nbsp;&nbsp;A6 &middot; B6</text>
+
+        <!-- D- -->
+        <rect x="38" y="206" width="148" height="34" rx="5" fill="var(--data-bg)" stroke="var(--data)"/>
+        <text x="50" y="228" fill="var(--data)" font-weight="700">D&minus; &nbsp;&nbsp;A7 &middot; B7</text>
+
+        <!-- CC1 -->
+        <rect x="38" y="252" width="148" height="34" rx="5" fill="var(--config-bg)" stroke="var(--config)"/>
+        <text x="50" y="274" fill="var(--config)" font-weight="700">CC1 &nbsp;A5</text>
+
+        <!-- CC2 -->
+        <rect x="38" y="294" width="148" height="34" rx="5" fill="var(--config-bg)" stroke="var(--config)"/>
+        <text x="50" y="316" fill="var(--config)" font-weight="700">CC2 &nbsp;B5</text>
+
+        <!-- NC group -->
+        <rect x="38" y="340" width="148" height="76" rx="5" fill="none"
+              stroke="var(--nc)" stroke-dasharray="4 3"/>
+        <text x="50" y="358" fill="var(--nc)" font-weight="700">UNUSED &mdash; 10</text>
+        <text x="50" y="376" fill="var(--nc)" font-size="11">TX1&plusmn; TX2&plusmn;</text>
+        <text x="50" y="392" fill="var(--nc)" font-size="11">RX1&plusmn; RX2&plusmn;</text>
+        <text x="50" y="408" fill="var(--nc)" font-size="11">SBU1 A8 &middot; SBU2 B8</text>
+
+        <!-- MNT group -->
+        <rect x="38" y="428" width="148" height="46" rx="5" fill="var(--shield-bg)" stroke="var(--shield)"/>
+        <text x="50" y="446" fill="var(--shield)" font-weight="700">MNT 1&ndash;6</text>
+        <text x="50" y="464" fill="var(--shield)" opacity=".8" font-size="11">shell + blade tabs</text>
+
+        <!-- ================= GND rail ================= -->
+        <path d="M200 71 H250 V612 H300" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".55"/>
+        <path d="M300 604 h34 M304 612 h26 M308 620 h18" stroke="currentColor" stroke-width="2" opacity=".75"/>
+        <text x="317" y="640" text-anchor="middle" fill="currentColor" opacity=".75" font-weight="700">GND</text>
+
+        <!-- ================= VBUS power path ================= -->
+        <path d="M186 129 H300" fill="none" stroke="var(--power)" stroke-width="2.2" marker-end="url(#ar)"/>
+        <text x="243" y="120" text-anchor="middle" fill="var(--power)" font-size="11">NET_VBUS</text>
+
+        <!-- D6 diode -->
+        <g stroke="var(--power)" fill="none" stroke-width="2.2">
+          <path d="M306 118 v22 l22 -11 z" fill="var(--power)"/>
+          <path d="M328 118 v22"/>
+        </g>
+        <text x="317" y="158" text-anchor="middle" fill="var(--power)" font-size="11" font-weight="700">D6</text>
+        <text x="317" y="172" text-anchor="middle" fill="var(--power)" font-size="10" opacity=".8">BAT60A</text>
+
+        <path d="M328 129 H400" stroke="var(--power)" stroke-width="2.2" fill="none"/>
+        <text x="366" y="120" text-anchor="middle" fill="var(--power)" font-size="10">NET_VBUS_OR</text>
+
+        <!-- R_VBUS -->
+        <rect x="400" y="119" width="54" height="20" rx="2" fill="var(--card)" stroke="var(--power)" stroke-width="2"/>
+        <text x="427" y="133" text-anchor="middle" fill="var(--power)" font-size="10.5" font-weight="700">0 &#8486;</text>
+        <text x="427" y="158" text-anchor="middle" fill="var(--power)" font-size="11" font-weight="700">R_VBUS</text>
+        <text x="427" y="172" text-anchor="middle" fill="var(--power)" font-size="10" opacity=".8">FITTED</text>
+
+        <path d="M454 129 H560" stroke="var(--power)" stroke-width="2.2" fill="none" marker-end="url(#ar)"/>
+        <text x="596" y="134" text-anchor="middle" fill="var(--power)" font-size="14" font-weight="700">+5V</text>
+
+        <!-- VBUS tap down to U5 -->
+        <path d="M366 129 V236 H470" stroke="var(--power)" stroke-width="1.6" fill="none"
+              opacity=".75" stroke-dasharray="5 3"/>
+        <circle cx="366" cy="129" r="3.5" fill="var(--power)"/>
+
+        <!-- ================= Data path ================= -->
+        <!-- D+ join -->
+        <path d="M186 181 H300" stroke="var(--data)" stroke-width="2.2" fill="none"/>
+        <text x="243" y="173" text-anchor="middle" fill="var(--data)" font-size="10.5">USB_DP_CON</text>
+        <path d="M186 223 H300" stroke="var(--data)" stroke-width="2.2" fill="none"/>
+        <text x="243" y="215" text-anchor="middle" fill="var(--data)" font-size="10.5">USB_DM_CON</text>
+        <path d="M300 181 H470" stroke="var(--data)" stroke-width="2.2" fill="none"/>
+        <path d="M300 223 H470" stroke="var(--data)" stroke-width="2.2" fill="none"/>
+
+        <!-- U5 -->
+        <rect x="470" y="160" width="118" height="112" rx="6"
+              fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.8"/>
+        <text x="529" y="186" text-anchor="middle" fill="var(--data)" font-size="13" font-weight="700">U5</text>
+        <text x="529" y="203" text-anchor="middle" fill="var(--data)" font-size="10.5">USBLC6-2SC6</text>
+        <text x="529" y="222" text-anchor="middle" fill="var(--data)" font-size="10" opacity=".85">ESD, 4-line</text>
+        <text x="529" y="242" text-anchor="middle" fill="var(--power)" font-size="10">VBUS pin</text>
+        <text x="529" y="262" text-anchor="middle" fill="currentColor" font-size="10" opacity=".7">GND</text>
+
+        <path d="M529 272 V612" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".45"/>
+
+        <path d="M588 181 H700" stroke="var(--data)" stroke-width="2.2" fill="none" marker-end="url(#ar)"/>
+        <path d="M588 223 H700" stroke="var(--data)" stroke-width="2.2" fill="none" marker-end="url(#ar)"/>
+        <text x="644" y="173" text-anchor="middle" fill="var(--data)" font-size="10.5">USB_DP</text>
+        <text x="644" y="215" text-anchor="middle" fill="var(--data)" font-size="10.5">USB_DM</text>
+
+        <!-- MCU -->
+        <rect x="706" y="150" width="150" height="132" rx="7"
+              fill="var(--card)" stroke="currentColor" stroke-width="1.8"/>
+        <text x="781" y="178" text-anchor="middle" fill="currentColor" font-size="13" font-weight="700">U4</text>
+        <text x="781" y="196" text-anchor="middle" fill="currentColor" font-size="10.5" opacity=".75">STM32G474RET6</text>
+        <text x="781" y="224" text-anchor="middle" fill="var(--data)" font-size="12.5" font-weight="700">PA12 &nbsp;D+</text>
+        <text x="781" y="246" text-anchor="middle" fill="var(--data)" font-size="12.5" font-weight="700">PA11 &nbsp;D&minus;</text>
+        <text x="781" y="268" text-anchor="middle" fill="currentColor" font-size="10" opacity=".6">pins 46 / 45</text>
+
+        <!-- ================= CC pulldowns ================= -->
+        <path d="M186 269 H360" stroke="var(--config)" stroke-width="2.2" fill="none"/>
+        <path d="M186 311 H360" stroke="var(--config)" stroke-width="2.2" fill="none"/>
+        <rect x="360" y="259" width="52" height="20" rx="2" fill="var(--card)" stroke="var(--config)" stroke-width="2"/>
+        <rect x="360" y="301" width="52" height="20" rx="2" fill="var(--card)" stroke="var(--config)" stroke-width="2"/>
+        <text x="386" y="273" text-anchor="middle" fill="var(--config)" font-size="10" font-weight="700">5.1k</text>
+        <text x="386" y="315" text-anchor="middle" fill="var(--config)" font-size="10" font-weight="700">5.1k</text>
+        <text x="386" y="252" text-anchor="middle" fill="var(--config)" font-size="10.5" font-weight="700">R9</text>
+        <text x="386" y="337" text-anchor="middle" fill="var(--config)" font-size="10.5" font-weight="700">R10</text>
+        <path d="M412 269 H440 V612" stroke="var(--config)" stroke-width="1.6" fill="none" opacity=".8"/>
+        <path d="M412 311 H440" stroke="var(--config)" stroke-width="1.6" fill="none" opacity=".8"/>
+        <text x="470" y="300" fill="var(--config)" font-size="10.5" opacity=".9">declares UFP, 500 mA</text>
+
+        <!-- ================= NC ================= -->
+        <path d="M186 378 H250" stroke="var(--nc)" stroke-width="1.8" fill="none" stroke-dasharray="5 4"/>
+        <g stroke="var(--nc)" stroke-width="2">
+          <path d="M256 371 l12 12 M268 371 l-12 12"/>
+        </g>
+        <text x="284" y="376" fill="var(--nc)" font-size="11.5" font-weight="700">No ERC &mdash; leave floating</text>
+        <text x="284" y="392" fill="var(--nc)" font-size="10.5">never tie to GND</text>
+
+        <!-- ================= Shield ================= -->
+        <path d="M186 451 H300" stroke="var(--shield)" stroke-width="2.2" fill="none"/>
+        <text x="243" y="443" text-anchor="middle" fill="var(--shield)" font-size="10.5">NET_SHIELD</text>
+        <rect x="300" y="424" width="54" height="20" rx="2" fill="var(--card)" stroke="var(--shield)" stroke-width="2"/>
+        <text x="327" y="438" text-anchor="middle" fill="var(--shield)" font-size="10" font-weight="700">1 M&#8486;</text>
+        <text x="327" y="416" text-anchor="middle" fill="var(--shield)" font-size="10.5" font-weight="700">R11</text>
+        <rect x="300" y="466" width="54" height="20" rx="2" fill="var(--card)" stroke="var(--shield)" stroke-width="2"/>
+        <text x="327" y="480" text-anchor="middle" fill="var(--shield)" font-size="10" font-weight="700">4.7 nF</text>
+        <text x="327" y="502" text-anchor="middle" fill="var(--shield)" font-size="10.5" font-weight="700">C24</text>
+        <path d="M300 451 V434 M300 451 V476 M354 434 H380 V476 H354" stroke="var(--shield)"
+              stroke-width="1.6" fill="none"/>
+        <path d="M380 455 V612" stroke="var(--shield)" stroke-width="1.6" fill="none"/>
+        <circle cx="380" cy="455" r="3.5" fill="var(--shield)"/>
+        <text x="410" y="500" fill="var(--shield)" font-size="10.5" opacity=".9">parallel &mdash; the only path to GND</text>
+
+        <!-- bottom rail -->
+        <path d="M250 612 H560" stroke="currentColor" stroke-width="1.6" fill="none" opacity=".45"/>
+        </g>
+      </svg>
+
+      <figcaption>
+        <div class="key">
+          <span><i style="background:var(--power)"></i>Power</span>
+          <span><i style="background:var(--data)"></i>Data</span>
+          <span><i style="background:var(--config)"></i>Configuration</span>
+          <span><i style="background:var(--shield)"></i>Shell / shield</span>
+          <span><i style="background:var(--nc)"></i>Unused</span>
+        </div>
+        Pad numbers are from Molex product drawing <span class="m">2047110001</span> rev B sheet 2,
+        which matches the USB Type-C standard receptacle assignment.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Every net, once</h2>
+    <div class="tbl">
+      <table>
+        <thead>
+          <tr><th>Group</th><th>Pads</th><th>Net</th><th>Goes to</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="chip c-power">Power</span></td>
+            <td class="pins">A4 &nbsp;A9 &nbsp;B4 &nbsp;B9</td>
+            <td class="net">NET_VBUS</td>
+            <td><span class="m">D6</span> anode, and the <span class="m">U5</span> VBUS pin. All four pads &mdash; they share the current.</td>
+          </tr>
+          <tr>
+            <td><span class="chip c-data">Data</span></td>
+            <td class="pins">A6 &nbsp;B6</td>
+            <td class="net">USB_DP_CON</td>
+            <td>Tied together, then <span class="m">U5</span> &rarr; <span class="m">PA12</span>.</td>
+          </tr>
+          <tr>
+            <td><span class="chip c-data">Data</span></td>
+            <td class="pins">A7 &nbsp;B7</td>
+            <td class="net">USB_DM_CON</td>
+            <td>Tied together, then <span class="m">U5</span> &rarr; <span class="m">PA11</span>.</td>
+          </tr>
+          <tr>
+            <td><span class="chip c-config">Config</span></td>
+            <td class="pins">A5</td>
+            <td class="net">CC1</td>
+            <td><span class="m">R9</span> 5.1&nbsp;k&#8486; to <span class="m">GND</span>.</td>
+          </tr>
+          <tr>
+            <td><span class="chip c-config">Config</span></td>
+            <td class="pins">B5</td>
+            <td class="net">CC2</td>
+            <td><span class="m">R10</span> 5.1&nbsp;k&#8486; to <span class="m">GND</span>. Not adjacent to CC1 &mdash; see below.</td>
+          </tr>
+          <tr>
+            <td>Ground</td>
+            <td class="pins">A1 &nbsp;A12 &nbsp;B1 &nbsp;B12</td>
+            <td class="net">GND</td>
+            <td>Directly. These are signal grounds, not the shell.</td>
+          </tr>
+          <tr>
+            <td><span class="chip c-shield">Shield</span></td>
+            <td class="pins">MNT 1&ndash;6</td>
+            <td class="net">NET_SHIELD</td>
+            <td><span class="m">R11</span> 1&nbsp;M&#8486; &#8741; <span class="m">C24</span> 4.7&nbsp;nF to <span class="m">GND</span>. Never straight to ground.</td>
+          </tr>
+          <tr>
+            <td><span class="chip c-nc">Unused</span></td>
+            <td class="pins">A2 A3 A10 A11<br>B2 B3 B10 B11</td>
+            <td class="net">&mdash;</td>
+            <td>SuperSpeed pairs. Floating, with a No&nbsp;ERC marker.</td>
+          </tr>
+          <tr>
+            <td><span class="chip c-nc">Unused</span></td>
+            <td class="pins">A8 &nbsp;B8</td>
+            <td class="net">&mdash;</td>
+            <td>SBU1 / SBU2. Floating, with a No&nbsp;ERC marker.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Four ways to get this wrong</h2>
+    <div class="hazards">
+
+      <div class="haz">
+        <h3>Pairing D+ with D&minus;</h3>
+        <p>Tie <span class="m">A6&ndash;B6</span> and <span class="m">A7&ndash;B7</span>. Not
+          <span class="m">A6&ndash;A7</span>.</p>
+        <p>Joining the two <em>halves</em> of each signal is what makes the connector reversible.
+          Joining D+ to D&minus; shorts the pair &mdash; a dead port that looks perfectly symmetrical
+          on the schematic.</p>
+      </div>
+
+      <div class="haz">
+        <h3>Grounding the SuperSpeed pads</h3>
+        <p>They look like ten free pads to stitch down. They are not.</p>
+        <p>A full-featured cable carries live differential signals on those pins whenever a host
+          attempts a SuperSpeed link, and grounding them loads the host's transmitter.
+          <em>Unused on this board</em> is not <em>unused on the cable</em>.</p>
+      </div>
+
+      <div class="haz">
+        <h3>Tabs straight to <span class="m">GND</span></h3>
+        <p>All six go to <span class="m">NET_SHIELD</span>, which reaches ground only through
+          <span class="m">R11</span> &#8741; <span class="m">C24</span>.</p>
+        <p>Wire them to <span class="m">GND</span> and you short out both parts, losing the shield
+          isolation, on a board that still looks correct.</p>
+      </div>
+
+      <div class="haz">
+        <h3>Reading the pad table as a grid</h3>
+        <p><span class="m">CC1</span> is <span class="m">A5</span>; <span class="m">CC2</span> is
+          <span class="m">B5</span>. They are not adjacent.</p>
+        <p>The drawing prints the B row backwards, <span class="m">B12&hellip;B1</span>. Read it as
+          labelled pairs. Swapping the CC pins is harmless here &mdash; both are 5.1&nbsp;k&#8486; to
+          ground &mdash; but the same misreading one column over swaps <span class="m">SBU2</span>
+          with <span class="m">CC2</span>.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="note">
+      <h3>Two things this diagram cannot tell you</h3>
+      <p><strong><span class="m">U5</span>'s pin numbers are not specified anywhere in the project.</strong>
+        Every document describes it by function &mdash; I/O1, I/O2, VBUS, GND &mdash; and none gives a
+        pin number for the SOT-23-6 package. That is the same gap as the BAV199's third pin, and it is
+        recorded rather than guessed: st.com and the LCSC mirror both failed to return the datasheet.
+        Take the pin mapping from the library symbol and confirm it against ST's datasheet before
+        capture.</p>
+      <p><strong>Fitting <span class="m">R_VBUS</span> lets USB reach the vehicle rail.</strong>
+        VBUS works back through the buck's high-side body diode onto <span class="m">+12V_P</span> at
+        roughly 4&nbsp;V, turning <span class="m">Q1</span> on and putting about 4&nbsp;V on
+        <span class="m">J1</span> pin&nbsp;1. Harmless with <span class="m">J1</span> unmated, which is
+        the bench case. Accepted deliberately &mdash; a blocking diode would cost 0.4&nbsp;V and the CAN
+        transceiver needs 4.75&nbsp;V minimum. Full reasoning in
+        <span class="m">wheel-schematic-complete.md</span> &sect;3.4a.</p>
+    </div>
+  </section>
+
+  <footer>
+    Sources: Molex product drawing <span class="m">2047110001</span> rev B &middot;
+    <span class="m">memory/wheel-schematic-complete.md</span> &sect;3.4 and &sect;3.4a &middot;
+    capture procedure in <span class="m">memory/wheel-pcb-altium-instructions.md</span> &sect;3.2a.
+  </footer>
+
+</div>

@@ -479,6 +479,11 @@ selectable and therefore gettable wrong (see the ordering box in §3.2).
 | `R11` | 1 MΩ, 0402 | `NET_SHIELD` → `GND` |
 | `C24` | 4.7 nF, 0402 | `NET_SHIELD` → `GND` (parallel with `R11`) |
 
+**A net-level wiring diagram of this whole stage is at `hardware/wheel/usb-hookup-diagram.html`** —
+connector to protection to MCU in one picture, with the pad groups colour-coded by function and
+the four common mistakes called out. Use it alongside the capture procedure in
+`wheel-pcb-altium-instructions.md` §3.2a; neither replaces the pad map below.
+
 `J2` D+/D− (both pairs — A6/A7 with B6/B7 — tied) → `USB_DM_CON`/`USB_DP_CON`. VBUS pins →
 `NET_VBUS`. Signal grounds → `GND`.
 
