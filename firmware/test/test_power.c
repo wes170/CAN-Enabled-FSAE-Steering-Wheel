@@ -40,6 +40,13 @@ int main(void)
     power_reset_state();
     ck("before any measurement the source is USB",
        power_source_get() == POWER_SRC_USB);
+    ck("and 'never measured' is distinguishable from 'measured, it is USB'",
+       !power_source_ever_measured());
+    power_source_update(0u);
+    ck("one reading of 0 V still says USB, but now it HAS been measured",
+       power_source_get() == POWER_SRC_USB && power_source_ever_measured());
+    power_reset_state();
+    ck("reset clears the measured flag too", !power_source_ever_measured());
     ck("before enumeration the cap is ZERO, not the USB cap",
        power_led_cap_ma() == 0u);
 

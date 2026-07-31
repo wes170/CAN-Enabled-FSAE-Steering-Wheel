@@ -117,8 +117,10 @@
  *  bring-up. Symptom if wrong: no image or a badly wrong refresh rate — loud,
  *  not subtle, and safe to discover on the bench. */
 
-/* SPI ceiling for this module. Note it is 15x the wheel panel's. */
-#define EVE_SPI_MAX_HZ 30000000u
+/* SPI ceiling for this module -- defined once in board_config.h. Note it is
+ * 15x the wheel panel's. */
+_Static_assert(EVE_SPI_MAX_HZ == 30000000u,
+               "BT817 SPI ceiling changed in board_config.h without review");
 
 bool display_dash_init(void);
 bool display_dash_is_ready(void);

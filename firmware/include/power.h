@@ -45,8 +45,7 @@ typedef enum {
  * ------------------------------------------------------------------------ */
 #define V12_DIV_TOP_OHM     47000u
 #define V12_DIV_BOTTOM_OHM  10000u
-#define ADC_VREF_MV          3300u
-#define ADC_FULL_SCALE       4095u
+/* ADC_VREF_MV and ADC_FULL_SCALE come from board_config.h -- one home. */
 
 uint32_t power_v12_mv_from_adc(uint16_t adc_counts);
 
@@ -112,6 +111,14 @@ power_source_t power_source_update(uint32_t v12_mv);
 
 /* The source last decided. Before the first update() this is POWER_SRC_USB. */
 power_source_t power_source_get(void);
+
+/*  Has a rail measurement ever been fed in?
+ *
+ *  Without this, "LEDs are dark because nobody is calling power_source_update()"
+ *  and "LEDs are dark because we really are on an unenumerated USB port" are the
+ *  same observable state, and the first one costs an hour at bring-up. The
+ *  fail-safe default is correct either way; this just makes it diagnosable. */
+bool power_source_ever_measured(void);
 
 /* USB enumeration state, driven by the USB device stack's SET_CONFIGURATION
  * handler. Ignored entirely when the vehicle rail is present. */

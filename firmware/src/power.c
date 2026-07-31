@@ -11,6 +11,7 @@
 
 static power_source_t s_src = POWER_SRC_USB;   /* unknown == USB, deliberately */
 static bool           s_usb_configured;
+static bool           s_ever_measured;
 
 uint32_t power_v12_mv_from_adc(uint16_t adc_counts)
 {
@@ -26,6 +27,8 @@ uint32_t power_v12_mv_from_adc(uint16_t adc_counts)
 
 power_source_t power_source_update(uint32_t v12_mv)
 {
+    s_ever_measured = true;
+
     /* Hysteresis, not a single threshold. A bare comparison at one level
      * chatters when the rail sits on it — and "chatters" here means the LED cap
      * flipping between 450 mA and 300 mA at whatever rate the ADC scans, which
@@ -38,7 +41,8 @@ power_source_t power_source_update(uint32_t v12_mv)
     return s_src;
 }
 
-power_source_t power_source_get(void) { return s_src; }
+power_source_t power_source_get(void)      { return s_src; }
+bool           power_source_ever_measured(void) { return s_ever_measured; }
 
 void power_set_usb_configured(bool configured) { s_usb_configured = configured; }
 bool power_usb_configured(void)                { return s_usb_configured; }
@@ -58,6 +62,7 @@ void power_reset_state(void)
 {
     s_src = POWER_SRC_USB;
     s_usb_configured = false;
+    s_ever_measured  = false;
 }
 
 #endif /* BOARD_WHEEL */

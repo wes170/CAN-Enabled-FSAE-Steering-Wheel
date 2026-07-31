@@ -25,9 +25,9 @@
  *  temperatures and pressures this front end is for, 2% is acceptable. If a
  *  channel ever needs better, the fix is ratiometric sensing (excite the
  *  sensor from the same rail and the error cancels), not a bigger number here. */
-#define ADC_VREF_MV 3300u
-
-#define ADC_FULL_SCALE 4095u
+/*  ADC_VREF_MV and ADC_FULL_SCALE now live in board_config.h -- they are board
+ *  facts shared with the wheel's rail monitors, and keeping a second copy here
+ *  meant two homes for one number. */
 
 /*  A channel that has never been converted must not read as 0 V — the same
  *  "never arrived vs. genuinely zero" distinction as the CAN staleness logic.

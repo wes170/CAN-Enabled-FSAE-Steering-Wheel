@@ -2,7 +2,7 @@
  *
  * The MCU holds no framebuffer for this display. It sends drawing commands to
  * a coprocessor which rasterises them. That is why an 800x480 colour panel is
- * affordable on the same MCU that drives a 176x176 panel pixel-by-pixel.
+ * affordable on the same MCU that drives the wheel's 400x240 panel pixel-by-pixel.
  */
 
 #include "display_dash.h"

@@ -7,16 +7,37 @@ one toolchain, one CAN stack, one set of bugs to fix.
 ```
 firmware/
 ├── include/
-│   ├── board_config.h     pin map for both boards — the single source of truth
-│   ├── clock_config.h     PLL/CAN timing, with datasheet limits as static asserts
-│   ├── system_init.h
-│   └── haltech_can.h      keypad emulation, IO12 emulation, broadcast decode
-├── src/
-│   ├── system_init.c      clock tree, UCPD dead-battery release, boot guard
-│   └── haltech_can.c      the three protocols, hardware-free
+│   ├── board_config.h     pin map + board facts — the single source of truth
+│   ├── clock_config.h     PLL/CAN/USB timing, datasheet limits as static asserts
+│   ├── power.h            WHEEL: which supply is feeding us, and the LED cap
+│   ├── system_init.h      clock tree, UCPD release, boot guard, USB clock
+│   ├── haltech_can.h      keypad emulation, IO12 emulation, broadcast decode
+│   ├── encoder.h  input.h  led.h          WHEEL peripherals
+│   ├── display_wheel.h    WHEEL: Sharp LS027B7DH01, 400x240 mono
+│   ├── servo.h  daq.h                     DASH peripherals
+│   └── display_dash.h     DASH: BT817 EVE
+├── src/                   one .c per header above
 └── test/
     └── run-tests.sh       host tests — no board, no cross-compiler needed
 ```
+
+## The integration contract — read this before writing a main loop
+
+There is **no main loop in this repository yet**. Every module is a standalone driver, which means
+the call schedule below exists only here. Getting it wrong mostly fails *quietly*, so it is written
+down rather than left to be rediscovered.
+
+| Call | Rate | What breaks if it is missing |
+|---|---|---|
+| `system_init()` | once, **first** | `ucpd_dead_battery_disable()` must run before ANY GPIO setup, or a 5.1 kΩ pull-down kills `ENC3_A` whenever the debug cable is attached (defect 8.2) |
+| `power_source_update(power_v12_mv_from_adc(...))` | ≥ 10 Hz | **The LEDs stay dark forever.** The cap defaults to the fail-safe USB/unenumerated value of 0 mA. `power_source_ever_measured()` exists to tell this apart from "genuinely on USB" at bring-up |
+| `display_wheel_task_1ms()` | **1 ms** | EXTCOMIN stops toggling → DC bias builds across the panel → **permanent damage**. Also drives the anti-sticking refresh. `display_wheel_extcomin_healthy()` is the watchdog; wire it to something visible |
+| `input_task_1ms()` | 1 ms | debounce integrator never advances; buttons never register |
+| `servo_task_1ms()` (dash) | 1 ms | the four ARB safety rules stop running — CAN-loss hold, end-stops, slew limit, divergence alarm. **This is the one where "quietly" is not true: it is a handling event** |
+| `display_wheel_flush()` | after drawing | nothing reaches the panel |
+
+**Order matters in exactly one place:** `system_init()` first, and inside it the UCPD release before
+the clock tree. Everything else is rate-driven.
 
 ## Running the tests
 
@@ -32,7 +53,7 @@ The protocol tests are the valuable ones, because every failure they check for i
 hardware**: a keypad that transmits before NMT start is simply ignored, a byte-order slip produces
 plausible numbers, and a stale reading looks exactly like a live one.
 
-## Status: all eight drivers written, none run on hardware yet
+## Status: all drivers written, none run on hardware yet
 
 Every driver in the Step 3 build order now exists and passes its host tests. **None of it has run on
 a board** — what the tests prove is the logic that can be proven at a desk, and the README is explicit
@@ -50,9 +71,10 @@ about which claims are which.
 | `led.c` | Written and host-tested (WS2812 DMA + the global current cap) |
 | `servo.c` | Written and host-tested (all four ARB safety rules) |
 | `daq.c` | Written and host-tested (8-channel scan, conversions, validity) |
-| `display_wheel.c` | Written and host-tested (JDI protocol, EXTCOMIN watchdog) |
+| `power.c` | Written and host-tested — runtime supply detection and the LED cap that follows from it (Rev B.5, one build for car and sim) |
+| `display_wheel.c` | **Rewritten for the Sharp LS027B7DH01** (Rev B.11) and host-tested — 400x240 mono, LSB-first gate address asserted against the datasheet's own §6-6 table, EXTCOMIN watchdog, anti-sticking refresh |
 | `display_dash.c` | Written and host-tested (EVE protocol, panel timing) |
-| USB HID (sim variant) | Not written |
+| USB HID (sim-rig personality) | **Not written.** No longer a build variant — one image, and `power.h` decides at run time |
 
 ## Writing the firmware already found a hardware defect
 

@@ -1573,19 +1573,25 @@ property that governs the decision (supply rail, terminal count) went unstated.
 - **FPC handling:** bend only 0.8–6.0 mm from the glass, inner radius ≥ R0.45, never backward toward
   the polariser, **3 bends maximum ever**, and never hang the module by the flex.
 
-### `[OPEN — deferred by the user]` — the display driver firmware
+### The display driver — **rewritten** (was deferred; done 2026-07)
 
-`firmware/{include,src}/display_wheel.*` still targets the **JDI** part: 176 × 176, 3 bits per pixel,
-10-bit MSB-first gate address. **It will not drive this panel.** The rewrite is deferred by choice
-(user, 2026-07) to keep momentum on the PCB, which is the right call — none of it blocks layout.
-
-Recorded here rather than left implicit, because a driver that targets a part no longer on the BOM is
-exactly the stale artifact this project keeps finding. What it needs: 400 × 240 at 1 bit/pixel
+`display_wheel.{h,c}` and `test_display.c` are rewritten for this panel: 400 × 240 at 1 bit/pixel
 (50 bytes/line, 12,000-byte frame buffer), the `[M0 M1 M2 + 5 dummy][8-bit LSB-first gate address]
-[400 data][16 dummy]` format, dirty-line tracking (a full frame is ~104 ms at 1 MHz), and the
-anti-sticking periodic rewrite. One item needs a bench check rather than a datasheet: the **pixel
-order within a data byte**, whose failure mode is a horizontal mirror in 8-pixel blocks and whose fix
-is one constant.
+[400 data][16 dummy]` format, dirty-line tracking, and the anti-sticking periodic rewrite.
+
+**The gate-address test vectors are transcribed from the datasheet's §6-6 table, not generated from
+the implementation** — L1 → 0x80, L2 → 0x40, L3 → 0xC0, L238 → 0x77, L239 → 0xF7, L240 → 0x0F. They
+fail if the LSB-first reversal is dropped, and they would have failed the old JDI driver. That is the
+difference between a test that checks the code against itself and one that checks it against the part.
+
+Coordinate types widened from `uint8_t` to `uint16_t`: **399 and 239 do not fit the old API**, which
+is a compile-time catch rather than a runtime one, and is covered by a far-corner test.
+
+**One item is a bench check, not a datasheet read:** the **pixel order within a data byte**. The
+timing chart shows D1…D400 in order but does not resolve the intra-byte bit order at the fidelity the
+PDF renders. Implemented MSB-first (pixel 0 = bit 7 of byte 0), with the symptom and the fix recorded
+in the code: a horizontal mirror in 8-pixel blocks, fixed by one shift expression. Marked as a
+bring-up observation rather than guessed at silently.
 
 ### Also corrected in the same pass (documentation, no board consequence)
 

@@ -90,6 +90,24 @@
 #define HSE_FREQ_HZ   16000000u         /* confirm against the fitted crystal */
 #define SYSCLK_HZ     170000000u
 
+/*  ADC reference and range — a property of the BOARD, not of any one driver,
+ *  so it lives here once. Both boards run VREF+ from the filtered +3V3A rail
+ *  through FB1, and both use the G474's 12-bit ADCs.
+ *
+ *  ⚠ This used to be defined twice: daq.h (dash) and power.h (wheel). The two
+ *  copies never collided, because those headers sit in mutually exclusive
+ *  board branches -- which is exactly what makes that kind of duplication
+ *  survive. Same shape as defect 8.1: one fact, two homes, and nothing forcing
+ *  them to agree.
+ *
+ *  The 3.3 V figure is the NOMINAL rail. Regulator initial accuracy is
+ *  typically ±2%, so every reading inherits that as a gain error; for the
+ *  temperatures, pressures and rail monitors this feeds, 2% is acceptable. If
+ *  a channel ever needs better, the fix is ratiometric sensing (excite the
+ *  sensor from the same rail and the error cancels), not a bigger number. */
+#define ADC_VREF_MV    3300u
+#define ADC_FULL_SCALE 4095u
+
 /* Debug UART (USART1) and SWD are identical on both boards. */
 #define DBG_UART_TX_PORT  GPIOA
 #define DBG_UART_TX_PIN   9u
@@ -161,8 +179,12 @@
 #define LED_CURRENT_CAP_MA_CAR  450u
 #define LED_CURRENT_CAP_MA_USB  300u
 
-/* Display: JDI LPM013M126A, 176x176, 8 colours, reflective memory-in-pixel.
- * Pin-compatible with the Sharp LS013B7DH05 mono fallback. */
+/* Display: Sharp LS027B7DH01, 400x240 mono, 2.7in reflective memory-in-pixel.
+ * Rev B.11 replaced the JDI LPM013M126A (176x176, 8 colours) with this panel.
+ * The 10-pin FPC pinout is IDENTICAL, so none of the pins below moved -- but
+ * the panel now runs from +5V and the wire format is a different protocol.
+ * ⚠ NOT pin-compatible with the LS013B7DH05 in any useful sense: that part is
+ * 3 V and this board's display rail is now 5 V (defect 8.24). */
 #define LCD_SCLK_PORT     GPIOA
 #define LCD_SCLK_PIN      5u            /* SPI1_SCK  */
 #define LCD_SI_PORT       GPIOA
@@ -174,18 +196,24 @@
 #define LCD_EXTCOMIN_PORT GPIOC
 #define LCD_EXTCOMIN_PIN  3u
 
-/*  ⚠ Two display constraints that are invisible on the schematic:
+/*  ⚠ Three display constraints that are invisible on the schematic:
  *   1. SCLK maximum is 2.00 MHz (1.00 MHz typical). The STM32 will happily
  *      clock SPI1 at 20 MHz+. Cap it or the panel misbehaves.
  *   2. EXTCOMIN must be toggled continuously at ~1 Hz whenever the panel is
  *      powered. It is what prevents a DC bias building across the liquid
- *      crystal. Stop toggling and you eventually damage the display.  */
+ *      crystal. Stop toggling and you eventually damage the display.
+ *   3. NEW with this panel: the frame must be REWRITTEN PERIODICALLY even when
+ *      nothing changes. A still image must not stand more than two hours, and
+ *      a static-discharge event can drop pixel memory outright -- on a wheel
+ *      gripped by a driver in a synthetic-fibre suit, that is not
+ *      hypothetical. See LCD_ANTI_STICK_REFRESH_MS in display_wheel.h.  */
 #define LCD_SPI_MAX_HZ    2000000u
 #define LCD_EXTCOMIN_HZ   1u
 
 /* Paddle sense taps — observation only. The paddle signals themselves are
  * copper from the connector to the ECU and do not pass through this MCU.
- * In the SIM build these become the shift inputs.
+ * When the wheel is USB-powered (sim rig) these become the shift inputs --
+ * a run-time personality now, not a build variant. See power.h.
  *
  * READ THESE WITH THE ADC, NOT AS GPIO. PB0/PB1 are TT_a pins (4.0 V absolute
  * max input) and the Nexus pulls the paddle lines to 5 V or 12 V depending on

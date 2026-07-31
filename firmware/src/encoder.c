@@ -2,11 +2,24 @@
  *
  * The MCU's timers do the decoding, which matters for more than CPU load: a
  * hardware decoder cannot miss an edge or mis-order two edges that arrive
- * microseconds apart, and it filters the illegal state transitions that
- * contact bounce produces. A software-polled decoder on six channels would
- * lose counts during a fast flick of a thumb wheel, and lost counts on a trim
+ * microseconds apart. A software-polled decoder on six channels would lose
+ * counts during a fast flick of a thumb wheel, and lost counts on a trim
  * control mean the ECU's idea of the trim silently drifts away from the
  * driver's.
+ *
+ * ⚠ CORRECTED: an earlier version of this comment said the timer "filters the
+ * illegal state transitions that contact bounce produces". That names the
+ * wrong mechanism. The Bourns datasheets specify 5.0 ms of contact bounce
+ * (PEC09) and 3.0 ms (PEC11H) -- far longer than either the conditioning RC
+ * (1 ms rising) or the timer's input filter (IC1F = 0b1111, about 1.5 us at
+ * 170 MHz). Neither of those is what defeats mechanical bounce.
+ *
+ * What defeats it is QUADRATURE ITSELF. The count direction depends on the
+ * RELATIVE state of A and B, so while one contact is chattering the other is
+ * stable: the counter steps up and down alternately and lands back exactly
+ * where it started. Bounce cancels by construction. That self-cancellation is
+ * the real reason to decode in hardware, and the RC and the input filter are
+ * there for electrical noise.
  *
  * Everything here that can be *wrong* -- counts-to-detents, wrap handling,
  * end-stops -- is in pure functions with no register access, so it is tested
@@ -127,9 +140,12 @@ static void encoder_timer_init(TIM_TypeDef *t)
 
     /* Both channels as inputs mapped to their own inputs. */
     t->CCMR1 = TIM_CCMR1_CC1S_0 | TIM_CCMR1_CC2S_0
-             /* Input filter. The conditioning RC already gives ~100 us, but
-              * mechanical contacts still chatter; the timer's digital filter
-              * costs nothing and rejects what survives the RC. */
+             /* Input filter at maximum: fSAMPLING = fDTS/32, N = 8, so it
+              * rejects pulses shorter than about 1.5 us at 170 MHz. That is
+              * for ELECTRICAL noise -- it is three orders of magnitude short
+              * of the datasheets' 3-5 ms of mechanical bounce, which
+              * quadrature cancels on its own (see the file header). It costs
+              * nothing, so it is set to maximum. */
              | (0x0Fu << TIM_CCMR1_IC1F_Pos)
              | (0x0Fu << TIM_CCMR1_IC2F_Pos);
 
