@@ -901,8 +901,64 @@ far. This board uses two different encoder parts depending on where they sit:
 
 | Ref | Part | Nets |
 |---|---|---|
-| `ENC1`–`ENC4` | **PEC09-2120F-S0012** — a right-angle encoder (its shaft points sideways out of the board rather than straight up), 12 pulses per revolution (PPR), 12 detents, with an integrated push switch | A → `ENC1_A`… B → `ENC1_B`… SW → `ENC1_SW`… (and so on through ENC4), commons → `GND` |
-| `ENC5`, `ENC6` | **PEC11H-4120F-S0020** — a vertical-bushing encoder (shaft points straight up through a panel), 20 PPR, 20 detents, with an integrated push switch | `ENC5_A/B/SW`, `ENC6_A/B/SW`, commons → `GND` |
+| `ENC1`–`ENC4` | **PEC09-2120F-S0012** — a right-angle encoder (its shaft points sideways out of the board rather than straight up), 12 pulses per revolution (PPR), 12 detents, with an integrated push switch | **five terminals — see the table below** |
+| `ENC5`, `ENC6` | **PEC11H-4120F-S0020** — a vertical-bushing encoder (shaft points straight up through a panel), 20 PPR, 20 detents, with an integrated push switch | **five terminals — see the table below** |
+
+#### Each encoder has FIVE terminals, not three — and this guide used to say three
+
+If you're looking at the part and counting more pins than the instructions account for, you're right,
+and until now they were wrong. Both encoders are really **two separate switches in one body**: the
+rotary encoder itself, and a push switch you get by pressing the shaft in. Each needs its own
+connections.
+
+**`ENC1`–`ENC4` (PEC09):**
+
+| Terminal | What it is | Wire it to |
+|---|---|---|
+| **A** | encoder channel A | `ENCn_A` — via its own conditioning cell |
+| **B** | encoder channel B | `ENCn_B` — via its own conditioning cell |
+| **C** | **the encoder's common** | **`GND`** |
+| **D** | push switch, one side | `ENCn_SW` — via its own conditioning cell |
+| **E** | push switch, other side | **`GND`** |
+| locating lug(s) | purely mechanical — **no net at all** | holes in the PCB, for alignment and to stop the part being torn off by the shaft |
+
+**`ENC5`, `ENC6` (PEC11H):** same idea — `A CHANNEL`, `C COMMON`, `B CHANNEL`, plus two switch pins
+(one to `ENCn_SW`, the other to `GND`), plus **two Ø2.2 mm locating posts** that are mechanical only.
+
+⚠ **On the PEC11H, the common is the MIDDLE pin of the three**, not one of the ends — Bourns labels
+them `A CHANNEL / C COMMON / B CHANNEL` in that physical order. Wire it like a part with the common at
+one end and you swap a channel with the common. That doesn't fail loudly: the encoder still produces
+counts, they're just nonsense, and it looks exactly like a firmware bug in the quadrature decoder.
+
+The switch is an **SPST momentary** — a plain on/off contact between its two terminals — so which of
+the two goes to the net and which goes to ground doesn't matter electrically. Pick one and draw all
+six the same way.
+
+The old wording said "commons → `GND`", plural and undefined, and named a single `SW` net for a
+**two**-terminal switch. Captured literally, the second switch pin goes nowhere and the button reads
+as permanently un-pressed on every encoder.
+
+#### Two things the datasheets say that are worth knowing before you fit them
+
+**They're only rated to +70 °C, and only IP40.** The rest of the board is specified to +85 °C, and the
+buttons next to them were chosen *specifically* for their IP67 sealing. The encoders are −10…+70 °C
+(PEC09) / −20…+70 °C (PEC11H) and offer **no water protection at all**. Neither choice is wrong on its
+own — but they were never compared, and the encoders are now the wheel's weakest parts for both heat
+and weather. Both are logged as open questions for the team (A11, A12); the temperature one shares its
+answer with the display, which has the same +70 °C ceiling.
+
+**Contact bounce is 3–5 ms, which is longer than the filter, and that's fine.** Mechanical contacts
+chatter when they close, and these are specified at up to 5 ms of it — while the conditioning cell's
+rising filter is only about 1 ms. That looks like a mismatch and isn't, because of *how* quadrature
+decoding works: the direction the counter moves depends on the **relative** state of A and B. While
+one contact is chattering, the other is sitting still, so the counter ticks up and down alternately
+and lands back exactly where it started. The bounce cancels itself out. That self-cancelling property
+is the main reason to decode with the timer hardware rather than by polling in software, and it's why
+nobody needs a slower filter here.
+
+(The push *switch* is a different story — it goes through the software debounce, which requires 20 ms
+of steady signal before it believes a press. Comfortably longer than 5 ms.)
+
 
 The right-angle parts (ENC1–4) are for thumb-operated controls, where the wheel's faceplate is
 roughly parallel to the main PCB and a thumb reaches in from the edge; the vertical parts (ENC5–6)

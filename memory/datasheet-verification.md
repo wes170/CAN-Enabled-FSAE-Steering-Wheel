@@ -1428,6 +1428,92 @@ leave the board (`BTN5`/`BTN6` via `J5`/`J6`) already carry `D7`/`D8` BAV99 clam
 `GND`. **Grouped with the §4.3 justification flag** for a single re-read of DS12288 Tables 14/15 at
 G1, rather than rewritten from memory — which is how defect 8.11 happened.
 
+## §11 — Bourns encoder datasheets, finally read (Rev B.10)
+
+Both were listed as VERIFIED after a distributor-parametric pass; **neither primary datasheet had been
+opened**, and `bourns.com` had 403'd every attempt. It answers a plain `curl` with a browser
+user-agent. Both PDFs are now in `hardware/lib/`. The user's question — *"both encoders have extra
+pins the instructions don't say what to do with"* — is correct, and the read turned up four more
+things.
+
+### Defect 8.22 — five terminals documented as three (MAJOR — every encoder on the board)
+
+§5.2 read: *"A→`ENC1_A`, B→`ENC1_B`, SW→`ENC1_SW`, commons → `GND`"*. Both parts have **five
+electrical terminals plus mechanical locating features**:
+
+| | PEC09-2120F-S0012 | PEC11H-4120F-S0020 |
+|---|---|---|
+| Encoder | `A`, `B`, **`C` = common** | `A CHANNEL`, **`C COMMON`**, `B CHANNEL` |
+| Switch | **`D`, `E`** — SPST between them | **2 pins** — SPST |
+| Mechanical | locating lug(s) | **2 × Ø2.2 mm** locating posts |
+
+The word doing the damage was **"commons"** — plural, undefined, and covering *both* the encoder
+common and, apparently, one side of the switch. `SW` named **one** net for a **two**-terminal switch,
+so the second switch terminal had no destination anywhere in the project. A capture from this table
+leaves a floating switch pin: the button reads as permanently released, on all six encoders.
+
+**PEC11H's common is the CENTRE terminal** (`A CHANNEL / C COMMON / B CHANNEL`, in that physical
+order). Treating it as a common-at-one-end part swaps a channel with the common — which fails
+*quietly*, producing nonsense counts that read as a firmware quadrature bug.
+
+Identical in shape to **8.19** (the BAV199's third pin) and **8.21** (the missing switch symbol):
+a component described by function rather than by terminal. Three in a row, all found by the user.
+
+### Defect 8.23 — a faceplate dimension that is not in the datasheet (MODERATE — machining)
+
+`wheel-pcb-altium-instructions.md` and the BOM both said the PEC11H needs a **"bushing hole Ø9.5 mm +
+anti-rotation slot in the faceplate."** The Bourns drawing shows the bushing as **`M7 × 0.75`** — a
+7 mm thread, wanting roughly a 7.1–7.5 mm clearance hole. **Ø9.5 mm is not in the document**, and a
+faceplate machined to it leaves the encoder loose in a 2.5 mm oversized hole.
+
+The "anti-rotation slot in the faceplate" is also unsupported: the anti-rotation feature these parts
+provide is the **PCB-side locating posts** (2 × Ø2.2 mm on the PEC11H, a lug on the PEC09). If a
+faceplate feature is wanted it must be confirmed, not assumed.
+
+Both corrected to cite `M7 × 0.75` and to flag the clearance hole for re-derivation **before the
+faceplate is machined** — this is a number that gets cut into metal.
+
+### Environmental findings — two new assumptions
+
+| | PEC09 | PEC11H | The rest of the BOM |
+|---|---|---|---|
+| **Operating temperature** | **−10…+70 °C** | **−20…+70 °C** | −40…+85 °C |
+| Storage | −40…+85 °C | −35…+85 °C | |
+| **IP rating** | **IP 40** | **IP 40** | KSC4 buttons are **IP 67** |
+
+**A11 (temperature).** The **+70 °C ceiling** is the live half, not the cold end: this is the same
+limit that put the display on assumption **A9**, and the encoders sit on the same sun-facing faceplate.
+A9's track-day surface-temperature measurement now covers the encoders too — one measurement, three
+parts.
+
+**A12 (ingress).** The buttons were chosen **specifically** for IP67. The encoders are **IP40** —
+dust over 1 mm, and **no water protection at all** — on the same panel, on a wheel that sees rain and
+sweat. Nothing is wrong with either choice; what was missing is that they were never compared. The
+encoders are now the wheel's ingress-limiting parts, and whether that needs sealing boots, a shrouded
+faceplate or simply accepting it is a team decision, not a datasheet one.
+
+### Confirmed, not corrected — the conditioning cell holds up
+
+- **Contact bounce is 5.0 ms (PEC09) / 3.0 ms (PEC11H)**, both far longer than the cell's 1 ms rising
+  RC. This is fine, and the reason deserves writing down because the numbers look alarming: in
+  quadrature the count direction depends on the **relative** state of A and B, so while one contact
+  chatters the other is stable and the counter steps up and down alternately, landing back where it
+  started. Hardware quadrature decoding is bounce-cancelling by construction. The RC and the timer's
+  `IC1F = 0b1111` filter (~1.5 µs at 170 MHz) handle electrical noise, not mechanical bounce — the
+  comment in `encoder.c` calling it "filters the illegal state transitions that contact bounce
+  produces" describes the wrong mechanism for the right conclusion.
+- **The switch lines** go through the software integrator at 20 ms, comfortably over 3–5 ms. ✔
+- **Max speed is 60 RPM**, so edges are **21 ms** apart (12 PPR) and **12.5 ms** apart (20 PPR) at the
+  rated maximum. §5.1's "~8 ms between edges" is *more* conservative than the part allows, giving the
+  1 ms rising τ **12–21×** margin rather than the ~8× implied. Better than documented.
+- **300 µA** through the cell against a **10 mA @ 5 V** contact rating; PEC09's 3 Ω closed-circuit
+  resistance vanishes against the 1 kΩ series. ✔
+- **Bourns' suggested filter is 10 kΩ series + 0.01 µF**, not our 1 kΩ + 100 nF. Ours is deliberate: a
+  10 kΩ series against the 10 kΩ pull-up would put the pressed level at **1.65 V**, which is not a
+  valid logic low. Recorded so the deviation reads as a decision.
+- PEC11H switch force **610 ±306 gf** — firm, which is right for gloved use; flagged for the G3
+  gloved-reach test rather than treated as a problem.
+
 ### Also corrected in the same pass (documentation, no board consequence)
 
 - The wheel's `D14`/`D15` paddle clamps specified only one diode of the dual BAV199, leaving the third

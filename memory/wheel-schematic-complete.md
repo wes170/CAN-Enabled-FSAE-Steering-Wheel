@@ -816,10 +816,65 @@ Designators: `R13`–`R36` (series 1 kΩ), `R37`–`R60` (pull-ups 10 kΩ), `C51
 
 ### 5.2 Encoders
 
-| Ref | Part | Nets |
+Both parts have **five electrical terminals plus mechanical locating features**, not three. Earlier
+revisions of this table named `A`, `B`, `SW` and "commons → `GND`", which left the switch's second
+terminal and the locating lugs undefined (defect 8.22). Datasheets are in `hardware/lib/`.
+
+#### `ENC1`–`ENC4` — **PEC09-2120F-S0012** (9 mm, side-exit PC pins, 12 PPR / 12 detent, push switch)
+
+| Terminal | Function | Connect to |
 |---|---|---|
-| `ENC1`–`ENC4` | **PEC09-2120F-S0012** (right-angle, 12 PPR, 12 detent, push switch) | A→`ENC1_A`… B→`ENC1_B`… SW→`ENC1_SW`…, commons → `GND` |
-| `ENC5`,`ENC6` | **PEC11H-4120F-S0020** (vertical bushing, 20 PPR, 20 detent, push switch) | `ENC5_A/B/SW`, `ENC6_A/B/SW`, commons → `GND` |
+| **A** | encoder A channel | `ENCn_A` — through its own conditioning cell |
+| **B** | encoder B channel | `ENCn_B` — through its own conditioning cell |
+| **C** | **encoder common** | **`GND`** |
+| **D** | push switch, one side | `ENCn_SW` — through its own conditioning cell |
+| **E** | push switch, other side | **`GND`** |
+| locating lug(s) | **mechanical only — no net** | plated or unplated holes per the drawing; needed for alignment and pull-out strength |
+
+`D`/`E` are an **SPST momentary** (datasheet "Switch Circuit: D—E"), so which of the two carries the
+net and which goes to `GND` is electrically arbitrary — but pick one and draw it consistently across
+all four.
+
+#### `ENC5`, `ENC6` — **PEC11H-4120F-S0020** (11 mm, M7 × 0.75 bushing, 20 PPR / 20 detent, push switch)
+
+| Terminal | Function | Connect to |
+|---|---|---|
+| **A** | A CHANNEL | `ENCn_A` |
+| **C** | **COMMON — the MIDDLE pin of the three** | **`GND`** |
+| **B** | B CHANNEL | `ENCn_B` |
+| switch pin ×2 | SPST momentary | one → `ENCn_SW`, other → **`GND`** |
+| 2 × Ø2.2 mm posts | **mechanical only — no net** | locating holes in the PCB |
+
+> ⚠ **On the PEC11H the common is the CENTRE terminal**, not an end one — the datasheet's top view
+> labels the trio `A CHANNEL / C COMMON / B CHANNEL` in that physical order. Wiring it like a
+> three-pin part with the common at one end swaps a channel with the common, which does not fail
+> loudly: the encoder simply produces nonsense counts that look like a firmware quadrature bug.
+
+**Both encoders draw ~300 µA** through the conditioning cell, against a **10 mA @ 5 V** contact rating —
+no concern. The PEC09's 3 Ω max closed-circuit resistance (PEC11H: 100 mΩ) disappears against the
+1 kΩ series resistor.
+
+#### What the datasheets confirmed about the conditioning cell
+
+| Figure | PEC09 | PEC11H | Against our cell |
+|---|---|---|---|
+| Contact bounce | **5.0 ms** max @ 15 RPM | **3.0 ms** max @ 60 RPM | see below |
+| Max operating speed | 60 RPM | 60 RPM | at 60 RPM, edges are **21 ms** apart (12 PPR) and **12.5 ms** apart (20 PPR) — so §5.1's "~8 ms between edges of a briskly spun encoder" is *more* conservative than the part's rated maximum, and the 1 ms rising τ has 12–21× margin rather than the ~8× implied |
+
+**Bounce is handled by the decoding scheme, not by the RC** — worth stating because the RC's 1 ms
+rising time constant is plainly shorter than 3–5 ms of bounce, and that looks alarming until you see
+why it does not matter. In quadrature mode the count direction depends on the **relative** state of A
+and B. While one contact chatters the other is stable, so the counter steps up and down alternately
+and lands back where it started. This inherent cancellation is the main reason to decode in hardware
+rather than by polling. The timer's digital input filter (`IC1F = 0b1111`, ~1.5 µs at 170 MHz) and the
+RC deal with electrical noise; neither is what defeats mechanical bounce.
+
+**Bourns' own suggested filter is different from ours and that is deliberate:** the datasheet suggests
+10 kΩ series + 0.01 µF + 10 kΩ pull-up (≈100 µs both edges). Ours is **1 kΩ series + 100 nF + 10 kΩ
+pull-up** — the same 100 µs on the falling edge, 1 ms on the rising. The smaller series resistor keeps
+more of the divider ratio at the pin when the contact closes (0.3 V rather than 1.65 V, which a 10 kΩ/
+10 kΩ pair would give and which is **not** a valid logic low). Recorded so the deviation reads as a
+decision rather than an oversight.
 
 ### 5.3 Buttons
 

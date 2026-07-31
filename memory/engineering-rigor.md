@@ -239,7 +239,7 @@
   60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
   covers both boards. **Verification is not only a hunt for defects — unverified numbers are
   padded numbers, and padding costs parts.**
-- **L19 (2026-07, updated):** **Thirty-six defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and twenty-one more in the Step 2, Rev B.5 and Rev B.8/B.9 passes (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+- **L19 (2026-07, updated):** **Thirty-eight defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and twenty-three more in the Step 2 and Rev B.5–B.10 passes (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
   were both **interactions between two correct-looking choices**, not errors in either one alone.
   PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
   combination. **Review pairs, not parts:** for every component, ask what else touches its net and
@@ -538,6 +538,26 @@
   the 1 kΩ/10 kΩ divider, not 0 V. Without that line the 1 kΩ looks like it is fighting the switch, the
   whole cell looks wrong, and a reader cannot tell a drawing error from a design they do not yet
   understand. **A conditioning circuit is only specified once both of its states are written down.**
+
+- **L56 (2026-07, the user asked what the encoders' extra pins do):** **"Commons" is not a net
+  assignment.** §5.2 named `A`, `B`, `SW` and "commons → `GND`" for parts with five terminals; the
+  plural was quietly covering the encoder common *and* one side of the switch, and `SW` named one net
+  for a two-terminal switch, so the second switch pin had no destination anywhere (defect 8.22).
+  **Any word that stands for "the rest of the pins" is a gap wearing a specification's clothes** —
+  every terminal gets its own row, including the ones that go to ground, including the mechanical
+  ones that go nowhere. Three findings in a row are now this exact shape: 8.19 (a third pin), 8.21
+  (a missing switch symbol), 8.22 (five terminals as three) — **all three found by a person asking
+  what a pin was for, and none findable by a checker, because every file agreed.**
+
+- **L57 (2026-07, same):** **A "VERIFIED" mark earned from distributor parametrics is not a datasheet
+  read, and it hides worse than a blank.** Both encoders were marked VERIFIED after a parametric pass;
+  bourns.com had 403'd, and the row never said so. Opening the real PDFs produced a wrong faceplate
+  dimension (8.23 — Ø9.5 mm for an **M7 × 0.75** bushing, a number that gets cut into metal), two
+  environmental limits nobody had compared against the rest of the BOM (IP40 encoders beside IP67
+  buttons; +70 °C on a sun-facing faceplate), and the five-terminal finding above. **Record the
+  *source* beside the verdict** — "verified (parametric only, datasheet unobtainable)" would have kept
+  this open instead of closing it wrongly. And when a vendor site 403s, try a different client before
+  concluding the document is unavailable.
 
 ## 5A. Planned future work (do not lose track of these)
 
