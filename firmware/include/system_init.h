@@ -12,6 +12,7 @@
 typedef struct {
     bool     clock_ok;       /* HSE started and the PLL locked at SYSCLK_HZ   */
     bool     boot_bytes_ok;  /* nSWBOOT0 == 0 and nBOOT0 == 1 (defects 1.3/1.6) */
+    bool     usb_clk_ok;     /* HSI48 running and CRS armed (wheel only)      */
     uint32_t sysclk_hz;      /* what the clock tree was configured for        */
 } system_init_result_t;
 
@@ -27,6 +28,15 @@ void ucpd_dead_battery_disable(void);
  * locked; in both cases the board is running on HSI16 and CAN bit timing will
  * be wrong, so callers must not proceed to bring CAN up. */
 bool clock_init(void);
+
+/* HSI48 + CRS for the USB 48 MHz domain. NOT derivable from the crystal: no PLL
+ * configuration serves 170 MHz SYSCLK and 48 MHz PLLQ at once -- the arithmetic
+ * is in clock_config.h (defect 8.17). Wheel only; the dash has no USB.
+ *
+ * Returns false if HSI48 never reports ready. CRS itself cannot be verified
+ * here: it only trims once the host starts sending SOF packets, so "armed" is
+ * all that can be checked before enumeration. */
+bool usb_clock_init(void);
 
 /* True if this board's boot option bytes are provisioned safely. A false here
  * cannot be repaired in firmware -- boot mode latches during reset. Report it

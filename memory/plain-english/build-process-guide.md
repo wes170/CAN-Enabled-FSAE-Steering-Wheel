@@ -27,7 +27,7 @@ Buy the slow part first, build a shared parts library, draw the schematic and ch
 lay out the copper and check it physically, get a second human to look at all of it, order the boards
 and the assembly, then power each one up in small deliberate steps before it goes anywhere near the
 car. Every step in that sentence exists because skipping it has already cost this project real
-mistakes — twenty-nine of them, found so far (lesson L19 in `engineering-rigor.md`), several of which
+mistakes — thirty-three of them, found so far (lesson L19 in `engineering-rigor.md`), several of which
 slipped past the person who wrote them.
 
 ## 1. Buy the long-lead part before you touch Altium at all
@@ -369,7 +369,7 @@ the first write-up and was only caught on a re-read" — which the project's own
 the project log. This is the gate that exists because, plainly, **the author of a design cannot see
 their own blind spots.** It is not a formality layered on top of the other four gates — it's the
 recognition that a design can be self-consistent and still wrong in a way that only becomes visible to
-someone who didn't write it. This project's own defect history backs that up directly: twenty-nine
+someone who didn't write it. This project's own defect history backs that up directly: thirty-three
 defects have been found across this design so far (lesson L19 in `engineering-rigor.md`), and multiple of them — the BOOT0/CAN conflict, the missing
 EXTMODE strap, three errors in one supposedly-frozen pin table — passed an initial self-review by the
 person who wrote the section, and were only caught on a later, harder look. "Plausible-sounding detail
@@ -381,9 +381,15 @@ before money is spent.
 **G6 — Pre-order.** BOM availability is re-checked the *same day* as ordering — not from notes taken
 a week earlier — including each part's lifecycle status (Active, NRND meaning "Not Recommended for New
 Design," or EOL meaning discontinued; stock quantity alone tells you nothing about whether a part is
-still in production). The variant fitted-lists get diffed against each other one more time, and the
-gerbers get visually inspected in a *third-party* viewer, deliberately not Altium itself, so a bug or
-blind spot in Altium's own rendering isn't the last line of defense. This gate exists because
+still in production). The gerbers get visually inspected in a *third-party* viewer, deliberately not
+Altium itself, so a bug or blind spot in Altium's own rendering isn't the last line of defense.
+
+This gate used to include "diff the two variants' fitted lists against each other." **There are no
+variants any more** — the wheel is a single build, and the only difference between a car wheel and a
+sim wheel is which cable is plugged in. What replaces that step is checking the opposite thing: that
+**no output file still selects a variant**. `[No Variations]` used to be the classic upload mistake
+and is now the only correct answer, so an OutJob still pointing at a deleted `CAR` or `SIM` variant is
+the one way that change can bite on order day. This gate exists because
 availability and correctness both have a shelf life — a BOM checked weeks ago can be stale by order
 day, and a part in stock today can have gone EOL since you selected it.
 

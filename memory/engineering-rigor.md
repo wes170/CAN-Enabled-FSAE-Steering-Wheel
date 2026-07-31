@@ -61,7 +61,7 @@
 | **G3 — Paper build** | 1:1 print taped to the real wheel/panel; hands on it; encoder/button reach test with gloves |
 | **G4 — Netlist cross-check** | Independent re-derivation of J1/J2 pinouts from the schematic vs. §0 tables vs. harness drawing — **including which ground each signal references** (see L13) |
 | **G5 — Peer sign-off** | A second person reviews G1–G4 evidence; their name goes in the log |
-| **G6 — Pre-order** | BOM availability **and lifecycle** re-checked same-day; variants' fitted lists diffed; gerbers visually inspected in a third-party viewer (not Altium); **Q1 source/drain confirmed against the DMP3056L pinout on the drawn schematic** (defect 5.5); **`scripts/check-consistency.py` passes**; **no BOM line still says "confirm", "TBD" or "select at capture"** — placeholder text blocks the gate (L35, which is how defect 8.8 hid) |
+| **G6 — Pre-order** | BOM availability **and lifecycle** re-checked same-day; **confirm no fabrication output still selects a variant** (Rev B.5 deleted CAR/SIM — `[No Variations]` is now the correct selection, and an OutJob pointing at a deleted variant is the one way that change bites at ordering); gerbers visually inspected in a third-party viewer (not Altium); **Q1 source/drain confirmed against the DMP3056L pinout on the drawn schematic** (defect 5.5); **`scripts/check-consistency.py` passes**; **no BOM line still says "confirm", "TBD" or "select at capture"** — placeholder text blocks the gate (L35, which is how defect 8.8 hid) |
 
 ## 3. Design-for-safety specifics of this project (do not lose these)
 
@@ -81,8 +81,13 @@
   paddle" idea must keep a passive fallback. Shifting is a driver-safety function.
 - **Dash shows stale-data indicators.** A frozen coolant temp reads as "fine" while the engine cooks.
   500 ms CAN silence → dashes/greyed values. This is a firmware *requirement*, not a nicety.
-- **LED global current cap lives in one function** with a compile-time ceiling per variant
-  (CAR 450 mA, SIM 350 mA). Any pattern code goes through it; no direct strip writes.
+- **LED global current cap lives in one function**, and since Rev B.5 the ceiling is chosen at **run
+  time from the measured supply**, not compiled in: **vehicle 450 mA · USB enumerated 300 mA · USB
+  not yet enumerated 0 mA** (`power.h`). Any pattern code goes through `led_show()`; no direct strip
+  writes. **Unknown supply means the USB cap** — every path that cannot prove `+12V_P` is present
+  returns the tighter number, because USB back-feeds that rail to ~4 V (defect 8.15) and a wrong
+  answer in the other direction browns out a host port. The old per-variant constants went stale the
+  moment the CAN transceiver became fitted on every board; see L47.
 - **CAN termination is an installation decision** (DNP footprints both boards) — document per-car in
   the harness drawing which node is terminated. Two terminations at one end = reflections =
   intermittent bus errors that look like firmware bugs.
@@ -111,7 +116,18 @@
    by the idle-high debug UART, so this failure is invisible unless the debug harness is connected —
    which is the opposite of every other bug's behaviour. Test in the failing configuration, not the
    convenient one.
-4. **CAN loopback:** FDCAN external-loopback + sniffer; then two-node bench bus with USB-CAN at 1 Mbit/s; verify bit timing with scope (sample point ~80%).
+3b. **USB back-feed check — wheel only, and it is not optional (defect 8.15).** Rev B.5 fits `R_VBUS`
+   on every board, which completes a path from USB VBUS to the vehicle rail through the buck's
+   high-side body diode. With **`J1` unmated**, power the board from USB alone and: (a) measure
+   `+12V_P` at `TP1` — expect roughly **4 V**, and confirm nothing downstream misbehaves; (b) watch
+   for the buck **hiccup-oscillating** as its back-fed `VIN` crosses UVLO (the LMR36015's UVLO
+   threshold has not been read, so this is an observation to make, not a prediction to trust);
+   (c) read `V12_SENSE` in firmware and confirm it reports **USB, not vehicle** — the thresholds are
+   7 V assert / 6 V release precisely because of this back-feed, and a false "vehicle" here asks a
+   500 mA host port for a 450 mA LED cap. Then **swap cables while running**, both ways, and confirm
+   the LED ceiling follows on the next frame. That behaviour is the entire point of the single build,
+   so it gets tested rather than assumed.
+4. **CAN loopback:** FDCAN external-loopback + sniffer; then two-node bench bus with USB-CAN at 1 Mbit/s; verify bit timing with scope (sample point ~80%). ⚠ **Use the vehicle cable for this** — on USB power the rail sits at ~4.7 V, below the TJA1051T/3's 4.75 V minimum, so CAN is not guaranteed bus-powered.
 5. **Protocol close-out:** emulated keypad against NSP/bench ECU (closes A1); IO12 frames visible in NSP as AVI values (A2 for Box B); broadcast decode against known ECU values.
 6. **HMI:** every encoder detent count CW/CCW ×20 fast/slow, every switch 100 presses, sense lines' voltages in both paddle states.
 7. **LEDs/display:** current at 100% white measured (closes A3); sunlight test outdoors (wheel LCD, dash panel behind its lens — closes L7 risk).
@@ -223,7 +239,7 @@
   60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
   covers both boards. **Verification is not only a hunt for defects — unverified numbers are
   padded numbers, and padding costs parts.**
-- **L19 (2026-07, updated):** **Twenty-nine defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and fourteen more in the Step 2 design pass (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+- **L19 (2026-07, updated):** **Thirty-three defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and eighteen more in the Step 2 and Rev B.5 passes (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
   were both **interactions between two correct-looking choices**, not errors in either one alone.
   PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
   combination. **Review pairs, not parts:** for every component, ask what else touches its net and
@@ -446,6 +462,50 @@
   margin. Flagging all four at equal volume would teach a reader that the warnings are boilerplate —
   and the reader who then skims past CL is the exact failure the warning exists to prevent. **Say
   which items are load-bearing and which are preferences, in the warning itself.**
+
+- **L47 (2026-07, Rev B.5, deleting the assembly variants):** **A build-time constant is a fact about
+  a BOM, and it does not know when the BOM changes.** The sim variant's LED cap was 350 mA, correct
+  while the CAN transceiver was DNP on those boards. Fitting the transceiver on every board spent
+  70 mA the constant never saw — 110 + 70 + 350 = 530 mA against a 500 mA USB allowance — and
+  *nothing* would have prompted anyone to revisit a `#define` selected by a build flag. The fix is
+  not a better constant, it is **measuring the thing the constant was standing in for**: the firmware
+  now reads `V12_SENSE` and picks the cap at run time. **When a compiled-in number depends on which
+  parts are fitted, treat the fitted-list as an input to that number and re-derive it on every BOM
+  change** — or stop compiling it in.
+
+- **L48 (2026-07, Rev B.5):** **Removing a restriction creates paths that neither restricted version
+  had.** `R_VBUS` DNP on car boards and the buck DNP on sim boards each independently broke the same
+  loop, so the USB-to-vehicle-rail back-feed (defect 8.15) existed in neither variant and appeared the
+  moment both halves were populated. **A DNP is a piece of circuit topology, not an absence** — when
+  one is fitted, re-walk every path it completes, in both directions, rather than checking only the
+  function it was fitted for.
+
+- **L49 (2026-07, Rev B.5):** **The obvious fix is a candidate, not a conclusion — price it against
+  what it breaks.** Blocking the 8.15 back-feed wants a series Schottky on the buck output. It works,
+  and it costs 0.4 V on a rail whose CAN transceiver has a 4.75 V minimum: a permanent, universal
+  spec violation traded for an occasional, benign annoyance. **Accepting a defect with the reasoning
+  and a bring-up gate written down beats fixing it with something worse**, and the rejected fix is
+  worth recording so it is not re-proposed as an improvement.
+
+- **L50 (2026-07, Rev B.5):** **A plausible simplification is the hardest kind of wrong to see.**
+  "CAN needs a crystal, so clock USB from it too and delete a class of questions" (defect 8.17) sat
+  unchallenged in a paragraph where every surrounding claim was true — and it is arithmetically
+  impossible, because 170 MHz SYSCLK forces VCO 340 MHz and 48 MHz on PLLQ needs VCO in
+  {96,192,288,384}. It survived because it *sounds like what a good design does*. The guard that now
+  exists is a static assertion on the **argument** rather than the result: it fires if a future PLL
+  re-tune ever makes PLLQ viable. **When you catch a wrong inference, protect the inference, not just
+  the current value.**
+
+- **L51 (2026-07, Rev B.5):** **A check written for one defect found a worse one on its first run.**
+  The phantom-footprint check exists because a document promised a footprint that was never on the
+  board (8.16). Run once, it immediately found the mirror image: **five parts specified in the
+  schematic with no BOM line**, including `R_EXTMODE` — a 0 Ω resistor whose absence lets the display's
+  `EXTMODE` pin float, which the same file says **permanently damages the panel** (8.18). Two things
+  follow. **(a)** A BOM is built by listing parts you *buy*; a schematic specifies parts you *place*.
+  Those two lists are never reconciled by reading either one, because nothing in a 0 Ω resistor
+  invites a second look. **(b)** When you write a check, run it before you decide what it is for —
+  the class of defect it catches is usually wider than the instance that prompted it, and the wider
+  class is where the expensive one lives.
 
 ## 5A. Planned future work (do not lose track of these)
 

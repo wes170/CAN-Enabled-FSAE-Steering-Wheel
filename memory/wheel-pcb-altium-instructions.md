@@ -1,7 +1,7 @@
 # Altium Instructions — Steering Wheel PCB (`FSAE-WHEEL`)
 
 > **Permanent memory file.** Follow in order. Companion files: `hardware-selections.md` (what & why),
-> `system-architecture-and-can.md` (nets, budgets, protocol), `sim-variant-instructions.md` (variant),
+> `system-architecture-and-can.md` (nets, budgets, protocol), `sim-variant-instructions.md` (sim-rig use — **no longer a variant**),
 > `engineering-rigor.md` (gates you must pass before ordering).
 > Written for Altium Designer 23+; menu paths noted where they matter.
 
@@ -73,7 +73,7 @@
 > changed.
 >
 > **This file remains authoritative for *process*** — project setup (§1), libraries (§2), layout
-> (§4), DRC and gates (§5), variants (§6) and manufacturing outputs (§7). Use it for how to work;
+> (§4), DRC and gates (§5), why there are **no variants** (§6) and manufacturing outputs (§7). Use it for how to work;
 > use the schematic-definition file for what to draw.
 >
 > *(Split introduced 2026-07 after an audit found stale values being repeated downstream — lesson L21.)*
@@ -94,7 +94,10 @@ This is now the *same input stage as the dash* (§1.1 of the dash doc). Copy tha
 6. Dividers: 47k/10k from `+12V_P` → `V12_SENSE`; 10k/10k from `+5V` → `V5_SENSE`; 100 nF at each ADC pin.
 7. Test points: `+12V_P`, `+5V`, `+3V3`, `GND` ×2 (loop for scope ground spring).
 8. USB VBUS OR-ing: **BAT60A Schottky from VBUS into the `+5V` rail (downstream of the buck)** through
-   the DNP `R_VBUS` link — see `sim-variant-instructions.md`. Never OR into `+12V_P`.
+   the `R_VBUS` link, **fitted on every board since Rev B.5** — see `sim-variant-instructions.md`.
+   Never OR into `+12V_P`. ⚠ Fitting it also creates the back-feed path of defect 8.15: USB reaches
+   `+12V_P` at ~4 V through the buck's high-side body diode. Accepted, not fixed — read
+   `wheel-schematic-complete.md` §3.4a before deciding to "improve" this.
 
 ### 3.2 `wheel-mcu.SchDoc`
 1. STM32G474RET6: 100 nF at **every** VDD pin + one 4.7 µF bulk; VDDA from `+3V3A`.
@@ -106,7 +109,7 @@ This is now the *same input stage as the dash* (§1.1 of the dash doc). Copy tha
    analysis: `memory/datasheet-verification.md` §1 defect 1.3. DFU entry is via USB DFU or an
    SWD-triggered jump, never a BOOT0 strap.
 3. Tag-Connect TC2030-CTX wired SWDIO/SWCLK/NRST/3V3/GND.
-4. USB-C: VBUS → Schottky (BAT60A) OR-ing into `+5V` **through a 0Ω DNP link `R_VBUS`** (populated only in sim variant — see sim doc §2), CC1/CC2 → 5.1 kΩ to GND, D+/D− → **USBLC6-2SC6** → PA11/PA12. Shield to GND via 1 MΩ ∥ 4.7 nF.
+4. USB-C: VBUS → Schottky (BAT60A) OR-ing into `+5V` **through the 0 Ω link `R_VBUS`, FITTED on every board** (Rev B.5 — one build, two cables; see sim doc §2), CC1/CC2 → 5.1 kΩ to GND, D+/D− → **USBLC6-2SC6** → PA11/PA12. Shield to GND via 1 MΩ ∥ 4.7 nF.
 5. Debug UART on JST-GH 3-pin (TX, RX, GND).
 
 ### 3.3 `wheel-can-io.SchDoc`
@@ -193,9 +196,20 @@ Wire sheet symbols, then **Project ▸ Validate**. Zero errors, zero *unsuppress
 
 Run **Tools ▸ Design Rule Check**: zero errors. Then the rigor-file gates: G2 (3D collision check against faceplate STEP — Altium 3D body import), G3 (print 1:1, physically place encoders/hands on paper), G4 (netlist re-verify of §0 tables), G5 (peer review sign-off).
 
-## 6. Variants
+## 6. Variants — **there are none (Rev B.5)**
 
-**Project ▸ Variants**: create `CAR` (base: all fitted; USB `R_VBUS` DNP) and `SIM` — details in `sim-variant-instructions.md`. The default/base assembly is `CAR`.
+**Do not create assembly variants on this project.** The `CAR`/`SIM` pair has been deleted: every
+part is fitted on every board, and a car wheel and a sim wheel differ only in which cable is plugged
+in. `R_VBUS` is fitted. Rationale and the two electrical consequences are in
+`sim-variant-instructions.md` §1–2.
+
+`[No Variations]` is therefore the correct selection in every output — it used to be the classic
+upload mistake, and now it is the only right answer. If you find a `CAR` or `SIM` variant in the
+project, it is left over; delete it rather than maintaining it.
+
+**Still DNP, and these are options rather than variants:** `R_T1`/`R_T2`/`C_T1` (CAN termination —
+an installation decision, per car), `J7`–`J10`/`D9`–`D12` (satellite encoder provision),
+`R_EXTMODE_L`. An option is a footprint you may not use; a variant forks the BOM.
 
 ## 7. Manufacturing outputs (JLCPCB PCBA)
 

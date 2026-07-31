@@ -194,6 +194,52 @@ bool boot_option_bytes_ok(uint32_t optr)
 }
 
 /* ---------------------------------------------------------------------------
+ * USB 48 MHz domain — HSI48 trimmed by CRS against USB SOF.
+ *
+ * Read the block comment at the end of clock_config.h before changing the
+ * source: this is not a preference, it is the only option. 170 MHz SYSCLK
+ * forces VCO = 340 MHz, and 48 MHz on PLLQ needs VCO in {96,192,288,384}.
+ *
+ * Only the wheel carries a USB connector, so this is a no-op on the dash rather
+ * than an #error -- system_init() is shared and a board-specific abort there
+ * would be a worse trade than an honest empty function.
+ * ------------------------------------------------------------------------ */
+bool usb_clock_init(void)
+{
+#if !defined(BOARD_WHEEL)
+    return true;                       /* dash: no USB, nothing to clock */
+#elif defined(FIRMWARE_HOST_BUILD)
+    return true;                       /* host: arithmetic only, no registers */
+#else
+    /* HSI48 on, and wait for it. Everything downstream is meaningless until the
+     * oscillator reports ready, so this is a hard gate rather than a hint. */
+    RCC->CRRCR |= RCC_CRRCR_HSI48ON;
+    for (uint32_t t = 0; !(RCC->CRRCR & RCC_CRRCR_HSI48RDY); ++t) {
+        if (t > 100000u) { return false; }   /* same bound as the HSE wait */
+    }
+
+    /* Select HSI48 as the 48 MHz clock. CLK48SEL == 00 is HSI48 and is also the
+     * reset value, but write it explicitly: a reset value that happens to be
+     * right is not the same as a decision, and the next person to touch CCIPR
+     * has no way to tell the difference. */
+    RCC->CCIPR &= ~RCC_CCIPR_CLK48SEL;
+
+    /* CRS: trim HSI48 against the host's 1 kHz SOF. Without this, HSI48 alone
+     * does not meet USB FS's 2500 ppm over temperature -- which is precisely
+     * the accuracy question the crystal was supposed to have settled, and does
+     * not, because the crystal cannot reach this clock domain. */
+    RCC->APB1ENR1 |= RCC_APB1ENR1_CRSEN;
+    CRS->CFGR = (CRS->CFGR & ~CRS_CFGR_RELOAD) | CRS_RELOAD_VAL;
+    CRS->CR  |= CRS_CR_AUTOTRIMEN | CRS_CR_CEN;
+
+    /* Deliberately no "is it locked" check here. CRS cannot converge until the
+     * host is enumerating and sending SOF, which has not happened yet at init.
+     * Reporting a lock we cannot have observed would be a fabricated pass. */
+    return true;
+#endif
+}
+
+/* ---------------------------------------------------------------------------
  * Entry point for the startup sequence. Keep this order.
  * ------------------------------------------------------------------------ */
 system_init_result_t system_init(void)
@@ -203,6 +249,7 @@ system_init_result_t system_init(void)
     ucpd_dead_battery_disable();      /* before ANY GPIO touches PA9/PA10 */
     r.clock_ok      = clock_init();
     r.boot_bytes_ok = boot_guard_check();
+    r.usb_clk_ok    = usb_clock_init();
     r.sysclk_hz     = HCLK_HZ;
     return r;
 }

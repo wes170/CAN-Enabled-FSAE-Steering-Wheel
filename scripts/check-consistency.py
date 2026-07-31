@@ -294,6 +294,103 @@ def check_crystal_mpn():
           f"{len(variants)} conflicting string(s)")
 
 
+def check_phantom_designators():
+    """Defect 8.16. `sim-variant-instructions.md` described a DNP footprint
+    `R_CC_SNS` as "provided". It was in no schematic definition and neither BOM
+    -- a designator that existed only in that sentence. Someone planning the USB
+    power strategy from that document would have designed around a pad that
+    would not be on the board.
+
+    Scoped to a SINGLE-LETTER designator prefix plus underscore -- R_VBUS,
+    C_BOOT, C_X1. That shape is what the BOMs actually use, and it is the only
+    one that can be told apart from a net name by inspection: `EVE_INT`,
+    `OSC_IN` and `V_IH` are signals and datasheet symbols, not parts, and a
+    first draft of this check flagged forty of them. Plain numbered refs (R9)
+    are not checked at all -- they collide with far too much prose, a lesson
+    already paid for in check_bom_note_crossrefs()."""
+    PREFIXES = "RCLDQUJYF"
+
+    def bom_set(*keys):
+        s = set()
+        for k in keys:
+            s |= set(_bom_designator_map(DOCS.get(k, "")))
+            # Designators the BOMs spell as groups inside one cell.
+            s |= set(re.findall(rf"\b([{PREFIXES}]_[A-Z0-9_]{{1,10}})\b", DOCS.get(k, "")))
+        return s
+
+    WHEEL_BOM = "hardware/wheel/bom-FSAE-WHEEL-revB.csv"
+    DASH_BOM  = "hardware/dash/bom-FSAE-DASH-revB.csv"
+    wheel, dash = bom_set(WHEEL_BOM), bom_set(DASH_BOM)
+    both = wheel | dash
+
+    checked = 0
+    for f in [k for k in DOCS if k.endswith(".md")]:
+        # Board-specific documents are checked against THAT board's BOM. Pooling
+        # them lets a part present only on the wheel excuse its absence from the
+        # dash -- which is defect 8.13's mistake in a different costume.
+        base = f.rsplit("/", 1)[-1]
+        known = (wheel if base.startswith("wheel-") else
+                 dash  if base.startswith("dash-")  else both)
+        for m in re.finditer(rf"`([{PREFIXES}]_[A-Z0-9_]{{1,10}})`", DOCS[f]):
+            ref = m.group(1)
+            checked += 1
+            if ref in known:
+                continue
+            ctx = DOCS[f][max(0, m.start() - 300): m.end() + 300].lower()
+            # Two legitimate exceptions. A phantom may be DISCUSSED, which is how
+            # one gets retired; and a symbol the datasheet uses for something
+            # INSIDE a chip is not a board part at all.
+            if re.search(r"never existed|phantom|defect 8\.16|not being added|"
+                         r"no schematic|removed|does not exist", ctx):
+                continue
+            if re.search(r"\binternal\b", ctx):
+                continue
+            line = DOCS[f][:m.start()].count("\n") + 1
+            fails.append(f"{f}:{line} references designator '{ref}', which is in "
+                         f"no BOM — phantom footprint? (defect 8.16)")
+    print(f"  {checked} underscore-style designator references resolved "
+          f"per-board against the BOMs")
+
+
+def check_single_build():
+    """Rev B.5 deleted the CAR/SIM assembly variants. The hazard now is a stale
+    'DNP in CAR' sitting in a file someone assembles from, which is defect 8.6's
+    shape: a superseded instruction in a build-from document."""
+    BUILD = [k for k in DOCS
+             if k.endswith(("-altium-instructions.md", "-schematic-complete.md",
+                            "sim-variant-instructions.md", ".csv"))]
+    for f in BUILD:
+        for i, line in enumerate(DOCS[f].splitlines(), 1):
+            if "R_VBUS" not in line:
+                continue
+            if re.search(r"DNP|do not (populate|fit)|not fitted", line, re.I) and \
+               not re.search(r"was |used to|no longer|Rev B\.5|deleted|previously",
+                             line, re.I):
+                fails.append(f"{f}:{i} still says R_VBUS is DNP — it is fitted on "
+                             f"every board since Rev B.5")
+    # The LED cap must agree between the firmware and the documents.
+    fw = DOCS.get("firmware/include/board_config.h", "")
+    m = re.search(r"#define\s+LED_CURRENT_CAP_MA_USB\s+(\d+)u", fw)
+    if not m:
+        fails.append("LED_CURRENT_CAP_MA_USB not found in board_config.h")
+    else:
+        usb_cap = int(m.group(1))
+        if re.search(r"LED_CURRENT_CAP_MA_SIM", fw):
+            fails.append("board_config.h still defines LED_CURRENT_CAP_MA_SIM")
+        # 110 mA (3V3 via LDO) + 70 mA (TJA1051 dominant) inside a 500 mA port.
+        if usb_cap + 180 > 500:
+            fails.append(f"USB LED cap {usb_cap} mA + 180 mA non-LED load exceeds "
+                         f"the 500 mA USB allowance")
+        for f in ["memory/system-architecture-and-can.md",
+                  "memory/sim-variant-instructions.md",
+                  "memory/wheel-schematic-complete.md"]:
+            if f"{usb_cap} mA" not in DOCS.get(f, "") and \
+               f"0.{usb_cap // 100}0 A" not in DOCS.get(f, ""):
+                fails.append(f"{f}: does not state the {usb_cap} mA USB LED cap")
+        print(f"  single build: R_VBUS fitted everywhere, USB LED cap {usb_cap} mA "
+              f"(+180 mA non-LED = {usb_cap + 180} of 500)")
+
+
 def check_boms_parse():
     for f in [k for k in DOCS if k.endswith(".csv")]:
         rows = list(csv.reader(DOCS[f].splitlines()))
@@ -374,6 +471,7 @@ for fn in (check_wheel_pin_table, check_pin_table_complete, check_adc_channels, 
            check_ucpd_hazard_documented, check_buck_support_parts,
            check_battery_rail_cap_ratings,
            check_no_rejected_parts_as_live_spec, check_stale_values, check_crystal_mpn,
+           check_phantom_designators, check_single_build,
            check_boms_parse,
            check_bom_note_crossrefs):
     fn()

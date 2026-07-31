@@ -414,9 +414,26 @@ CAN at 1 Mbit/s needs about **5 000 ppm** per node → **55× margin**. USB full
 practical reason to keep the `OSC_IN`/`OSC_OUT` traces short: stray capacitance is a *frequency* error
 here, not just a startup question.
 
-**USB does not force this decision but benefits from it.** The G4 can run crystal-less USB using
-HSI48 plus the Clock Recovery System. Since CAN requires a crystal anyway, clock both from the HSE
-and delete a whole class of clock-accuracy questions.
+**USB does not force this decision, and — correcting what this section used to say — USB cannot use
+the crystal at all (defect 8.17).** This paragraph previously read *"since CAN requires a crystal
+anyway, clock both from the HSE and delete a whole class of clock-accuracy questions."* The first
+half is right. The second half is arithmetically impossible on this part:
+
+| | Requirement | Implied VCO |
+|---|---|---|
+| USB FS needs 48 MHz on PLL"Q" | VCO = 48 × Q, Q ∈ {2,4,6,8} | {96, 192, 288, **384**} MHz |
+| SYSCLK is 170 MHz on PLL"R" | VCO = 170 × R, R ∈ {2,4,6,8} | {**340**, 680, …} MHz |
+
+**The two sets do not intersect**, and everything above 344 MHz breaks the VCO ceiling anyway
+(Table 46). There is no PLL configuration that serves 170 MHz SYSCLK and 48 MHz USB simultaneously —
+it is not a tuning problem. **USB runs on HSI48 + CRS**, trimmed against the host's 1 kHz SOF
+packets, which lands far inside USB FS's 2500 ppm without the crystal being involved.
+
+The crystal still earns its place; CAN was always the real justification. What was wrong was the
+tidy-sounding claim that one clock source settles both questions. `clock_config.h` now carries the
+arithmetic and a static assertion that fires if a future PLL re-tune ever *does* make PLLQ viable, so
+the reasoning is guarded rather than just the result. This matters more since Rev B.5, because USB is
+a first-class mode on every board rather than a sim-variant feature.
 
 #### Layout rules for this circuit
 
@@ -459,7 +476,7 @@ selectable and therefore gettable wrong (see the ordering box in §3.2).
 | `U5` | **USBLC6-2SC6**, SOT-23-6, LCSC `C7519` | I/O1 ↔ `USB_DM_CON`, I/O2 ↔ `USB_DP_CON`, VBUS pin → `NET_VBUS`, GND → `GND`; protected side → `USB_DM`/`USB_DP` |
 | `R9`,`R10` | 5.1 kΩ 1 %, 0402 | `CC1` → `GND`, `CC2` → `GND` (sets UFP, 500 mA default) |
 | `D6` | **BAT60A** Schottky, SOD-123 | Anode `NET_VBUS` → Cathode `NET_VBUS_OR` |
-| `R_VBUS` | 0 Ω, 0603 — **DNP in CAR, FIT in SIM** | `NET_VBUS_OR` → `+5V` |
+| `R_VBUS` | 0 Ω, 0603 — **FITTED ON EVERY BOARD (Rev B.5)** | `NET_VBUS_OR` → `+5V` |
 | `R11` | 1 MΩ, 0402 | shield → `GND` |
 | `C24` | 4.7 nF, 0402 | shield → `GND` (parallel with R11) |
 
@@ -467,6 +484,97 @@ selectable and therefore gettable wrong (see the ordering box in §3.2).
 GND/shield per the connector's own pinout.
 
 **The USB OR-diode feeds `+5V`, downstream of the buck** — never `+12V_P`.
+
+### 3.4a One build, two cables (Rev B.5)
+
+`R_VBUS` used to be DNP on car boards and fitted only on sim boards. **It is now fitted on every
+board**, and the CAR/SIM assembly variants are deleted: every part is populated on every wheel, and
+the only difference between a car wheel and a sim wheel is which cable is plugged in. `D6` is what
+makes that safe in the normal direction — a Schottky pointing `NET_VBUS` → `NET_VBUS_OR`, so board
+power can never reach the host's port.
+
+The remaining DNPs (`R_T1`/`R_T2`/`C_T1` CAN termination, `J7`–`J10`/`D9`–`D12` satellite encoders,
+`R_EXTMODE_L`) stay DNP. Those are **installation and provision options, not build variants** — the
+distinction matters, because a variant forks the BOM and an option does not.
+
+> ### ⚠ USB back-feeds the vehicle rail through the buck (defect 8.15)
+>
+> Fitting `R_VBUS` on a board that also has the 12 V front end fitted creates a path that existed in
+> neither variant before, because each variant was missing one half of it:
+>
+> ```
+> VBUS 5.0 V → D6 (~0.3 V) → +5V ≈ 4.7 V → L1 → SW
+>            → LMR36015 high-side body diode (SW→VIN, ~0.7 V) → +12V_P ≈ 4.0 V
+>            → Q1 turns on (V_GS = −4.0 V vs V_GS(th) −2.1 V) → NET_FUSED → F1 → J1.1
+> ```
+>
+> The buck's high-side switch is a bootstrapped NMOS, so its body diode points `SW` → `VIN` and
+> conducts whenever the output is driven while `VIN` is dead. Nothing in the design blocks it.
+>
+> | Situation | What happens | Verdict |
+> |---|---|---|
+> | USB only, `J1` unmated | ~4 V on an unmated connector pin | harmless |
+> | Both connected, car live | buck holds 5.0 V; `D6` reverse-biased at 4.7 V | no conflict |
+> | **Both connected, car off** | USB tries to energise the vehicle 12 V bus; the port current-limits | **the real one** |
+>
+> **Not fixable cheaply, and the obvious fix is wrong.** A series Schottky on the buck output would
+> block it and cost ~0.4 V — but the **TJA1051T/3 needs 4.75 V minimum**, and 5.0 − 0.4 = 4.6 V puts
+> the CAN transceiver out of spec on every board, all the time, to protect against a case that is
+> merely inconvenient. Trading a permanent violation for an occasional annoyance is a bad trade.
+>
+> **Accepted, with two consequences that are real work:**
+> 1. **Firmware must not trust `+12V_P` as a "vehicle present" signal without a threshold well above
+>    4 V.** `power.h` asserts at 7 V and releases at 6 V, and `test_power.c` sweeps the whole
+>    3.0–5.5 V back-feed band. Get this wrong and a 500 mA host port is asked for a 450 mA LED cap.
+> 2. **Bring-up gate:** plug USB into a `J1`-mated board with the car off, and watch `+12V_P` on a
+>    scope. Watch specifically for the buck hiccup-oscillating as its own back-fed `VIN` crosses
+>    UVLO — the LMR36015's UVLO threshold has not been read, so this is an observation to make, not
+>    a prediction to trust.
+
+> ### ⚠ CAN is not guaranteed on USB power
+>
+> At `VBUS − V_D6` ≈ 4.7 V the **TJA1051T/3 is below its 4.75 V minimum supply**. Not damaging, not
+> guaranteed. This is a consequence of one build rather than two: the transceiver used to be DNP on
+> sim boards, so the question never arose. Treat "car cable → CAN, USB cable → HID" as the design,
+> not as a limitation discovered later.
+>
+> If CAN-on-USB is ever wanted, the cheap route is to bring the transceiver's `S` pin (currently
+> hard-tied to `GND` for normal mode) to a spare GPIO so firmware can hold it in standby on USB
+> power — which also returns its 70 mA to the LED budget. **Not done in Rev B.5**, recorded here so
+> the option is not rediscovered from scratch.
+
+#### USB current budget — re-derived for the single build
+
+The old sim-variant number was **350 mA of LEDs**, and it was correct *at the time*: the CAN
+transceiver was DNP on those boards. It is fitted on every board now, and 70 mA it never accounted
+for is now spent:
+
+| Load on `+5V` | Worst case | Basis |
+|---|---|---|
+| AP2112K → `+3V3` (MCU + display) | 110 mA | LDO, so 1:1 from the 5 V side |
+| TJA1051T/3 transmitting dominant | 70 mA | supply spec, dominant state |
+| 74AHCT1G125 LED buffer | <1 mA | logic only |
+| **Non-LED total** | **≈180 mA** | |
+| USB allowance after enumeration | 500 mA | 5.1 kΩ Rd on both CC pins = default USB power |
+| **Headroom for LEDs** | **320 mA** | 500 − 180 |
+| **Cap set in firmware** | **300 mA** | 20 mA in hand |
+
+110 + 70 + 350 = **530 mA**, which does not fit. **Collapsing the variants changed this number** —
+and it changed it in a build flag that nobody would have thought to revisit. That is the argument
+for measuring the supply rather than compiling an assumption about it.
+
+Before enumeration a device may draw only 100 mA, which the non-LED load nearly consumes on its own,
+so the firmware cap is **zero until the host has configured us**. LEDs stay dark for the first
+moments on a USB cable, deliberately.
+
+> **No CC-current sensing, and that is a decision (defect 8.16).** An earlier version of
+> `sim-variant-instructions.md` promised a DNP `R_CC_SNS` footprint for reading the CC pin voltage to
+> detect a 1.5 A or 3 A source and lift the cap. **That footprint was never in this file or in either
+> BOM** — it was described as "provided" and did not exist. It is not being added: lifting the cap is
+> an optimisation with no safety value (300 mA is safe on *any* compliant source), and it would need
+> two facts this project has not verified — an ADC channel number for a spare pin from DS12288
+> Table 12, and the USB-C Rp advertisement currents from the Type-C spec. Adding a footprint whose
+> function rests on two unread documents is how placeholders get built into boards.
 
 ---
 

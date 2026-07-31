@@ -281,13 +281,33 @@ A crystal's accuracy is measured in ppm (parts per million), and even a modest o
 than CAN needs — the exact margin for the part actually selected is worked out below, under
 "Frequency accuracy budget." Standard crystals are cheap, so there's no reason to cut this corner.
 
-**USB doesn't force this decision, but rides along for free.** The G4 chip can technically do
-USB without any crystal at all, using its HSI48 internal oscillator plus a feature called the Clock
-Recovery System that trims the internal oscillator against timing marks in the USB data stream. But
-since CAN already requires a crystal, it's simpler to clock *both* CAN and USB from the same crystal
-via the chip's PLL (phase-locked loop, a circuit that multiplies a clock up to a higher frequency)
-and eliminate the whole question of clock accuracy in one move, rather than juggling two different
-clock sources for two peripherals.
+**USB does not ride along on the crystal — and this guide used to say it did.** The G4 can run USB
+without any crystal, using its HSI48 internal oscillator plus a feature called the Clock Recovery
+System (CRS), which trims that internal oscillator against timing marks in the USB data stream. This
+section previously argued that since CAN already needs a crystal, you may as well clock *both* from
+it and delete the whole clock-accuracy question in one move.
+
+**That is impossible on this chip, and the arithmetic is short enough to check.** USB needs exactly
+48 MHz, which on this part can only come from one PLL output, called "Q". The PLL has a single
+internal oscillator (the "VCO") that every output divides down from, and the divisors are restricted
+to 2, 4, 6 or 8:
+
+- To get 48 MHz out of Q, the VCO must be 48 × {2,4,6,8} = **96, 192, 288 or 384 MHz**.
+- To get the 170 MHz the processor runs at, the VCO must be 170 × {2,4,6,8} = **340 MHz** or higher
+  (and the higher ones exceed the chip's 344 MHz VCO limit anyway).
+
+**No number appears in both lists.** You cannot have 170 MHz for the processor and 48 MHz for USB
+from one PLL — it isn't a tuning problem to be solved by trying harder. So **USB runs on HSI48 + CRS**,
+which trims to well inside what USB needs, and the crystal serves CAN and the processor. The crystal
+is still mandatory; CAN was always the real reason for it. What was wrong was the tidy-sounding
+conclusion that one clock source settles both questions.
+
+This is worth dwelling on as a *type* of error rather than a fact to correct. Every sentence around
+it was true — the crystal is required, CAN does need it, one clock source *is* simpler — and the
+conclusion drawn from those true statements still didn't follow. It survived several readings because
+it sounds like exactly the kind of simplification a good design makes. The firmware now carries the
+arithmetic **and** an automatic check that fires if anyone ever re-tunes the PLL in a way that would
+make 48 MHz reachable, so what's protected is the reasoning, not just today's numbers.
 
 **How it's built.** The oscillator pins are `PF0-OSC_IN` (LQFP-64 pin 5) and `PF1-OSC_OUT` (pin 6).
 Both are confirmed bonded (i.e. actually connected to a physical pin) on this package. The crystal
@@ -457,11 +477,12 @@ bench with the bus disconnected and simply never start in the car.)
 ⚠ **`PA9`/`PA10` have a second job that bites the moment this connector is used — see §3.5, the UCPD
 dead-battery trap, before relying on the debug UART to diagnose anything.**
 
-### 3.4 USB-C (for the simulator variant and DFU firmware updates)
+### 3.4 USB-C — one board, two cables
 
-**What it does and why it exists.** The same board design can run in two contexts: bolted into the
-race car, or plugged into a desktop sim rig over USB. This section wires up a USB-C connector so the
-sim variant can be powered and programmed over USB, without changing anything else on the board.
+**What it does and why it exists.** The same board runs in two contexts: bolted into the race car, or
+plugged into a desktop sim rig over USB. Since Rev B.5 those are not two *builds* — **every part is
+fitted on every board, and the only difference is which cable you plug in.** This section wires up
+the USB-C connector that makes the second context possible.
 
 | Ref | Part / value | Connections |
 |---|---|---|
@@ -469,7 +490,7 @@ sim variant can be powered and programmed over USB, without changing anything el
 | `U5` | **USBLC6-2SC6**, an ESD protection chip (a device that clamps electrostatic discharge spikes on data lines without disturbing the signal) in a SOT-23-6 package, LCSC `C7519` | I/O1 ↔ `USB_DM_CON`, I/O2 ↔ `USB_DP_CON`, VBUS pin → `NET_VBUS`, GND → `GND`; the protected (chip) side connects to `USB_DM`/`USB_DP` |
 | `R9`, `R10` | 5.1 kΩ, 1%, 0402 | `CC1` → `GND`, `CC2` → `GND` (this tells the USB-C host "I'm a UFP" — upstream-facing port, i.e. a peripheral — requesting the 500 mA default) |
 | `D6` | **BAT60A** Schottky diode, SOD-123 | Anode on `NET_VBUS` → Cathode on `NET_VBUS_OR` |
-| `R_VBUS` | 0 Ω, 0603 — **DNP** ("do not populate": place the footprint on the board but don't solder the part) **in the car build, FIT in the sim build** | `NET_VBUS_OR` → `+5V` |
+| `R_VBUS` | 0 Ω, 0603 — **fitted on every board** (it used to be DNP — "do not populate", meaning place the footprint but don't solder the part — on car boards only) | `NET_VBUS_OR` → `+5V` |
 | `R11` | 1 MΩ, 0402 | connector shield → `GND` |
 | `C24` | 4.7 nF, 0402 | connector shield → `GND` (in parallel with R11) |
 
@@ -477,11 +498,73 @@ The connector's D+/D− pins (both orientation pairs, since USB-C is reversible)
 `USB_DM_CON`/`USB_DP_CON`; its VBUS pins go to `NET_VBUS`; ground and shield follow the connector's
 own datasheet pinout.
 
-**The USB power feeds `+5V`, downstream of the buck converter — it must never feed `+12V_P`.** This
-is the point of the diode-OR arrangement (`D6` plus `R_VBUS`): when the sim variant is powered from
-USB with the buck converter unpopulated, USB's 5 V steps in to supply the board's `+5V` rail
-directly. Wiring USB power upstream of the buck instead would mean USB's 5 V has to fight or bypass
-a converter designed to take 12 V, which is not what it's for.
+**The USB power feeds `+5V`, downstream of the buck converter — it must never feed `+12V_P`.** That's
+the point of the diode-OR arrangement (`D6` plus `R_VBUS`): USB's 5 V steps in to supply the `+5V`
+rail directly. Wiring USB power upstream of the buck instead would mean USB's 5 V has to fight or
+bypass a converter designed to take 12 V, which is not what it's for. `D6` points one way only —
+VBUS toward the board — so board power can never travel back out into a laptop's port.
+
+#### Why there is no longer a "car build" and a "sim build"
+
+Two build configurations bought a few dollars of parts. What they cost was worse:
+
+- **Two ways to assemble a board is two chances to build the wrong one**, and the mistake is quiet.
+  A sim board with the buck fitted works. A car board with `R_VBUS` fitted works. The wrong parts
+  list uploaded to the assembler produces a board that works *until it doesn't*.
+- **A number that depends on which parts are fitted goes stale without anyone noticing.** The USB
+  brightness limit was set to 350 mA, and it was correct — while the CAN transceiver was left off sim
+  boards. Fitting that chip on every board spends 70 mA the old number never knew about, and the
+  budget stopped adding up. Nothing would have prompted anyone to re-check it, because it was a
+  constant chosen by a build flag rather than a measurement. It is now **300 mA**, and the firmware
+  works it out by *measuring which supply is present* instead of being told at compile time.
+
+Some parts are still marked DNP, and that's a different thing. The CAN termination resistors are an
+**installation** choice (fit them only if this wheel sits at a physical end of the bus), and the
+satellite-encoder connectors are a **provision** (fit one instead of an on-board encoder to move it
+off-board). An option is a footprint you might not use on a given car. A variant forks the whole
+parts list. Only the second one is gone.
+
+> #### ⚠ Fitting `R_VBUS` everywhere creates one new path — and it's worth understanding, not just obeying
+>
+> Trace what happens with a USB cable in and no vehicle power:
+>
+> USB's 5 V goes through `D6` onto the `+5V` rail, as designed. But `+5V` is also the *output* of the
+> buck converter, and a buck converter's high-side switch has a **body diode** — an unavoidable
+> parasitic diode inside the transistor — pointing from its output side back toward its input. Drive
+> the output while the input is dead and that diode conducts backwards. So USB's 5 V works its way
+> back through the inductor, through that body diode, and lands on `+12V_P` at about **4 V**.
+>
+> It doesn't stop there. `Q1`, the reverse-polarity protection FET, has its gate held at ground; with
+> its source now sitting at 4 V, the gate is 4 V *below* the source, which is past its −2.1 V turn-on
+> threshold. **`Q1` switches on**, and roughly 4 V appears on pin 1 of the vehicle connector.
+>
+> **How much does this matter? Honestly, it depends entirely on what's plugged in:**
+>
+> | Situation | What happens | Verdict |
+> |---|---|---|
+> | USB only, car connector unplugged — the desk case | ~4 V on an unmated pin | completely harmless |
+> | Both plugged in, car running | the buck holds 5.0 V and `D6` is reverse-biased | no conflict |
+> | Both plugged in, **car switched off** | USB tries to power the car's whole 12 V system; the port gives up | the only real one |
+>
+> **The obvious fix is worse than the problem.** A diode in series with the buck's output would block
+> the back-feed — and cost about 0.4 V. The CAN transceiver needs at least 4.75 V, and 5.0 − 0.4 =
+> 4.6 V puts it out of spec on every board, permanently, to guard against something that is merely
+> annoying and only happens if you mate both connectors at once. That's a bad trade, so the back-feed
+> is **accepted and written down** rather than engineered away.
+>
+> Accepting it isn't free, though — it comes with two obligations:
+> 1. **The firmware must not mistake 4 V for "the car is on."** It treats the vehicle rail as present
+>    only above 7 V, and stops believing it below 6 V. Get that threshold wrong and the board asks a
+>    500 mA laptop port for 450 mA of LEDs on top of everything else.
+> 2. **Someone must actually check it on the bench** — plug USB into a board that's mated to a
+>    switched-off car, and watch what the buck converter does as its own back-fed input crosses the
+>    voltage where it tries to start up.
+
+> #### ⚠ CAN isn't guaranteed when you're running on USB
+>
+> On USB power the `+5V` rail sits at about 4.7 V (5 V minus the diode drop), and the TJA1051T/3 CAN
+> transceiver wants **4.75 V minimum**. Not damaging — just not guaranteed. Car cable → CAN, USB cable
+> → the sim-rig gamepad interface. That's the design, not a limitation discovered afterwards.
 
 ### 3.5 The UCPD dead-battery trap — a firmware requirement hiding in the pin map
 

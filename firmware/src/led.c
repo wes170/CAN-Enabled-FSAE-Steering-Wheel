@@ -12,6 +12,7 @@
  */
 
 #include "led.h"
+#include "power.h"
 #include <string.h>
 
 #ifdef BOARD_WHEEL
@@ -123,8 +124,13 @@ led_rgb_t *led_debug_buffer(void) { return s_px; }
 void led_show(void)
 {
     /* THE choke point. Every frame passes through here, and the cap is applied
-     * unconditionally — there is no "trusted" caller and no bypass path. */
-    (void)led_apply_cap(s_px, LED_TOTAL, LED_CURRENT_CAP_MA);
+     * unconditionally — there is no "trusted" caller and no bypass path.
+     *
+     * The cap is read fresh every frame rather than latched at init, because
+     * the supply can change underneath a running board: unplug the car harness
+     * from a wheel that also has USB in, and the ceiling has to come down
+     * before the next frame goes out, not at the next reset. */
+    (void)led_apply_cap(s_px, LED_TOTAL, power_led_cap_ma());
 
 #ifndef FIRMWARE_HOST_BUILD
     led_dma_start();

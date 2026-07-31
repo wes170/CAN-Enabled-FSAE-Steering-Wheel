@@ -142,7 +142,32 @@ Contact-degradation check (the reason for 12V — see hardware-selections.md §0
 | 150 mΩ (new) | 44 mV — irrelevant | 95 mV of ~600 mV headroom |
 | 500 mΩ (worn/oxidised) | **145 mV** of ~7 V headroom — still irrelevant | **315 mV — half the headroom gone** |
 
-Buck needs ≥ ~5.5 V in for 5 V out; arriving voltage stays >11.5 V under any plausible contact wear ✔.
+Buck needs ≥ ~5.5 V in for 5 V out; arriving voltage stays >11.5 V under any plausible contact wear ✔
+
+#### Wheel on **USB power** — the second supply, on the same board (Rev B.5)
+
+`R_VBUS` is fitted on every board now, so any wheel can be bus-powered. This is a *different budget on
+the same hardware*, not a different board:
+
+| Load on `+5V` | Worst case | Basis |
+|---|---|---|
+| AP2112K → `+3V3` (MCU + display) | 0.11 A | LDO, so 1:1 from the 5 V side |
+| TJA1051 transmitting dominant | 0.07 A | now fitted on **every** board |
+| 74AHCT1G125 LED buffer | <0.001 A | logic only |
+| **Non-LED subtotal** | **≈0.18 A** | |
+| USB allowance, enumerated | 0.50 A | 5.1 kΩ Rd both CC pins = default USB power |
+| **LED headroom** | **0.32 A** | 0.50 − 0.18 |
+| **Firmware cap on USB** | **0.30 A** | 20 mA in hand — `LED_CURRENT_CAP_MA_USB` |
+
+**The old sim figure was 0.35 A and it is now wrong.** It was correct while the CAN transceiver was
+DNP on sim boards (0.11 + 0.35 = 0.46 A ✔). Fitting the transceiver everywhere spends 70 mA that
+number never accounted for: 0.11 + 0.07 + 0.35 = **0.53 A ✘**. See `sim-variant-instructions.md` §3 —
+a budget attached to a build flag went stale when the BOM underneath it changed, which is the reason
+the cap is now chosen at run time from a `V12_SENSE` measurement rather than compiled in.
+
+Pre-enumeration the allowance is 0.10 A, which the non-LED load nearly consumes on its own, so the
+firmware cap is **zero until the host configures the device** — the strip is deliberately dark for
+the first moments on a USB cable..
 
 ### Dash (12V input) — **Rev B, corrected against Riverdi DS Rev 1.7**
 | Load | Rail | Worst case |

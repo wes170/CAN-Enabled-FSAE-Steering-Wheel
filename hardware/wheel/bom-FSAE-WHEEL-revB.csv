@@ -12,6 +12,7 @@ C3;C4;C_O3,3,Buck output capacitor,15uF 16V X7R,0805,spec,Commodity,Stock,"TI Ta
 C5,1,Input bulk / TVS decoupling,100nF 100V X7R,0603,spec,Commodity,Stock,"At J1 side of protection. 100V not 50V -- sits on the clamped rail, defect 8.10"
 C_BOOT,1,Buck bootstrap capacitor,100nF 25V X7R,0402,spec,Commodity,Stock,"REQUIRED -- LMR36015 datasheet 10.2.1.2.7: 100nF / >=16V between BOOT and SW. Without it the high-side FET cannot be driven at all"
 C_VCC,1,Buck VCC capacitor,1uF 16V X7R,0603,spec,Commodity,Stock,"REQUIRED -- datasheet 10.2.1.2.8: 1uF/16V VCC to GND for proper operation. Do NOT load VCC externally"
+R_PG,1,Buck power-good pull-up -- DNP,100k,0402,spec,Commodity,Stock,"DNP. U1 pin 8 (PG) is an open-drain power-good output; fit this to +3V3 only if you want to sense it. Listed so the footprint exists -- an option with no pad is not an option (defect 8.18)"
 R_FBT,1,Buck feedback divider top,100k 1%,0402,spec,Commodity,Stock,"Sets Vout. TI Table 10-1 1MHz 5V row. Never float or ground FB"
 R_FBB,1,Buck feedback divider bottom,24.9k 1%,0402,spec,Commodity,Stock,"Sets Vout with R_FBT. 100k/24.9k = 5.0V"
 C_FF,1,Buck feed-forward capacitor,20pF C0G,0402,spec,Commodity,Stock,"Across R_FBT. TI tabulated value for the 100k/24.9k pair specifically -- if you change the divider go back to the table, do not keep 20pF"
@@ -46,15 +47,16 @@ C22,1,MCU bulk,4.7uF 16V X7R,0805,spec,Commodity,Stock,
 C23,1,NRST capacitor,100nF,0402,spec,Commodity,Stock,
 R8,0,**DELETED - BOOT0 pulldown**,do not fit,n/a,n/a,REMOVED,n/a,"*** HARMFUL: PB8-BOOT0 is also FDCAN1_RX. A pulldown fights the transceiver RXD output. BOOT0 must come from the nBOOT0 option bit (nBOOT_SEL=1), re-checked after any mass erase. See datasheet-verification.md defect 1.3"
 J4,1,Debug UART connector,JST-GH 3-pin,SM03B-GHS-TB,spec,Commodity,Stock,TX/RX/GND
-,,=== USB-C (sim variant / DFU) ===,,,,,,
+,,=== USB-C (sim-rig use / DFU -- FITTED on every board from Rev B.5) ===,,,,,,
 J2,1,USB-C receptacle,USB 2.0 16-pin,SMD,LCSC C165948 (HRO TYPE-C-31-M-12),Active,Stock,
 U5,1,USB ESD protection,4-line / USB2.0,SOT-23-6,USBLC6-2SC6,Active,Stock,Fitted in BOTH variants — see sim doc 2
 R9;R10,2,CC pull-downs,5.1k 1%,0402,spec,Commodity,Stock,Sets UFP default (500mA) — firmware LED cap depends on this
 D6,1,VBUS OR-ing Schottky,BAT60A 10V/3A low Vf,SOD-123,BAT60A,Active,Stock,Into the 5V rail DOWNSTREAM of the buck
-R_VBUS,1,VBUS enable link,0 ohm,0603,spec,Commodity,Stock,DNP in CAR / FITTED in SIM
+R_VBUS,1,VBUS enable link,0 ohm,0603,spec,Commodity,Stock,"*** FITTED ON EVERY BOARD from Rev B.5 -- the CAR/SIM variants are deleted; one build, and the only difference is which cable is plugged in. Was DNP in CAR. Fitting it creates the defect 8.15 back-feed: USB reaches +12V_P at ~4V through the LMR36015 high-side body diode and turns Q1 on, so ~4V appears on J1 pin 1. ACCEPTED, not fixed -- a series Schottky on the buck output would block it but costs 0.4V and the TJA1051T/3 needs 4.75V min. Firmware must not treat +12V_P as vehicle-present below 7V (power.h)"
 R11;C24,2,Shield termination,1M + 4.7nF,0402,spec,Commodity,Stock,
 ,,=== LEDS (3.5) ===,,,,,,
 U6,1,Level-shift buffer for LED data,74AHCT1G125 single buffer 5V,SOT-353,74AHCT1G125,Active,Stock,"AHCT is mandatory: TTL VIH 2.0V legally accepts 3.3V logic"
+C_U6,1,LED buffer decoupling,100nF,0402,spec,Commodity,Stock,"*** WAS MISSING FROM THIS BOM (defect 8.18). wheel-schematic-complete.md section 6 specifies it at U6 between +5V and GND. Every other IC on the board has its decoupling cap listed; this one existed only in the schematic definition"
 R12,1,LED data series resistor,300 ohm,0402,spec,Commodity,Stock,At the driver
 LED1-LED16,16,Shift-light bar,WS2812B-2020 addressable RGB,2020 (2.2x2.0mm),LCSC C965555,Active,Stock,~$0.05 ea. Left-to-right chain order
 LED17-LED20,4,TC bar,WS2812B-2020,2020,LCSC C965555,Active,Stock,Left bar (driver mnemonic: left = traction)
@@ -75,8 +77,10 @@ D9-D12,4,Satellite line clamp,BAV99,SOT-23,BAV99,Active,Stock,DNP — fit only i
 ,,=== DISPLAY (3.6) ===,,,,,,
 DS1,1,Wheel display **COLOUR**,"JDI LPM013M126A 1.28"" 176x176 8-colour reflective memory-in-pixel. VDD/VDDA 2.7-3.3V (3.6V abs max), VIH=VDD-0.1V, SCLK 2MHz max, 115uW, -20..+70C",10-pin FPC,LPM013M126A (Switch-Science / Data Modul / Youritech),Active,SPECIALTY DISTRIBUTOR,"Pin-for-pin identical to the Sharp mono part, so this is a BOM change only. MONO FALLBACK with zero board change: Sharp LS013B7DH05, LCSC C17500193, JLC-assemblable. Keep both in the library"
 J3,1,Display FPC connector,10-pin 0.5mm ZIF,SMD,spec -- select at capture,Commodity,Stock,"Fits BOTH the JDI colour and Sharp mono parts (identical pinout). CHECK contact side against the panel mechanical drawing: a top-contact part mirrors the pinout"
+R_EXTMODE,1,Display EXTMODE strap to +3V3,0 ohm,0402,spec,Commodity,Stock,"*** WAS MISSING FROM THIS BOM (defect 8.18) and it is NOT optional. JDI: EXTMODE H = enable EXTCOMIN, connect to VDD. A FLOATING EXTMODE leaves COM inversion undefined, DC bias builds across the liquid crystal and PERMANENTLY DAMAGES THE PANEL (schematic section 7 rule 3). A required part with no BOM line does not get assembled"
+R_EXTMODE_L,1,Display EXTMODE strap to GND -- DNP,0 ohm,0402,spec,Commodity,Stock,"DNP. The unused half of the strap option; fit R_EXTMODE instead. Listed so the footprint exists and the choice is visible on the BOM rather than only in the schematic (defect 8.18)"
 C75;C76,2,Display decoupling,100nF + 1uF,0402,spec,Commodity,Stock,At the connector
 ,,=== CONNECTOR / OFF-BOARD ===,,,,,,
 J1,1,Wheel-to-car connector,Deutsch DTM 6-way panel,DTM04-6P,DTM04-6P + DTM06-6S + wedges + gold sockets,Active,Stock,"Pin 1 = +12V_IN (Rev B). Pigtail to PCB. ~$8/pair"
-,1,Debug programming footprint,Tag-Connect TC2030-CTX,copper + 3 locating holes,n/a (no BOM cost),n/a,n/a,Needs the TC2030 cable — one per team not per board
+J_SWD,1,Debug programming footprint,Tag-Connect TC2030-CTX,copper + 3 locating holes,n/a (no BOM cost),n/a,n/a,Needs the TC2030 cable — one per team not per board
 ,2,Paddle switch (off-board),Snap-action microswitch NO to GND,panel,Honeywell/ZF V15 or D4 class,Active,Stock,Mechanical selection follows the paddle design

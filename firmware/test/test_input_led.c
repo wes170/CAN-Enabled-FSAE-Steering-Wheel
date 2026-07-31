@@ -11,6 +11,7 @@
 #include <string.h>
 #include "input.h"
 #include "led.h"
+#include "power.h"
 
 static int failures = 0;
 
@@ -227,24 +228,53 @@ static void test_led_cap(void)
 
 static void test_led_show_is_the_choke_point(void)
 {
-    puts("\nLED: led_show() applies the cap unconditionally");
+    puts("\nLED: led_show() applies the LIVE cap unconditionally");
     led_init();
     ck_u("init leaves the strip dark",
          led_estimate_ma(led_debug_buffer(), LED_TOTAL),
          LED_TOTAL * LED_MA_QUIESCENT_PER_LED);
 
-    /* A pattern that blows way past the cap, written through the normal API. */
+    /* Since Rev B.5 the cap is not a constant -- led_show() asks power.h every
+     * frame. Test BOTH supplies, and set the state explicitly rather than
+     * relying on the default: the default is USB-unconfigured, whose cap is
+     * zero, and a zero cap makes every "is it under the cap" assertion pass for
+     * the wrong reason. A test that cannot fail is not a test. */
+
+    /* --- vehicle rail: the 450 mA ceiling --------------------------------- */
+    power_reset_state();
+    power_source_update(13000u);
     led_fill(255u, 255u, 255u);
-    ck("buffer is over the cap before show()",
-       led_estimate_ma(led_debug_buffer(), LED_TOTAL) > LED_CURRENT_CAP_MA);
-
+    ck("buffer is over the vehicle cap before show()",
+       led_estimate_ma(led_debug_buffer(), LED_TOTAL) > LED_CURRENT_CAP_MA_CAR);
     led_show();
-    ck("after show(), the buffer is under the cap",
-       led_estimate_ma(led_debug_buffer(), LED_TOTAL) <= LED_CURRENT_CAP_MA);
+    ck("after show(), the buffer is under the VEHICLE cap",
+       led_estimate_ma(led_debug_buffer(), LED_TOTAL) <= LED_CURRENT_CAP_MA_CAR);
+    ck("and it actually used most of that headroom, not a token amount",
+       led_estimate_ma(led_debug_buffer(), LED_TOTAL) > (LED_CURRENT_CAP_MA_CAR / 2u));
 
+    /* --- pull the harness: the ceiling must come down on the NEXT frame --- */
+    power_source_update(0u);
+    power_set_usb_configured(true);
+    led_fill(255u, 255u, 255u);
+    led_show();
+    ck("after the supply changes, show() honours the USB cap",
+       led_estimate_ma(led_debug_buffer(), LED_TOTAL) <= LED_CURRENT_CAP_MA_USB);
+
+    /* --- unconfigured USB: dark, because 100 mA is the pre-enumeration
+     * allowance and the non-LED load very nearly consumes it ---------------- */
+    power_set_usb_configured(false);
+    led_fill(255u, 255u, 255u);
+    led_show();
+    ck("unenumerated USB drives the signal current to zero",
+       led_estimate_ma(led_debug_buffer(), LED_TOTAL)
+           <= LED_TOTAL * LED_MA_QUIESCENT_PER_LED);
+
+    power_reset_state();
+    power_source_update(13000u);
     led_set(200u, 255u, 255u, 255u);   /* out of range: must be ignored */
+    led_show();
     ck("out-of-range led_set ignored",
-       led_estimate_ma(led_debug_buffer(), LED_TOTAL) <= LED_CURRENT_CAP_MA);
+       led_estimate_ma(led_debug_buffer(), LED_TOTAL) <= LED_CURRENT_CAP_MA_CAR);
 }
 
 int main(void)

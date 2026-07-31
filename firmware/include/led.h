@@ -39,11 +39,12 @@
  * not negligible against a 450 mA cap. */
 #define LED_MA_QUIESCENT_PER_LED 1u
 
-#if defined(BOARD_SIM)
-#  define LED_CURRENT_CAP_MA LED_CURRENT_CAP_MA_SIM
-#else
-#  define LED_CURRENT_CAP_MA LED_CURRENT_CAP_MA_CAR
-#endif
+/* The cap is NOT a compile-time constant any more (Rev B.5). `R_VBUS` is fitted
+ * on every board, so the same firmware on the same hardware runs bus-powered or
+ * vehicle-powered depending only on which cable is in. led_show() asks power.h
+ * every frame. LED_CURRENT_CAP_MA_CAR is kept as the ceiling the tests reason
+ * about, and as the value power_led_cap_ma() returns on the vehicle rail. */
+#define LED_CURRENT_CAP_MA LED_CURRENT_CAP_MA_CAR
 
 typedef struct { uint8_t g, r, b; } led_rgb_t;   /* WS2812 wire order is GRB */
 

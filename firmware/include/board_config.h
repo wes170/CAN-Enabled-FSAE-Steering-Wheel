@@ -146,9 +146,20 @@
 /*  Global LED current cap. 24 LEDs at full white is ~0.86 A, which the 12 V
  *  input stage can supply but the thermal and connector budget should not
  *  see routinely. Every pattern goes through led_apply_cap(); nothing writes
- *  the strip directly. Sim builds cap harder because USB default is 500 mA. */
+ *  the strip directly.
+ *
+ *  These are the two CEILINGS, not a choice made here. Rev B.5 fitted `R_VBUS`
+ *  on every board, so one binary on one board can be vehicle-powered or
+ *  bus-powered at different moments -- see power.h, which picks between them at
+ *  run time from a V12_SENSE reading. There is no -DBOARD_SIM any more.
+ *
+ *  The USB figure was 350 mA while the CAN transceiver was DNP in the SIM
+ *  variant. Fitting it on every board spends 70 mA the old number never saw:
+ *      500 mA allowance - 110 mA (3V3 via LDO) - 70 mA (TJA1051 dominant) = 320
+ *  so the cap drops to 300 mA, keeping 20 mA in hand. Collapsing the variants
+ *  changed this number; see power.h for the full derivation. */
 #define LED_CURRENT_CAP_MA_CAR  450u
-#define LED_CURRENT_CAP_MA_SIM  350u
+#define LED_CURRENT_CAP_MA_USB  300u
 
 /* Display: JDI LPM013M126A, 176x176, 8 colours, reflective memory-in-pixel.
  * Pin-compatible with the Sharp LS013B7DH05 mono fallback. */

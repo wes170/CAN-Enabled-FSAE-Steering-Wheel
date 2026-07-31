@@ -1030,8 +1030,9 @@ the rejected alternative.
 | Wheel `+5V` | LMR36015 from `+12V_P` | LEDs capped at **450 mA** in firmware + MCU/CAN | 1.5 A | — |
 
 The wheel's 5 V margin is not a passive property — it is **enforced by the single LED current-cap
-function** (`CAR 450 mA`, `SIM 350 mA`). That cap is a power-tree component, and any pattern code that
-bypasses it invalidates this row. This is why rule "all writes through one function" is a rigor rule
+function**, and since Rev B.5 the ceiling is picked at run time from the measured supply rather than
+compiled in: **vehicle 450 mA · USB enumerated 300 mA · USB before enumeration 0 mA** (`power.h`).
+That cap is a power-tree component, and any pattern code that bypasses it invalidates this row. This is why rule "all writes through one function" is a rigor rule
 and not a style preference.
 
 ### Defect 8.10 — every capacitor on the clamped 12 V rail was under-rated (MAJOR)
@@ -1159,6 +1160,149 @@ consistent, the electrical numbers were all correct, and a consistency script ca
 vendor's default option differs from the value the design assumes. **A spec written in engineering
 units is not an orderable part**, and the gap between them is invisible until someone opens the
 ordering-information page.
+
+## §10 — Rev B.5: collapsing the CAR/SIM variants into one build
+
+The user asked whether USB could be present on both versions of the wheel, so that the only
+difference is which cable is plugged in. **It already was** — `J2`, `U5`, the CC pull-downs and the
+shield network were fitted on both variants; only `R_VBUS`, the 0 Ω link that lets VBUS *power* the
+board, was DNP on car boards. Fitting it everywhere and deleting the variants surfaced three defects.
+
+### Defect 8.15 — USB back-feeds the vehicle rail through the buck (MAJOR — new interaction)
+
+With `R_VBUS` fitted **and** the 12 V front end fitted — a combination neither variant had — there is
+an unblocked path from the USB port to the vehicle connector:
+
+```
+VBUS 5.0 V → D6 BAT60A (~0.3 V) → +5V ≈ 4.7 V → L1 → SW
+           → LMR36015 high-side body diode (SW→VIN, ~0.7 V) → +12V_P ≈ 4.0 V
+           → Q1: V_GS = 0 − 4.0 = −4.0 V vs V_GS(th) −2.1 V → channel ON
+           → NET_FUSED → F1 → J1 pin 1
+```
+
+The buck's high-side switch is a bootstrapped NMOS (it has a `C_BOOT`), so its body diode is oriented
+`SW` → `VIN` and conducts whenever the output is driven while `VIN` is dead. `Q1` then turns *on*
+because its gate is held at ground by `R1` while its source rises — the reverse-polarity FET
+conducting in the direction it was never asked about.
+
+**Severity is in the detail, so it is stated per case rather than as one adjective:**
+
+| Case | Behaviour | Verdict |
+|---|---|---|
+| USB only, `J1` unmated (the desk case) | ~4 V on an unmated pin | harmless |
+| Both connected, car live | buck at 5.0 V, `D6` reverse-biased at 4.7 V | no conflict |
+| Both connected, **car off** | USB tries to energise the vehicle 12 V bus; the host port current-limits | the real one |
+
+**The obvious fix is worse than the defect.** A series Schottky on the buck output blocks it and
+costs ~0.4 V — but the **TJA1051T/3 minimum supply is 4.75 V**, so 5.0 − 0.4 = 4.6 V puts the CAN
+transceiver out of spec on every board, permanently, to guard against an occasional annoyance.
+Rejected. The body-diode path cannot be blocked without a series element, so it is **accepted and
+documented**, with two pieces of real work attached:
+
+1. **Firmware threshold.** `+12V_P` at ~4 V must never read as "vehicle present" — `power.h` asserts
+   at 7 V and releases at 6 V, and `test_power.c` sweeps the entire 3.0–5.5 V back-feed band rather
+   than checking one convenient point. Getting this wrong asks a 500 mA host port for a 450 mA LED
+   cap on top of 180 mA of other load.
+2. **Bring-up gate.** Scope `+12V_P` with USB in and `J1` mated, watching for the buck
+   hiccup-oscillating as its back-fed `VIN` crosses UVLO. The LMR36015's UVLO threshold has *not*
+   been read, so this is an observation to make, not a prediction to trust.
+
+**Class:** L19's signature shape — an interaction between two correct-looking choices. `R_VBUS` is
+fine. The buck is fine. `Q1` is fine. The path only exists when all three are populated together,
+which is exactly what deleting the variants did.
+
+### Defect 8.16 — a footprint described as "provided" that never existed (MODERATE)
+
+`sim-variant-instructions.md` §2 read: *"Optionally read CC line voltage (ADC on a divider — DNP
+footprint `R_CC_SNS` provided) to detect a 1.5 A/3 A source and lift the cap."*
+
+**`R_CC_SNS` appears in no schematic definition and in neither BOM.** It is not a DNP part that was
+forgotten in a fitted-list; it is a designator that exists only in that sentence. Anyone planning the
+USB power strategy from that document would have designed around a footprint that would not be on the
+board when it arrived.
+
+**Not added — deleted, and that is the finding.** Lifting the LED cap above 300 mA is an optimisation
+with no safety content (300 mA is safe on *any* compliant source), and building it needs two facts
+this project has not verified: an ADC channel number for a spare pin from DS12288 Table 12, and the
+USB-C Rp advertisement currents from the Type-C specification. **Adding a footprint whose function
+rests on two unread documents is how placeholders get built into boards** (L35). The honest close is
+to remove the promise and record what it would cost to make good on it.
+
+Same family as 8.4/8.6/8.13: prose in one file describing another file, which nothing mechanically
+verifies. `check-consistency.py` now fails on any designator that a memory file references but no BOM
+contains.
+
+### Defect 8.17 — "clock USB from the crystal" is arithmetically impossible (MODERATE)
+
+`wheel-schematic-complete.md` §3.2 said: *"Since CAN requires a crystal anyway, clock both from the
+HSE and delete a whole class of clock-accuracy questions."*
+
+| | Requirement | Implied VCO |
+|---|---|---|
+| USB FS 48 MHz on PLL"Q" | VCO = 48 × Q, Q ∈ {2,4,6,8} | {96, 192, 288, 384} MHz |
+| SYSCLK 170 MHz on PLL"R" | VCO = 170 × R, R ∈ {2,4,6,8} | {340, 680, 1020, 1360} MHz |
+
+**Disjoint**, and everything above 344 MHz breaks the Table 46 VCO ceiling regardless. No PLL
+configuration serves both. USB must use **HSI48 + CRS**, trimmed against the host's 1 kHz SOF, which
+comfortably meets USB FS's 2500 ppm.
+
+Nothing was damaged by this — no hardware depended on it, and USB had never been brought up. What
+makes it worth a number is *why it survived*: it is a tidy, plausible simplification of the kind a
+good design really does make, sitting in a paragraph whose surrounding claims are all correct. The
+crystal genuinely is mandatory; CAN genuinely does need it; the conclusion drawn from those two true
+statements simply does not follow.
+
+**Fixed in the place that can enforce it.** `clock_config.h` now carries the arithmetic and a static
+assertion that fires if a future PLL re-tune ever makes 48 MHz reachable on PLLQ — guarding the
+*argument*, not just today's numbers. `usb_clock_init()` implements HSI48 + CRS with the reload
+derived (`f_target / f_sync − 1 = 47999`) rather than pasted. CRS `FELIM` is left at its reset value
+and recorded as an RM0440 refinement, not as a placeholder: nothing about it is wrong, it is simply
+not optimal, and RM0440 has never been downloadable in this project.
+
+### Defect 8.18 — five components specified in the schematic and absent from the BOM (MAJOR)
+
+Found by the check written for 8.16, on its first run — not by looking for it. Once the checker
+resolved every `X_NAME`-style designator in the memory files against the BOMs, five came back with no
+BOM line at all. **Two of them are fitted parts**, and one of those protects the display:
+
+| Ref | What it is | Consequence of the omission |
+|---|---|---|
+| **`R_EXTMODE`** | 0 Ω strap tying the JDI panel's `EXTMODE` pin to `+3V3` | **Not assembled → `EXTMODE` floats.** §7 rule 3: floating leaves COM inversion undefined, DC bias builds across the liquid crystal and **permanently damages the panel**. The most expensive single part on the wheel, on a specialty-distributor lead time |
+| **`C_U6`** | 100 nF decoupling at the `74AHCT1G125` LED buffer | Not assembled → the one IC on the board with no local decoupling, driving a 24-LED chain with fast edges |
+| `R_EXTMODE_L` | the unused half of that strap (DNP) | No footprint → the alternative is not actually available |
+| `R_PG` | optional power-good pull-up on `U1` pin 8 (DNP) | No footprint → "optional" was never optional |
+| `J_SWD` | Tag-Connect TC2030-CTX | Present as a row, but with an **empty designator cell**, so it resolved against nothing |
+
+The three DNP/no-cost lines matter less on their own, but they share the cause: **a BOM built by
+listing the parts you buy, checked against a schematic that also specifies parts you place.** A 0 Ω
+resistor and a 100 nF capacitor are the two least interesting lines on any BOM, which is exactly why
+nobody re-reads them — and `R_EXTMODE` is a 0 Ω resistor whose absence destroys a display.
+
+This is 8.16 generalised. That defect was a designator in a document with no part behind it; this is
+a part in a document with no BOM line in front of it. **Same gap, opposite direction**, and the same
+check catches both because it asks one question of every reference: *does this designator exist in the
+BOM for this board?*
+
+**The checker is now per-board.** Pooling both BOMs would let a wheel-only part excuse its absence
+from the dash — defect 8.13's mistake in a different costume — so `wheel-*.md` resolves against the
+wheel BOM and `dash-*.md` against the dash BOM.
+
+Two exclusions are deliberate and narrow: a reference the surrounding text calls **internal** (the
+STM32's own 200 kΩ `R_F` is a datasheet symbol, not a part), and one being **discussed as retired**,
+which is how a phantom gets removed honestly rather than silently.
+
+### The number that only moved because the variants merged
+
+Not a defect — a consequence, recorded because it is the best argument for the change. The USB LED
+cap was **350 mA**, correct while the CAN transceiver was DNP on sim boards (110 + 350 = 460 mA
+inside a 500 mA allowance). Fitting the transceiver on every board spends 70 mA that figure never
+saw: **110 + 70 + 350 = 530 mA, which does not fit.** The cap is now **300 mA**.
+
+Nothing would have flagged it. It was a `#define` chosen by a build flag, correct against a BOM that
+changed underneath it. The firmware now measures the supply (`V12_SENSE`, hardware that already
+existed) instead of compiling an assumption about it — and the pre-enumeration cap is **zero**,
+because a device may draw only 100 mA before the host configures it and the non-LED load nearly
+consumes that alone.
 
 ### Also corrected in the same pass (documentation, no board consequence)
 

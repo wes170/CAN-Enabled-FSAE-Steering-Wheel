@@ -165,4 +165,62 @@ CLK_ASSERT(CAN_NTSEG1 >= 1u && CAN_NTSEG1 <= 256u, "NTSEG1 must be 1..256");
 CLK_ASSERT(CAN_NTSEG2 >= 1u && CAN_NTSEG2 <= 128u, "NTSEG2 must be 1..128");
 CLK_ASSERT(CAN_NSJW <= CAN_NTSEG2, "SJW must not exceed NTSEG2");
 
+/* ---------------------------------------------------------------------------
+ * USB 48 MHz — and why it CANNOT come from the crystal (defect 8.17)
+ *
+ * `wheel-schematic-complete.md` §3.2 used to say: since CAN needs a crystal
+ * anyway, "clock both from the HSE and delete a whole class of clock-accuracy
+ * questions." The first half is right. The second half is arithmetically
+ * impossible on this part, and it went unchallenged because it sounds like
+ * exactly the kind of simplification a good design makes.
+ *
+ * USB FS needs 48 MHz. The only PLL route to it is PLL"Q", and PLLQ divides the
+ * same VCO that PLLR divides for SYSCLK:
+ *
+ *     48 MHz from PLLQ  =>  VCO = 48 * Q,  Q in {2,4,6,8}
+ *                       =>  VCO in {96, 192, 288, 384} MHz
+ *     170 MHz SYSCLK    =>  VCO = 170 * R, R in {2,4,6,8}
+ *                       =>  VCO in {340, 680, 1020, 1360} MHz
+ *
+ * The two sets do not intersect, and 680 MHz and up are far past the 344 MHz
+ * VCO ceiling anyway. There is no PLL configuration that serves 170 MHz SYSCLK
+ * and 48 MHz USB at the same time. It is not a tuning problem.
+ *
+ * So USB runs from **HSI48 + CRS**. CRS (Clock Recovery System) trims HSI48
+ * against the host's 1 kHz USB SOF packets, which pulls it far inside USB FS's
+ * 2500 ppm requirement without any crystal involvement. The crystal still earns
+ * its place — CAN needs it, and that was always the real justification.
+ *
+ * This matters more since Rev B.5 than it did before: USB used to be a
+ * sim-variant feature plus a DFU path, and is now a first-class mode on every
+ * board, because `R_VBUS` is fitted everywhere.
+ * ------------------------------------------------------------------------ */
+#define USB_CLK_HZ 48000000u
+
+/* Guard the reasoning, not just the result. If someone later re-tunes the PLL
+ * to a VCO that CAN feed PLLQ at 48 MHz, this fires and asks them to revisit
+ * the USB clock source rather than silently leaving HSI48 selected for no
+ * reason. An assertion that only ever protects today's numbers is worth less
+ * than one that protects the argument. */
+CLK_ASSERT(PLL_VCO_HZ !=  96000000u && PLL_VCO_HZ != 192000000u &&
+           PLL_VCO_HZ != 288000000u && PLL_VCO_HZ != 384000000u,
+           "This VCO can produce 48 MHz on PLLQ - USB no longer has to use HSI48, revisit the choice");
+
+/* CRS reload: the counter measures the target clock between SYNC events, so
+ * RELOAD = f_target / f_sync - 1. USB SOF is 1 kHz. This is arithmetic, not a
+ * table lookup, which is why it is derived here rather than pasted as 0xBB7F.
+ *
+ * ⚠ FELIM (the frequency error limit that sets when CRS gives up and declares
+ * SYNCERR) is left at its reset value. Its optimum is an RM0440 refinement, and
+ * RM0440 has never been downloadable in this project. The reset value works;
+ * the tuned value would work better at the margins. Recorded as a refinement,
+ * not as a placeholder — nothing here is wrong, it is just not optimal. */
+#define CRS_SYNC_HZ    1000u
+#define CRS_RELOAD_VAL ((USB_CLK_HZ / CRS_SYNC_HZ) - 1u)
+
+CLK_ASSERT(USB_CLK_HZ % CRS_SYNC_HZ == 0u,
+           "USB clock is not an integer multiple of the 1 kHz SOF rate - CRS reload would not be exact");
+CLK_ASSERT(CRS_RELOAD_VAL <= 0xFFFFu, "CRS RELOAD is a 16-bit field");
+CLK_ASSERT(CRS_RELOAD_VAL == 47999u, "CRS reload should be 47999 for 48 MHz against 1 kHz SOF");
+
 #endif /* CLOCK_CONFIG_H */
