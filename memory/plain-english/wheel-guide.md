@@ -486,17 +486,78 @@ the USB-C connector that makes the second context possible.
 
 | Ref | Part / value | Connections |
 |---|---|---|
-| `J2` | USB-C receptacle, 16-pin, LCSC `C165948` | see pin notes below |
+| `J2` | **Molex `204711-0001`** USB-C receptacle, **vertical mount** — it stands up off the board rather than pointing sideways at a board edge | multi-part symbol; see the notes below |
 | `U5` | **USBLC6-2SC6**, an ESD protection chip (a device that clamps electrostatic discharge spikes on data lines without disturbing the signal) in a SOT-23-6 package, LCSC `C7519` | I/O1 ↔ `USB_DM_CON`, I/O2 ↔ `USB_DP_CON`, VBUS pin → `NET_VBUS`, GND → `GND`; the protected (chip) side connects to `USB_DM`/`USB_DP` |
 | `R9`, `R10` | 5.1 kΩ, 1%, 0402 | `CC1` → `GND`, `CC2` → `GND` (this tells the USB-C host "I'm a UFP" — upstream-facing port, i.e. a peripheral — requesting the 500 mA default) |
 | `D6` | **BAT60A** Schottky diode, SOD-123 | Anode on `NET_VBUS` → Cathode on `NET_VBUS_OR` |
 | `R_VBUS` | 0 Ω, 0603 — **fitted on every board** (it used to be DNP — "do not populate", meaning place the footprint but don't solder the part — on car boards only) | `NET_VBUS_OR` → `+5V` |
-| `R11` | 1 MΩ, 0402 | connector shield → `GND` |
-| `C24` | 4.7 nF, 0402 | connector shield → `GND` (in parallel with R11) |
+| `R11` | 1 MΩ, 0402 | `NET_SHIELD` → `GND` |
+| `C24` | 4.7 nF, 0402 | `NET_SHIELD` → `GND` (in parallel with R11) |
 
 The connector's D+/D− pins (both orientation pairs, since USB-C is reversible) tie together to
-`USB_DM_CON`/`USB_DP_CON`; its VBUS pins go to `NET_VBUS`; ground and shield follow the connector's
-own datasheet pinout.
+`USB_DM_CON`/`USB_DP_CON`, and its VBUS pins go to `NET_VBUS`.
+
+#### It's a multi-part symbol, and the first sub-part isn't the signals
+
+`J2` is drawn in Altium as a **multi-part component** — one physical connector split across several
+schematic symbols, because 22-ish pins in one box is unreadable. The trailing letter tells you which
+piece you're looking at: **`J2A` is the six mechanical tabs**, labelled `MNT 1` through `MNT 6`, and
+nothing else. The USB signals live on the other sub-part(s).
+
+If you only place `J2A`, the board has a USB connector with no USB on it. Step through the sub-parts
+with the Part field in the Properties panel and place every one.
+
+#### The shell tabs do *not* go to ground — that's the bit worth slowing down for
+
+There are two different kinds of "ground" on a USB-C connector, and they get different treatment:
+
+| | Goes to |
+|---|---|
+| The connector's **signal ground pins** | `GND`, directly |
+| The **shell / mounting tabs** (`MNT 1`–`MNT 6`) | `NET_SHIELD`, which reaches `GND` *only* through `R11` (1 MΩ) in parallel with `C24` (4.7 nF) |
+
+That resistor–capacitor pair is a deliberate choice, not decoration. The 4.7 nF capacitor gives
+high-frequency noise on the cable shield a low-impedance path to ground so it doesn't radiate, while
+the 1 MΩ resistor stops the shield forming a *DC* connection between the car's ground and whatever
+the other end of the cable is plugged into — which, in a car with a laptop attached, can be a
+genuinely different potential. Solder the tabs straight to `GND` and you've shorted both parts out
+and thrown away the isolation, with a board that looks perfectly correct.
+
+(The net had no written-down name at all until now — the documents just said "shield" in prose, while
+the same file insists every net name is typed exactly as written. A net you can't type consistently
+isn't specified.)
+
+⚠ One thing to check on the Molex drawing: that **all six tabs are actually connected to the shell**.
+If any of them is a purely mechanical anchor with no electrical connection, it shouldn't be on
+`NET_SHIELD` at all.
+
+#### Why a vertical connector, and what it costs
+
+The wheel uses a **vertical** USB-C receptacle: it stands up perpendicular to the board rather than
+lying flat and pointing at a board edge. That's a packaging decision — a right-angle part needs a
+clear run to the edge of the PCB *and* a matching hole in the faceplate lined up with it, while a
+vertical part just needs clearance above itself. Behind a steering wheel faceplate, the second is
+much easier to arrange.
+
+Nothing about that is wrong, but three things follow from it:
+
+1. **It's a Molex part, and this project assembles at JLCPCB, which buys from LCSC.** The old
+   connector was an LCSC line. If Molex `204711-0001` isn't in LCSC's catalogue, this connector has
+   to be supplied separately or hand-soldered — a different kind of assembly order, not just a
+   different row in the BOM. Worth checking *before* the BOM is frozen rather than at ordering.
+2. **Height.** A vertical connector sticks up, and a plugged-in cable sticks up much further. This
+   needs checking against the faceplate in 3D and on the 1:1 paper build, with a specific question:
+   can you actually plug a cable in and pull it out with the wheel assembled, or is this a
+   bench-only port? Either answer is workable. Finding out after the faceplate is machined is not.
+3. **Pulling the cable out is the load case, not pushing it in.** Insertion pushes the connector down
+   into the board, which a PCB handles well. Withdrawal pulls *up*, peeling the pads — the direction
+   surface-mount joints are weakest. Six mounting tabs suggests the part is built for exactly this;
+   worth confirming whether they're through-hole (which makes it a non-issue) or surface-mount
+   (which makes it a layout concern).
+
+**Still open:** which pad is which on this specific Molex part hasn't been read from its drawing yet.
+That's the piece that determines whether the footprint is right way round, so it has to be captured
+before boards are ordered.
 
 **The USB power feeds `+5V`, downstream of the buck converter — it must never feed `+12V_P`.** That's
 the point of the diode-OR arrangement (`D6` plus `R_VBUS`): USB's 5 V steps in to supply the `+5V`

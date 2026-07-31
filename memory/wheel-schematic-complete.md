@@ -468,20 +468,76 @@ selectable and therefore gettable wrong (see the ordering box in §3.2).
 | `J_SWD` | Tag-Connect **TC2030-CTX** footprint (copper + 3 locating holes, no part) | pin 1 `+3V3`, 2 `SWDIO`(PA13), 3 `NRST`, 4 `SWCLK`(PA14), 5 `GND`, 6 NC |
 | `J4` | JST-GH 3-pin, `SM03B-GHS-TB` | 1 `DBG_TX`(PA9), 2 `DBG_RX`(PA10), 3 `GND` |
 
-### 3.4 USB-C (sim variant and DFU)
+### 3.4 USB-C (sim-rig use and DFU)
 
 | Ref | Part / value | Connections |
 |---|---|---|
-| `J2` | USB-C receptacle, 16-pin, LCSC `C165948` | see below |
+| `J2` | **Molex `204711-0001`**, USB-C receptacle, **vertical (board-perpendicular) mounting** | multi-part symbol — see below |
 | `U5` | **USBLC6-2SC6**, SOT-23-6, LCSC `C7519` | I/O1 ↔ `USB_DM_CON`, I/O2 ↔ `USB_DP_CON`, VBUS pin → `NET_VBUS`, GND → `GND`; protected side → `USB_DM`/`USB_DP` |
 | `R9`,`R10` | 5.1 kΩ 1 %, 0402 | `CC1` → `GND`, `CC2` → `GND` (sets UFP, 500 mA default) |
 | `D6` | **BAT60A** Schottky, SOD-123 | Anode `NET_VBUS` → Cathode `NET_VBUS_OR` |
 | `R_VBUS` | 0 Ω, 0603 — **FITTED ON EVERY BOARD (Rev B.5)** | `NET_VBUS_OR` → `+5V` |
-| `R11` | 1 MΩ, 0402 | shield → `GND` |
-| `C24` | 4.7 nF, 0402 | shield → `GND` (parallel with R11) |
+| `R11` | 1 MΩ, 0402 | `NET_SHIELD` → `GND` |
+| `C24` | 4.7 nF, 0402 | `NET_SHIELD` → `GND` (parallel with `R11`) |
 
-`J2` D+/D− (both pairs, A6/A7 and B6/B7 tied) → `USB_DM_CON`/`USB_DP_CON`. VBUS pins → `NET_VBUS`.
-GND/shield per the connector's own pinout.
+`J2` D+/D− (both pairs — A6/A7 with B6/B7 — tied) → `USB_DM_CON`/`USB_DP_CON`. VBUS pins →
+`NET_VBUS`. Signal grounds → `GND`.
+
+**`J2` is a multi-part symbol.** Sub-part `J2A` carries only the six mechanical tabs, `MNT 1`–`MNT 6`;
+the USB signals are on the other sub-part(s). **Place every sub-part** — a signal sub-part left
+unplaced is pins that exist in the component and appear nowhere on the sheet.
+
+#### `NET_SHIELD` — the shell tabs do NOT go straight to `GND`
+
+| Where | Net |
+|---|---|
+| `J2A` `MNT 1`–`MNT 6` (shell / mounting tabs) | **`NET_SHIELD`** |
+| `NET_SHIELD` → `GND` | only through `R11` 1 MΩ ∥ `C24` 4.7 nF |
+| `J2` **signal** ground pins | `GND` directly — these are a different thing from the shell |
+
+Tying the tabs to `GND` shorts out `R11`/`C24` and defeats the choice they exist to make. The net had
+no literal name until Rev B.6 — §0 of this file says net names are typed exactly as written, and
+"shield" in prose is not a name you can type consistently.
+
+⚠ **Confirm on the Molex drawing that all six tabs are electrically common to the shell.** If any is a
+purely mechanical anchor with no connection, it does not belong on `NET_SHIELD`.
+
+#### Why the vertical part, and what it costs
+
+**Chosen by the user (2026-07) for packaging:** a vertical receptacle exits perpendicular to the
+board, which is easier to fit behind the wheel faceplate than a right-angle part that needs a clear
+run to a board edge. That is a mechanical decision made by the person holding the mechanical
+constraint, and it is the right basis for it.
+
+It replaces the previous `LCSC C165948` (HRO `TYPE-C-31-M-12`). Three consequences follow, and none
+is a reason to reverse the choice — they are work the change creates:
+
+1. **⚠ Sourcing changes, and this one has teeth.** The old part was an LCSC line, and this project
+   assembles at **JLCPCB, which sources from LCSC**. A Molex part number is a Digi-Key/Mouser line.
+   If it is not in LCSC's catalogue, `J2` becomes a **consigned or hand-fitted part**, which is a
+   different assembly order, not just a different line item. **Check LCSC for the Molex part before
+   the BOM is frozen** — see the procurement action in `PROJECT-LOG.md` §3.
+2. **Z-height against the faceplate.** A vertical receptacle stands proud of the board, and the mated
+   plug stands much further. This lands on **G2** (3D collision against the faceplate STEP) and
+   **G3** (1:1 paper build on the real wheel) — with the specific question: *can a USB cable actually
+   be inserted and removed with the wheel assembled, or is this a bench-only port?* Either answer is
+   fine; discovering it after the faceplate is machined is not.
+3. **Withdrawal force is the load case, not insertion.** Plugging in pushes the connector *into* the
+   board, which the PCB takes well. **Pulling out peels the pads upward**, which is the direction SMT
+   joints are weakest. Six mounting tabs suggests the part is designed for this — **confirm whether
+   they are through-hole or SMT.** Through-hole tabs make this a non-issue; SMT tabs make it a layout
+   concern worth extra copper and a keep-out for flex.
+
+#### `[OPEN — needs the Molex drawing]` — `J2` pad map
+
+**The pin-to-pad mapping for `204711-0001` has not been read**, and neither had the HRO part's before
+it. This file cannot yet tell you which pad is `CC1` versus `CC2`, or how the library symbol numbers
+the signal pins across its sub-parts. That is exactly what mirrors a footprint.
+
+**This blocks G6** under rule L35 — placeholder text in a build-from document stops the pre-order
+gate, which is the system working rather than an inconvenience. To close it: read the Molex product
+drawing, transcribe the pad map into this section as a table, and confirm the library footprint's pad
+numbering matches it rather than assuming the vendor symbol is right.
 
 **The USB OR-diode feeds `+5V`, downstream of the buck** — never `+12V_P`.
 

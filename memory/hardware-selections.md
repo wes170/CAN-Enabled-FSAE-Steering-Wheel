@@ -270,7 +270,7 @@ Riverdi-direct / Mouser (~$150–190 class).
 | PCB-internal (display FPC) | 10-pin (wheel) / 20-pin (dash) 0.5 mm FPC ZIF | Dictated by the display modules. |
 | Aux buttons / paddles on wheel PCB | **JST-GH** (1.25 mm, positive lock) | Locking (vibration), tiny, cheap, JLC-stocked. Never use unlocked 2.54 mm headers in a vehicle. |
 | Debug | **Tag-Connect TC2030-CTX** footprint (no connector cost) + USB-C | SWD access with zero BOM cost and no connector to vibrate loose. |
-| Sim/DFU | **USB-C 16-pin** (e.g. HRO TYPE-C-31-M-12, LCSC C165948) + USBLC6-2SC6 ESD + 5.1k CC pull-downs | USB 2.0 FS only; C because nobody should buy a micro-B cable in 2026. |
+| Sim/DFU | **Wheel `J2`: Molex `204711-0001`, VERTICAL mount.** Dash `J3`: HRO TYPE-C-31-M-12, LCSC C165948. Both + USBLC6-2SC6 ESD + 5.1 k CC pull-downs | USB 2.0 FS only; C because nobody should buy a micro-B cable in 2026. **The wheel changed to a vertical part (user, 2026-07) for packaging** — it exits perpendicular to the board instead of needing a clear run to a board edge, which is easier to fit behind the faceplate. ⚠ The two boards therefore use **different USB-C connectors and different footprints**; the shared library carries both. ⚠ Molex is a Digi-Key/Mouser line and JLC assembles from LCSC — check availability before the BOM is frozen. |
 
 ## 9. Dash servo outputs — adjustable anti-roll bar (2 channels)
 
