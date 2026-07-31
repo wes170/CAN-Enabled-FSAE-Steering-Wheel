@@ -915,57 +915,199 @@ guarantee directly. A plain HC part would not work.
 
 ---
 
-## 7. Sheet `wheel-display.SchDoc` — COLOUR display
+## 7. Sheet `wheel-display.SchDoc` — 2.7" WIDE mono display
 
-`DS1` = **JDI LPM013M126A** — 1.28", **176 × 176, 8 colours**, reflective memory-in-pixel.
-`J3` = 10-pin 0.5 mm FPC ZIF.
+`DS1` = **Sharp LS027B7DH01** — 2.7", **400 × 240 monochrome**, reflective memory-in-pixel (HR-TFT).
+`J3` = 10-pin 0.5 mm FPC ZIF, **bottom-side contact**.
 
-**Pinout verified against JDI specification Ver.01 — and it is pin-for-pin identical to the Sharp
-mono part it replaces**, so this is a BOM change only: same footprint, same nets, same firmware
-structure.
+Every figure below is from **Sharp specification LCP-2110015A, issued 2010-06-21**, saved at
+`hardware/lib/datasheet-LS027B7DH01-sharp.pdf`.
 
-| Pin | Signal | Connect to |
+**Replaces the JDI LPM013M126A (176 × 176, 8-colour, 1.28").** Chosen for the landscape aspect and
+the much larger active area; the trade is colour → mono. See §7.6 for everything the change touches.
+
+### 7.1 Connections — the pinout is IDENTICAL to the JDI and Sharp parts it replaces
+
+| Pin | Signal | Connect to | Changed? |
+|---|---|---|---|
+| 1 | SCLK | `LCD_SCLK` (PA5) | — |
+| 2 | SI | `LCD_SI` (PA7) | — |
+| 3 | SCS | `LCD_SCS` (PA4) | — |
+| 4 | EXTCOMIN | `LCD_EXTCOMIN` (PC3) | — |
+| 5 | DISP | `LCD_DISP` (PB13) | — |
+| 6 | VDDA | **`+5V`** | ⚠ **was `+3V3`** |
+| 7 | VDD | **`+5V`** | ⚠ **was `+3V3`** |
+| 8 | EXTMODE | **`+5V` via `R_EXTMODE` 0 Ω**; `R_EXTMODE_L` 0 Ω to `GND` **DNP** | ⚠ **was `+3V3`** |
+| 9 | VSS | `GND` | — |
+| 10 | VSSA | `GND` | — |
+
+**The MCU signal nets do not move.** Same five signals, same MCU pins, same order on the connector —
+Table 4-1 of this spec matches the JDI part pin for pin. Only the three power/strap pins change rail.
+
+### 7.2 The rail moves to 5 V — and the logic does NOT
+
+This is the inversion that makes the swap easy, and it is the opposite of the rule the JDI part
+imposed:
+
+| | JDI LPM013M126A | **Sharp LS027B7DH01** |
 |---|---|---|
-| 1 | SCLK | `LCD_SCLK` (PA5) |
-| 2 | SI | `LCD_SI` (PA7) |
-| 3 | SCS | `LCD_SCS` (PA4) |
-| 4 | EXTCOMIN | `LCD_EXTCOMIN` (PC3) |
-| 5 | DISP | `LCD_DISP` (**PB13**) — H = show memory, L = black, memory retained either way |
-| 6 | VDDA | `+3V3` |
-| 7 | VDD | `+3V3` |
-| 8 | **EXTMODE** | **`+3V3` via `R_EXTMODE` 0 Ω** (JDI: "H = enable EXTCOMIN, connect to VDD"); `R_EXTMODE_L` 0 Ω to `GND` **DNP** |
-| 9 | VSS | `GND` |
-| 10 | VSSA | `GND` |
+| VDD / VDDA | 3.3 V | **+4.8 / 5.0 / 5.5 V** (Table 7-1) |
+| V_IH | **VDD − 0.1 V** — forced the panel onto the MCU's own rail | **min 2.70 V**, typ 3.00 V |
+| Level shifting | none needed (shared rail) | **none needed — 3.3 V drives it directly** |
 
-`C75` 100 nF + `C76` 1 µF at the connector, from `+3V3` to `GND`.
+Page 13 of the spec states it outright under the timing diagrams: *"SCS, SI, SCLK, DISP, EXTCOMIN:
+3V input voltage."* **Do not add level shifters.**
 
-### Three rules this part imposes — none are optional
+> ### ⚠ EXTMODE is the exception, and it is the one that will bite
+>
+> Every *signal* input takes 3.3 V. **`EXTMODE` does not.** Table 7-1's Remark 6-1 attaches the
+> **VDD** range (4.8–5.5 V) to `EXTMODE = "H"`, and §4 Remark 4-1 says plainly: *"When 'H', connect
+> EXTMODE to VDD."*
+>
+> So `R_EXTMODE` goes to **`+5V`**, not `+3V3`. Strapping it to 3.3 V puts it below the specified
+> high level for that pin while every neighbouring pin is perfectly happy at 3.3 V — which is exactly
+> the kind of thing that gets "tidied up" onto the wrong rail.
+>
+> `EXTMODE` still must not float, for the same reason as before: floating leaves COM inversion
+> undefined, DC bias builds across the liquid crystal, and the panel is permanently damaged.
 
-1. **VDD and VDDA both come from the MCU's own `+3V3` rail.** The datasheet gives
-   **V_IH = VDD − 0.1 V**, so a logic high must be within 100 mV of the display's own supply. Sharing
-   the rail with the MCU makes its output high track the display's threshold. Powering the display
-   from a separate or lower 3.3 V source breaks this.
-2. **VDDA must never exceed VDD** (spec: VDDA max = VDD). Both tie to `+3V3`; do not give VDDA a
-   separate higher or filtered rail.
-3. **EXTMODE must not float**, exactly as on the Sharp part. High selects the hardware EXTCOMIN path
-   used here. Floating leaves COM inversion undefined, which lets DC bias build across the liquid
-   crystal and permanently damages the panel.
+**V_IL max is VSS + 0.15 V**, which is tighter than most parts. It is satisfied here because the
+display's inputs draw only leakage — the STM32's output low sits within a few millivolts of ground at
+that load. It is **not** satisfied by the datasheet's "V_OL ≤ 0.4 V at 8 mA" figure, so do not put
+anything in series with these lines.
 
-### Firmware constraints (not visible on the schematic — do not lose these)
-- **SCLK maximum is 2.00 MHz** (1.00 MHz typical). The STM32 will happily clock SPI1 far faster;
-  cap it in firmware.
-- Toggle `LCD_EXTCOMIN` at ~1 Hz continuously whenever the panel is powered.
+**Power sequencing** (§6-2): *"VDD and VDDA should rise simultaneously or VDD should rise first"*, and
+the same on the way down. **Tying both to one `+5V` net satisfies this by construction** — which is a
+positive reason not to split them, not merely an economy.
 
-### Ratings and risks
-Power is **115.5 µW max** — irrelevant in the wheel budget. Absolute max VDD 3.6 V.
-⚠ **Operating temperature is −20 … +70 °C**, narrower than the rest of the wheel BOM; a black wheel
-in direct sun can exceed that at the panel surface (**assumption A9** — measure it on a summer
-track day).
+### 7.3 Decoupling — three capacitors, on specific nets
 
-**Mono fallback, zero board change:** if colour stock fails, fit the **Sharp LS013B7DH05**
-(144 × 168 mono, LCSC `C17500193`, JLC-assemblable). Identical 10-pin pinout. Keep both in the
-library. Sourcing for the JDI part is specialty distributors (Switch-Science, Data Modul, Youritech)
-rather than Digi-Key/LCSC, which is the one thing that is *worse* about the colour option.
+Figure 9-1 of the spec is explicit, and one of them is not where you would guess:
+
+| Ref | Value | Between | Note |
+|---|---|---|---|
+| `C75` | **100 nF** | **`LCD_DISP` → `GND`** | ⚠ **on the DISP *signal*, not a rail.** New — the JDI part had no such requirement |
+| `C76` | **100 nF** | `+5V` → `GND`, at pin 6 (VDDA) | |
+| `C77` | **1 µF** | `+5V` → `GND`, at pin 7 (VDD) | **NEW designator** |
+
+All X7R, ≥16 V. Place all three **at the connector**. Remark 6-4: *"We recommend capacitor for VDD and
+VDDA. (If VDD and VDDA are on separate systems, we recommend capacitor for each.)"* — they are on one
+system here, but the spec's own example still shows one per pin, so fit both.
+
+Other Notice (2): *"As power supply impedance is lowered during use, bus controller should be inserted
+near LCD module as much as possible"* — i.e. keep the decoupling tight to `J3`, not at the buck.
+
+### 7.4 Firmware constraints — not visible on the schematic
+
+- **SCLK: 1 MHz typical, 2 MHz maximum** (Table 6-3-1). Unchanged from the JDI part; still cap it in
+  firmware, since SPI1 will happily run far faster.
+- **Frame rate `fSCS`: 1–20 Hz.** **`fCOM`: 0.5–10 Hz** — so the ~1 Hz `EXTCOMIN` toggle is still
+  correct. §6-5-5 adds a requirement the JDI part did not: ***"The period of EXTCOMIN should be
+  constant."*** Drive it from a timer, not from a task loop whose period wanders under load.
+- **Wire format** (§6-5-1, and it is *not* the JDI format):
+  `[M0 M1 M2 + 5 dummy] [8-bit gate address] [400 data clocks] [16 dummy]` per line.
+  M0 = data-update flag, M1 = frame inversion (only meaningful when `EXTMODE = L`, so unused here),
+  M2 = all-clear.
+- **The gate address is LSB-first**, confirmed from the §6-6 table rather than inferred: `L1` is
+  `AG0=H` with the rest low, `L240` is `AG0–AG3` low and `AG4–AG7` high — i.e. the line number 1…240
+  in binary with **AG0 transmitted first**. This is the Sharp bit-reversed convention, and it is why
+  the JDI driver's 10-bit MSB-first address code cannot be reused.
+- **All-clear mode** (§6-5-4): `M0 = L`, `M2 = H`, 3 mode clocks then **≥13 dummy** clocks.
+- **Full-frame time:** 240 lines × (8 + 8 + 400 + 16) = **103,680 clocks ≈ 104 ms at 1 MHz**, 52 ms at
+  2 MHz. The panel supports **arbitrary single-line addressing**, so update only the lines that
+  changed — a naive full-frame redraw caps you at ~10 fps.
+- **⚠ Image sticking — a genuinely new firmware requirement.** Operating note (3): *"A still image
+  should be displayed less than two hours; if it is necessary to display a still image longer than two
+  hours, display image data must be refreshed."* Note (4) adds that a static-electricity event can
+  drop the pixel memory, and *"data update should be executed frequently."* **On a steering wheel,
+  handled by a driver in a synthetic-fibre suit, that second one is not hypothetical.** The wheel
+  firmware must rewrite the frame periodically even when nothing on screen has changed.
+- Power-on: `DISP` and `EXTCOMIN` up, then **≥30 µs before `SCS`** starts (§6-2 ※1).
+
+### 7.5 Mechanical — the part of this change that costs the most
+
+| | Value |
+|---|---|
+| Module outline | **62.8 (W) × 42.82 (H) × 1.64 (D) mm** |
+| Active area | **58.8 × 35.28 mm** |
+| Dot pitch | 0.147 mm |
+| Weight | 9.9 g |
+| Viewing direction | **6 o'clock = FPC side** — the flex exits the **bottom** edge in normal orientation |
+| Contrast / reflectance | 14:1 typ / 17.5 % |
+| Operating temp | **−20 … +70 °C at the panel surface** — unchanged from the JDI part, so **A9 is unaffected** |
+| Storage | −30 … +80 °C; max wet-bulb 57 °C, no condensation |
+
+**FPC handling rules, which the faceplate design has to respect:**
+- Bend only **0.8–6.0 mm from the glass edge**; minimum **inner radius R0.45**; **never** bend backward
+  toward the polariser; **3 bends maximum, ever**.
+- *"Do not hang the LCD module by the FPC or apply force to the FPC."*
+
+> ### ⚠ The bezel must shade the driver, not just frame the picture
+>
+> Handling note (7): *"Do not expose gate driver, etc. on the panel (circuit area outside panel
+> display area) to light as it may not operate properly. Design that shields gate driver from light is
+> required when mounting the LCD module."*
+>
+> The border between the 58.8 × 35.28 mm active area and the 62.8 × 42.82 mm module edge contains the
+> driver, and **it must be covered by opaque faceplate**, not left visible under a clear window. On a
+> sun-facing wheel this is a functional requirement, not cosmetic. Add it to the G2/G3 evidence.
+
+### 7.6 What this change touches — checklist
+
+| Area | Change |
+|---|---|
+| MCU nets & pins | **none** — five signals, same pins |
+| Connector | same class (10-pin 0.5 mm ZIF, **bottom contact**); part numbers now specified, see §7.7 |
+| Rails | pins 6, 7, 8 move **`+3V3` → `+5V`** |
+| Decoupling | now **three** caps, one of them on the `DISP` signal |
+| `R_EXTMODE` | strap target moves to **`+5V`** |
+| Firmware | new geometry, **1 bit/pixel**, 8-bit **LSB-first** gate address, periodic anti-sticking refresh |
+| Mechanical | far larger cutout; FPC exits bottom; **bezel must shade the driver border** |
+| A9 | **unchanged** — same −20…+70 °C |
+| Power budget | 350 µW max. Still irrelevant; now drawn from `+5V` rather than `+3V3` |
+| Mono fallback | **gone — see the warning in §7.8** |
+
+### 7.7 `J3` connector — part numbers
+
+The spec names its own recommendations (Figure 8-1):
+
+| Contact side | Part | Use |
+|---|---|---|
+| **Bottom** | **SMK FP12 series `CFP-4610-0150F`** | flat FPC entry — **this is the case for this board** |
+| **Bottom** | **Molex `51441-1093`** | same, alternative vendor |
+| Top | SMK FP12 series `CFP-4510-0150F` | only if the FPC is folded back on itself |
+
+**This closes the long-standing "display FPC contact side" open item**: the datasheet's own
+recommendations for the unbent case are **bottom-side contact**, stated explicitly.
+
+⚠ **Those part numbers are from a 2010 specification and may no longer be current.** Select by the
+requirement, not by the string: **0.5 mm pitch · 10 circuits · bottom-side contact · ZIF/flip-lock ·
+for 0.30 ± 0.03 mm FPC**. A current-production family matching that is Molex **FD19 / 505110** (10-way,
+0.5 mm, bottom contact) — **verify the exact orderable code and its LCSC availability before the BOM
+is frozen**, since JLC assembles from LCSC.
+
+Because the pitch and circuit count are unchanged, **the existing `J3` footprint is very likely
+reusable** — confirm the pad geometry against whichever connector is actually bought.
+
+### 7.8 ⚠ There is no longer a drop-in mono fallback
+
+The JDI part had one: the **Sharp LS013B7DH05**, "identical 10-pin pinout, zero board change." That
+no longer applies, and it is worth being explicit about *why*, because the pinout is still identical:
+
+**The LS013B7DH05 is a 3 V part** (VDD +3.0 V, absolute max +3.6 V). Fitting it to a board whose
+display rail is now **5 V** would destroy it. It is also 1.26" and 144 × 168 — mechanically and
+visually nothing like this panel.
+
+**An identical pinout does not make an interchangeable part.** Rail voltage is the thing that decides
+it, and this design has just changed rails.
+
+The compensating factor is sourcing: **the LS027B7DH01 is stocked at LCSC (`C17492463`)**, unlike the
+JDI part, which was specialty-distributor-only and was the single worst sourcing risk in the BOM. The
+mitigation is now **buy a spare**, not "keep a fallback footprint."
+
+⚠ **Also re-check the *old* fallback claim before trusting anything similar again:** the JDI part ran
+at 3.3 V and the LS013B7DH05 is specified at 3.0 V with a 3.6 V absolute maximum, so "zero board
+change" was, at best, running the fallback above its recommended supply. Recorded as defect 8.24.
 
 ## 8. Connector J1 and the top sheet
 

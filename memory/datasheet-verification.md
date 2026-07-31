@@ -1514,6 +1514,79 @@ faceplate or simply accepting it is a team decision, not a datasheet one.
 - PEC11H switch force **610 ±306 gf** — firm, which is right for gloved use; flagged for the G3
   gloved-reach test rather than treated as a problem.
 
+## §12 — Wheel display changed to the Sharp LS027B7DH01 (Rev B.11)
+
+Sharp specification **LCP-2110015A, 2010-06-21**, read in full and saved to
+`hardware/lib/datasheet-LS027B7DH01-sharp.pdf`. User decision: landscape aspect and a far larger
+active area, trading 8 colours for mono.
+
+### Defect 8.24 — "identical pinout" was doing work it cannot do (MODERATE)
+
+§7 said of the JDI LPM013M126A: *"Mono fallback, zero board change: fit the Sharp LS013B7DH05.
+Identical 10-pin pinout."* The pinout claim is true. The conclusion does not follow.
+
+**The LS013B7DH05 is a 3 V part** — VDD +3.0 V recommended, +3.6 V absolute maximum. The JDI part it
+was "a drop-in for" runs at 3.3 V, which is inside the fallback's absolute maximum but **above its
+recommended supply**. So even before this change, "zero board change" meant running the fallback
+out of its recommended range.
+
+After this change it is worse than imprecise, it is destructive: **the display rail is now 5 V**, and
+fitting a 3 V panel to it would destroy the part. Identical pinout, identical connector, and it dies
+on power-up.
+
+**An identical pinout does not make an interchangeable part — rail voltage decides it.** The
+substitution table now states supply voltage beside every alternative, and §7.8 says explicitly that
+this design no longer has a drop-in fallback. The compensating factor is that sourcing improved:
+LCSC stocks the LS027B7DH01 (`C17492463`), where the JDI part was specialty-distributor-only and was
+the single worst sourcing risk in the BOM. Mitigation is a **spare**, not a fallback footprint.
+
+Same family as **8.19** and **8.22**: a part characterised by one property (pin arrangement) while the
+property that governs the decision (supply rail, terminal count) went unstated.
+
+### What the datasheet settled
+
+| Question | Answer | Consequence |
+|---|---|---|
+| Pinout | **Identical** to both parts it replaces — SCLK, SI, SCS, EXTCOMIN, DISP, VDDA, VDD, EXTMODE, VSS, VSSA | MCU nets and pin assignments do not move at all |
+| Supply | **VDD = VDDA = +4.8 / 5.0 / 5.5 V** | pins 6, 7 move `+3V3` → `+5V` |
+| Logic level | **V_IH min 2.70 V**; p.13: *"SCS, SI, SCLK, DISP, EXTCOMIN: 3V input voltage"* | **no level shifters** — the inverse of the JDI part's `V_IH = VDD − 0.1 V` rule, which had forced the panel onto the MCU's rail |
+| **EXTMODE** | Remark 6-1 puts the **VDD** range on `EXTMODE = H`; §4 Remark 4-1: *"connect EXTMODE to VDD"* | ⚠ `R_EXTMODE` → **`+5V`**, while every neighbouring input is content at 3.3 V. The one that gets strapped to the wrong rail |
+| V_IL | max **VSS + 0.15 V** | met only because the inputs draw leakage; nothing in series with these lines |
+| Sequencing | *"VDD and VDDA should rise simultaneously or VDD first"* | satisfied by construction on one `+5V` net — a reason **not** to split them |
+| Decoupling | Fig 9-1: 0.1 µF on **DISP**, 0.1 µF on VDDA, **1 µF** on VDD | three caps, one on a **signal**; `C77` is a new designator |
+| Gate address | §6-6 table: L1 = AG0 high; L240 = AG0–AG3 low, AG4–AG7 high | **8-bit, LSB-first** — read off the table, not inferred. The JDI's 10-bit MSB-first code cannot be reused |
+| Connector | Fig 8-1 recommends **SMK `CFP-4610-0150F`** / **Molex `51441-1093`**, both **bottom contact** | **closes the long-standing "FPC contact side" open item** |
+| Temperature | **−20 … +70 °C** panel surface | **A9 unchanged** — no better, no worse |
+
+### New obligations this part creates
+
+- **⚠ Image sticking is a firmware requirement.** Operating note (3): *"A still image should be
+  displayed less than two hours; if longer, display image data must be refreshed."* Note (4): a
+  static-electricity event can drop pixel memory, so *"data update should be executed frequently."*
+  **On a wheel gripped by a driver in a synthetic-fibre suit, the second one is not hypothetical.**
+  The JDI part imposed nothing like this.
+- **⚠ The bezel must shade the driver.** Handling note (7): the circuit area outside the display area
+  *"may not operate properly"* if exposed to light, and *"design that shields gate driver from light
+  is required."* The border between the 58.8 × 35.28 mm active area and the 62.8 × 42.82 mm module
+  must be **opaque faceplate**, not a clear window. Functional, not cosmetic — G2/G3 evidence.
+- **EXTCOMIN period must be constant** (§6-5-5) — timer-driven, not task-loop-driven.
+- **FPC handling:** bend only 0.8–6.0 mm from the glass, inner radius ≥ R0.45, never backward toward
+  the polariser, **3 bends maximum ever**, and never hang the module by the flex.
+
+### `[OPEN — deferred by the user]` — the display driver firmware
+
+`firmware/{include,src}/display_wheel.*` still targets the **JDI** part: 176 × 176, 3 bits per pixel,
+10-bit MSB-first gate address. **It will not drive this panel.** The rewrite is deferred by choice
+(user, 2026-07) to keep momentum on the PCB, which is the right call — none of it blocks layout.
+
+Recorded here rather than left implicit, because a driver that targets a part no longer on the BOM is
+exactly the stale artifact this project keeps finding. What it needs: 400 × 240 at 1 bit/pixel
+(50 bytes/line, 12,000-byte frame buffer), the `[M0 M1 M2 + 5 dummy][8-bit LSB-first gate address]
+[400 data][16 dummy]` format, dirty-line tracking (a full frame is ~104 ms at 1 MHz), and the
+anti-sticking periodic rewrite. One item needs a bench check rather than a datasheet: the **pixel
+order within a data byte**, whose failure mode is a horizontal mirror in 8-pixel blocks and whose fix
+is one constant.
+
 ### Also corrected in the same pass (documentation, no board consequence)
 
 - The wheel's `D14`/`D15` paddle clamps specified only one diode of the dual BAV199, leaving the third

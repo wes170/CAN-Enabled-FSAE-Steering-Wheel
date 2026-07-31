@@ -224,29 +224,44 @@ the fast edge), clamps third (bound the voltage). It appears identically on the 
 
 ## 7. Displays
 
-### 7.1 Wheel — JDI LPM013M126A colour memory-in-pixel LCD (1.28", 176×176, 8 colours)
+### 7.1 Wheel — Sharp LS027B7DH01 memory-in-pixel LCD (2.7", 400 × 240, mono)
 
-**Selected** (replaces the Sharp LS013B7DH05 mono part on the same footprint).
+**Selected (Rev B.11)**, replacing the JDI LPM013M126A (1.28", 176 × 176, 8 colours), which had itself
+replaced the Sharp LS013B7DH05. Driver: **aspect ratio and legible size.**
 
-- **Reflective colour = sunlight-proof by physics, now in colour.** A memory-in-pixel LCD modulates
-  *reflected* ambient light, so direct sun *increases* contrast. That was the whole argument for the
-  mono part, and it survives intact — this simply adds 8 colours (3-bit RGB) and more pixels
-  (176×176 vs 144×168). Every emissive option at this size is either invisible at noon or needs a
-  backlight that dominates the wheel's power budget.
-- **115.5 µW** maximum — a rounding error in the budget.
-- **Pin-for-pin identical to the Sharp part** (10-pin FPC: SCLK, SI, SCS, EXTCOMIN, DISP, VDDA, VDD,
-  EXTMODE, VSS, VSSA), so the change costs nothing in board area, schematic or firmware structure.
-- 8 colours is limited, but for encoder values and channel status that is exactly enough — red for
-  a caution channel, green for armed, white for values.
+- **Reflective = sunlight-proof by physics**, unchanged and still the whole argument. A memory-in-pixel
+  LCD modulates *reflected* ambient light, so direct sun *increases* contrast. Every emissive option at
+  this size is either invisible at noon or needs a backlight that dominates the wheel's power budget.
+- **Landscape 5:3, and four times the picture.** Active area **58.8 × 35.28 mm** against roughly
+  28 × 28 mm — the thing a driver reads at a glance mid-corner got substantially bigger, and it is now
+  the shape a gear number plus a couple of values actually wants.
+- **400 × 240 mono beats 176 × 176 in 8 colours for this job.** Colour on the wheel was never doing
+  much work: the shift lights are the WS2812 bar, not the panel. Resolution and size are what
+  legibility is made of.
+- **350 µW** maximum — still a rounding error in the budget.
+- **Sourcing improves, which was the JDI part's one real weakness.** LCSC stocks it (`C17492463`), so
+  it is JLC-assemblable instead of specialty-distributor-only.
+- **Pinout is identical** to both parts it replaces (10-pin FPC: SCLK, SI, SCS, EXTCOMIN, DISP, VDDA,
+  VDD, EXTMODE, VSS, VSSA), so the MCU nets and pin assignments do not move at all.
 
-**Constraints the datasheet imposes:** VDD/VDDA both 2.7–3.3 V (3.6 V absolute max) with
-**VDDA ≤ VDD**, **V_IH = VDD − 0.1 V** so the display must share the MCU's `+3V3` rail, and
-**SCLK ≤ 2 MHz**.
+**Constraints the datasheet imposes** (spec LCP-2110015A, in `hardware/lib/`):
+**VDD/VDDA = +4.8 / 5.0 / 5.5 V** — a **5 V** panel, so the display rail moves off `+3V3`. But
+**V_IH min = 2.70 V**, so **3.3 V logic drives it directly with no level shifting** — the exact
+inverse of the JDI part's `V_IH = VDD − 0.1 V` rule, which had forced the panel onto the MCU's rail.
+⚠ **`EXTMODE` is the exception and must go to `+5V`**, not 3.3 V. **SCLK ≤ 2 MHz.** Gate address is
+**8-bit LSB-first**, not the JDI's 10-bit MSB-first.
 
-**Two honest downsides.** Operating range is **−20 … +70 °C**, tighter than the rest of the wheel
-BOM — a black wheel in direct sun may exceed it (assumption A9, measure it). And sourcing is
-specialty display distributors rather than Digi-Key/LCSC. **Mitigation is free:** the Sharp
-LS013B7DH05 is a zero-change drop-in fallback, JLC-assemblable at `C17500193`.
+**Three honest downsides.**
+1. **Mono.** That is the trade, made deliberately.
+2. **Operating range is still −20 … +70 °C** — no better than before, so **assumption A9 stands
+   unchanged**, and it now also covers the encoders (A11).
+3. **The zero-change fallback is gone.** The LS013B7DH05 is a **3 V** part (3.6 V absolute max) and
+   would be destroyed on this board's 5 V display rail — identical pinout notwithstanding (defect
+   8.24). Mitigation is now a **spare unit** plus LCSC stock, rather than a fallback footprint.
+
+**Mechanical cost, which is the real price of this change:** 62.8 × 42.82 mm module versus roughly
+28 mm square, a much larger faceplate cutout, and the bezel must **shade the non-active border** —
+the datasheet requires the gate driver be kept out of the light.
 
 ### 7.2 Dash — Riverdi RVT50HQBNWN00 (5.0", 800×480, **1000 cd/m² IPS**, EVE4 BT817)
 
