@@ -239,7 +239,7 @@
   60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
   covers both boards. **Verification is not only a hunt for defects — unverified numbers are
   padded numbers, and padding costs parts.**
-- **L19 (2026-07, updated):** **Thirty-five defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and twenty more in the Step 2, Rev B.5 and Rev B.8 passes (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+- **L19 (2026-07, updated):** **Thirty-six defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and twenty-one more in the Step 2, Rev B.5 and Rev B.8/B.9 passes (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
   were both **interactions between two correct-looking choices**, not errors in either one alone.
   PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
   combination. **Review pairs, not parts:** for every component, ask what else touches its net and
@@ -522,6 +522,22 @@
   sentence of §1. This is the third time in this project that opening the real document changed the
   answer (ABM8 option codes, the Molex 24-position pinout, and now this). **When a tool hedges, that is
   the finding — go to the source.**
+
+- **L54 (2026-07, the user asked why pressing the button wouldn't short the net to ground):** **A
+  diagram that omits a component is invisible to every cross-document check this project has**, because
+  the documents still agree with each other perfectly. The conditioning-cell sketch drew the contact
+  net dropping to `GND` with no switch on it (defect 8.21) — captured literally, that is an input stuck
+  LOW forever, replicated **24 times**, in a cell the same page tells you to turn into a reusable
+  snippet. Three findings in a row now have this shape: a designator with no part (8.16), a part with
+  no BOM line (8.18), and a drawing with no component (8.21). **The tooling finds contradictions; only
+  a person finds omissions.** Highest-multiplicity drawings deserve the most sceptical read, and
+  "does this circuit actually do the thing it is for?" is a different question from "is it consistent?"
+
+- **L55 (2026-07, same):** **State the resting AND the actuated condition, with numbers.** No version
+  of the conditioning-cell text ever said what the pin sits at when the switch is *closed* — 0.3 V from
+  the 1 kΩ/10 kΩ divider, not 0 V. Without that line the 1 kΩ looks like it is fighting the switch, the
+  whole cell looks wrong, and a reader cannot tell a drawing error from a design they do not yet
+  understand. **A conditioning circuit is only specified once both of its states are written down.**
 
 ## 5A. Planned future work (do not lose track of these)
 

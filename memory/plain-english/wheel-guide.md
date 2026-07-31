@@ -837,10 +837,42 @@ the same small circuit, called the "conditioning cell," is repeated identically 
 B, and SW line and every button line — 24 times total.
 
 ```
-switch/encoder contact ──┬── R(1 kΩ) ──┬── MCU pin
-                         │             ├── C(100 nF) ── GND
-                        GND            └── R(10 kΩ) ── +3V3
+                                          ┌── R(10 kΩ) ── +3V3     the pull-up
+                                          │
+   GND ──o/ o── NET ── R(1 kΩ) ───────────┼──────────────── MCU pin
+        SWITCH                            │
+        (the button, or ONE               └── C(100 nF) ── GND     the filter
+         contact of an encoder)
 ```
+
+**Read the switch as a real component, because it is one.** An earlier version of this diagram drew
+the contact net dropping straight to `GND` with no switch symbol on it, which looks exactly like a
+permanent short to ground — and if you captured it literally that's what you'd build, giving an input
+that reads LOW forever and never changes. The switch is what connects this net to ground, and it is
+the *only* thing that does.
+
+Where does it go? **Between the far end of the 1 kΩ resistor and ground** — on the opposite side of
+that resistor from the MCU pin, the capacitor and the pull-up.
+
+So the two states are:
+
+| Switch | What happens | MCU pin sees |
+|---|---|---|
+| **Open** (nobody pressing) | nothing conducts; the 10 kΩ pull-up quietly holds the node up at the supply | **3.3 V — reads HIGH** |
+| **Closed** (pressed) | a path opens: `+3V3` → 10 kΩ → 1 kΩ → switch → `GND` | 3.3 × 1/(10+1) = **0.3 V — reads LOW** |
+
+**Pressing the button is not a short to ground, and that's the part worth internalising.** The two
+resistors become a voltage divider the moment the switch closes, and the MCU pin sits at the point
+between them: 0.3 V, not 0 V. That's comfortably below the ~0.99 V the chip treats as "low," so it
+reads as a clean press — and the whole cell draws only 300 µA while your thumb is down, and *nothing
+at all* the rest of the time.
+
+That's also why the 1 kΩ can be there without spoiling anything. It's only a small part of an 11 kΩ
+divider, so it barely moves the pressed voltage — while still standing between the outside world and
+the microcontroller pin, which is its actual job.
+
+The physical wiring is in the encoder and button tables further down: every encoder **common** pin and
+the far side of every button go to `GND`.
 
 - The series 1 kΩ resistor limits any injected current into the microcontroller pin to under 5 mA,
   even in the worst case of a direct short to the 5 V rail.

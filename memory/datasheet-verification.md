@@ -1374,6 +1374,60 @@ conducting on every negative transient the car produces. With the 150 kΩ upper 
 **The part stays. The sentence needs rewriting**, and the exact abs-max wording re-read from DS12288
 Tables 14/15 — flagged for G1 rather than fixed from memory, because that is how defect 8.11 happened.
 
+### Defect 8.21 — the conditioning-cell diagram omitted the switch (MAJOR — 24 instances)
+
+**Found by the user**, reading the diagram and asking why pressing the button wouldn't just short the
+net to ground. It would, as drawn. The diagram in `wheel-schematic-complete.md` §5.1 and in the wheel
+guide was:
+
+```
+switch/encoder contact ──┬── R(1 kΩ) ──┬── MCU pin
+                         │             ├── C(100 nF) ── GND
+                        GND            └── R(10 kΩ) ── +3V3
+```
+
+The vertical stub to `GND` was standing in for the switch — **with no switch symbol on it**. Read
+literally, the contact net is hard-wired to ground: the pull-up is permanently loaded, the input reads
+LOW forever, and no press ever changes it.
+
+**This is the most-repeated cell on the board — 24 instances**, covering every encoder A, B and SW
+line and every button. It is explicitly labelled "make this a device sheet or snippet", so it is
+copied rather than re-read, and an error in it propagates to every one of those 24 without a second
+look. It is the highest-multiplicity drawing in the project.
+
+The information was not *absent* from the project — §5.2 and §5.3 both say encoder commons and the far
+side of each button go to `GND`. But **the diagram is what gets captured**, and a reader reconciling a
+diagram against a table will usually trust the diagram, because a picture reads as more specific than
+prose.
+
+**Corrected** to draw the switch explicitly between the far end of the 1 kΩ and `GND`, with the two
+states tabulated: open → 3.3 V HIGH; closed → the 1 kΩ and 10 kΩ form a divider and the pin sits at
+**0.3 V**, not 0 V, against a V_IL of about 0.99 V. Stating that pressed ≠ shorted is the part that
+makes the cell make sense, and no version of this document had ever said it.
+
+**Class:** the same family as 8.16 (a designator with no part) and 8.18 (a part with no BOM line) —
+**a drawing that omits a component**. All three are things a document *fails to say*, which no
+consistency check between documents can find, because the documents agree with each other perfectly.
+Both of the previous two were caught by tooling written for something else; **this one needed a human
+looking at a picture and asking whether it made sense.**
+
+### Flagged for G1 in the same section — the injection-current wording (no board change)
+
+§5.1 says the series 1 kΩ "limits injected current to <5 mA even on a direct short to 5 V." Two
+imprecisions, neither of which changes a part:
+
+1. **The arithmetic gives exactly 5 mA**, not less than it (5 V / 1 kΩ). The real figure is smaller —
+   about 1 mA — because the pin clamps near 4 V, so the drop across the resistor is ~1 V, not 5 V. The
+   conclusion is right and the stated derivation is not the one that supports it.
+2. **It uses positive-injection reasoning**, and DS12288 Table 15 note 3 says positive injection "is
+   not possible" on some of these I/O classes — the same wording that drove defect 8.7 on the paddle
+   pins. Whether the `BTN`/`ENC` pins are that class has not been checked.
+
+Neither is urgent: the on-board buttons cannot realistically see 5 V, and the two lines that *do*
+leave the board (`BTN5`/`BTN6` via `J5`/`J6`) already carry `D7`/`D8` BAV99 clamps to `+3V3` and
+`GND`. **Grouped with the §4.3 justification flag** for a single re-read of DS12288 Tables 14/15 at
+G1, rather than rewritten from memory — which is how defect 8.11 happened.
+
 ### Also corrected in the same pass (documentation, no board consequence)
 
 - The wheel's `D14`/`D15` paddle clamps specified only one diode of the dual BAV199, leaving the third

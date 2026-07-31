@@ -782,10 +782,30 @@ influence at 12 V, 85 µA at a 16 V charging-system maximum.
 Make this a device sheet or snippet. For every encoder A, B, SW line and every button line:
 
 ```
-switch/encoder contact ──┬── R(1 kΩ) ──┬── MCU pin
-                         │             ├── C(100 nF) ── GND
-                        GND            └── R(10 kΩ) ── +3V3
+                                          ┌── R(10 kΩ) ── +3V3      pull-up
+                                          │
+   GND ──o/ o── NET ── R(1 kΩ) ───────────┼───────────────── MCU pin
+        SWITCH                            │
+        (button, or ONE                   └── C(100 nF) ── GND      filter
+         encoder contact)
 ```
+
+**The switch is a component in this cell, not a wire.** An earlier version of this diagram drew the
+contact net going straight down to `GND` with no switch symbol on it, which reads as a permanent short
+(defect 8.21). The switch sits **between the far end of the 1 kΩ and `GND`** — it is the only thing
+that ever connects this net to ground.
+
+| Switch | Path | MCU pin sees |
+|---|---|---|
+| **open** (resting) | no current flows; the 10 kΩ holds the node up | **3.3 V — HIGH** |
+| **closed** (pressed) | `+3V3` → 10 kΩ → 1 kΩ → switch → `GND` | 3.3 × 1/11 = **0.3 V — LOW** |
+
+Pressing it is **not** a short to ground: the 1 kΩ and the 10 kΩ become a divider, so the pin sits at
+0.3 V against a V_IL of about 0.99 V (0.3 × VDD) — clearly low, with margin — and the whole cell draws
+300 µA while held. Idle current is zero.
+
+Physical connections are in §5.2 and §5.3: every encoder **common** and the far side of every button
+go to `GND`.
 
 - Series 1 kΩ limits injected current to <5 mA even on a direct short to 5 V.
 - 10 kΩ pull-up is **external**, so the line has a defined state while the MCU is in reset.
