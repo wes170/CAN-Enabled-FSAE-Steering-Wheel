@@ -1067,27 +1067,45 @@ near LCD module as much as possible"* — i.e. keep the decoupling tight to `J3`
 | Power budget | 350 µW max. Still irrelevant; now drawn from `+5V` rather than `+3V3` |
 | Mono fallback | **gone — see the warning in §7.8** |
 
-### 7.7 `J3` connector — part numbers
+### 7.7 `J3` connector — **Hirose FH12-10S-0.5SH(55)**, LCSC `C506791`
 
-The spec names its own recommendations (Figure 8-1):
+The panel spec (Figure 8-1) recommends **SMK `CFP-4610-0150F`** and **Molex `51441-1093`**. Both are
+from a 2010 document and **both are now deprecated** — which is exactly why that section already said
+to select by requirement rather than by string.
 
-| Contact side | Part | Use |
-|---|---|---|
-| **Bottom** | **SMK FP12 series `CFP-4610-0150F`** | flat FPC entry — **this is the case for this board** |
-| **Bottom** | **Molex `51441-1093`** | same, alternative vendor |
-| Top | SMK FP12 series `CFP-4510-0150F` | only if the FPC is folded back on itself |
+**Selected against the requirement, then verified:**
 
-**This closes the long-standing "display FPC contact side" open item**: the datasheet's own
-recommendations for the unbent case are **bottom-side contact**, stated explicitly.
+| Requirement | FH12-10S-0.5SH(55) |
+|---|---|
+| 10 positions | ✅ 10P |
+| 0.5 mm pitch | ✅ |
+| **Bottom-side contact** | ✅ **bottom contact** |
+| ZIF actuator | ✅ hinged lid (flip-lock) |
+| SMT, FPC parallel to the board | ✅ surface mount, right-angle |
+| Applicable FPC thickness | ✅ **0.3 mm** — the LS027B7DH01 flex is **0.30 ± 0.03 mm** |
+| Temperature | ✅ **−40 … +85 °C** |
+| Contacts | gold on phosphor bronze |
 
-⚠ **Those part numbers are from a 2010 specification and may no longer be current.** Select by the
-requirement, not by the string: **0.5 mm pitch · 10 circuits · bottom-side contact · ZIF/flip-lock ·
-for 0.30 ± 0.03 mm FPC**. A current-production family matching that is Molex **FD19 / 505110** (10-way,
-0.5 mm, bottom contact) — **verify the exact orderable code and its LCSC availability before the BOM
-is frozen**, since JLC assembles from LCSC.
+**Bottom contact is the load-bearing line in that table.** A top-contact part in the same pitch and
+position count mirrors the pinout, fits the same footprint, and looks right.
 
-Because the pitch and circuit count are unchanged, **the existing `J3` footprint is very likely
-reusable** — confirm the pad geometry against whichever connector is actually bought.
+**−40 … +85 °C is worth noting for a different reason:** unlike the panel (−20…+70, assumption A9) and
+the encoders (A11), this connector does **not** tighten the wheel's thermal envelope. It is one of the
+few parts on the faceplate that does not.
+
+> ⚠ **It was OUT OF STOCK at LCSC when specified.** It is in the JLCPCB parts library as `C506791`, so
+> it is assemblable in principle, but stock is a live question — **re-check at G6**.
+>
+> If it has not returned, **a substitute is a new footprint, not a new BOM line.** FPC connectors are
+> not interchangeable between manufacturers at the same pitch and position count: housing outline and
+> mounting-tab geometry differ. Any substitute must be re-verified against **every** row of the table
+> above, and bottom-contact confirmed explicitly rather than assumed from the pitch.
+
+**Mechanical consequence of the right-angle entry:** the FPC leaves the panel's **bottom edge**
+(6 o'clock, §7.5) and enters this connector **parallel to the board**. Combined with the flex rules —
+bend only 0.8–6.0 mm from the glass, inner radius ≥ R0.45, three bends maximum, never toward the
+polariser — that largely fixes where `J3` can sit relative to the panel cutout. Settle it on the 1:1
+paper build (G3) before the layout is frozen.
 
 ### 7.8 ⚠ There is no longer a drop-in mono fallback
 

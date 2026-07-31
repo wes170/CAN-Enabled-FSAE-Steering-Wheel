@@ -287,6 +287,12 @@ def check_key_part_numbers():
             # Any other ABM8 option string anywhere is a conflict.
             "rival": r"ABM8[A-Z0-9]*-[0-9.]+MHZ[A-Z0-9-]*",
         },
+        "J3 display FPC (wheel)": {
+            "mpn": "FH12-10S-0.5SH(55)",
+            "required": ["hardware/wheel/bom-FSAE-WHEEL-revB.csv",
+                         "memory/wheel-schematic-complete.md"],
+            "rival": None,
+        },
         "J2 USB-C (wheel)": {
             "mpn": "204711-0001",
             "required": ["hardware/wheel/bom-FSAE-WHEEL-revB.csv",
