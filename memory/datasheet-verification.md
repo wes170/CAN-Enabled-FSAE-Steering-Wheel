@@ -1304,6 +1304,76 @@ existed) instead of compiling an assumption about it — and the pre-enumeration
 because a device may draw only 100 mA before the host configures it and the non-LED load nearly
 consumes that alone.
 
+### Defect 8.19 — the BAV199's third pin was never specified (MODERATE, and it stops capture dead)
+
+**Found by the user, reading the plain-English guide and asking why a three-pin part only had two pins
+described.** That is the right question and nothing in this project would have asked it.
+
+Every document described the clamp *electrically* — "upper diode anode → net, cathode → `+3V3`; lower
+diode cathode → net, anode → `GND`" — and **no document anywhere gave a physical pin number**. Worse,
+that phrasing reads as though the sense net connects to the part **twice**, which is what you would do
+with two independent diodes and is not how this part is built.
+
+**BAV199 data sheet read first-hand** (Nexperia, 1 April 2023, saved to
+`hardware/lib/datasheet-BAV199-nexperia.pdf`). §1: *"The diodes are connected in series."* Table 2:
+
+| Pin | Symbol | Description | This design |
+|---|---|---|---|
+| 1 | `A1` | anode (diode 1) | `GND` |
+| 2 | `K2` | cathode (diode 2) | `+3V3` |
+| 3 | `K1, A2` | cathode (diode 1) **and** anode (diode 2) | **the sense net** |
+
+The net lands on **one pin**. Pin 3 is simultaneously the upper diode's anode and the lower diode's
+cathode, because the two diodes already meet inside the package — which is exactly what lets a
+three-terminal part clamp both rails.
+
+**Why this is more than a documentation nit.** SOT-23 dual diodes come in three internal arrangements
+that share a package, a silkscreen and a nearly identical schematic symbol: **common cathode**
+(BAV70), **common anode** (BAW56) and **series** (BAV99, BAV199). **Only the series arrangement can
+clamp both rails from one net** — with a common-cathode part the circuit is not merely wrong, it is
+unwireable. A future substitution for availability, checked on package and leakage alone, breaks the
+clamp silently. Both BOMs now carry the pin map and an explicit non-interchangeability warning.
+
+⚠ **A cautionary note on how this was nearly got wrong.** The first attempt to answer this used a web
+fetch, whose summariser reported the BAV199 as **common cathode** — confidently, and with a note that
+it could not parse the compressed PDF. Had that been believed, the "correction" would have destroyed a
+working circuit. **Reading the actual pages is what settled it**, exactly as with the ABM8 and the
+Molex drawing. A summary of a document is not the document.
+
+### Defect 8.20 — the wheel guide never received the 8.7 correction (MODERATE — a doc regression)
+
+Defect 8.7 established that `D14`/`D15` need **both** halves of the BAV199, because `D3`/`D4` are
+**bidirectional** SMAJ24CA parts and a negative transient presents −8.03 V at the pin. That correction
+was applied to `wheel-schematic-complete.md` §4.3, to the wheel BOM, and to this file.
+
+**It was never applied to `memory/plain-english/wheel-guide.md`**, which still listed only the upper
+clamp — "anode → `PADDLE_UP_SNS`, cathode → `+3V3`" — and whose prose discussed only the positive
+fault. Anyone capturing the paddle sheet from the guide would have fitted half a clamp on the one
+circuit the schematic file calls *"load-bearing, not belt-and-braces."*
+
+Three files updated, the fourth missed. Identical in shape to defect 8.1 and to the "eleven"/"twenty-four"
+count that survived a search-and-replace (L26). **A correction is not applied until it is applied to
+every file that describes the thing**, and the plain-English guides are consistently the ones left
+behind, because they restate rather than duplicate — so a literal search for the old text does not find
+them.
+
+### Also flagged while verifying 8.19 — the *justification* for the lower clamp is imprecise
+
+Not a defect in the circuit; a defect in the reasoning written beside it. §4.3 says the lower half is
+needed "against an absolute minimum of VSS − 0.3 V". **A silicon diode clamps at about −0.7 V**, which
+does not hold the pin above VSS − 0.3 V either. The lower diode cannot deliver what that sentence
+claims for it.
+
+What it *does* deliver is worth stating correctly: DS12288 Table 15 note 3 says positive injection is
+not possible on these I/Os, which implies a **negative-side internal structure does exist**, so the pin
+would self-clamp near −0.7 V regardless. The external diode's real job is to **carry that current
+instead of the MCU's ESD structure**, which is rated for one-off static events rather than for
+conducting on every negative transient the car produces. With the 150 kΩ upper leg the current is
+(38.9 − 0.7)/150 kΩ ≈ **0.25 mA**, far inside the ±5 mA injection limit either way.
+
+**The part stays. The sentence needs rewriting**, and the exact abs-max wording re-read from DS12288
+Tables 14/15 — flagged for G1 rather than fixed from memory, because that is how defect 8.11 happened.
+
 ### Also corrected in the same pass (documentation, no board consequence)
 
 - The wheel's `D14`/`D15` paddle clamps specified only one diode of the dual BAV199, leaving the third

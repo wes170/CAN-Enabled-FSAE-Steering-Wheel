@@ -60,6 +60,29 @@ AINn (J2) ──[ Rs 10 kΩ ]──┬── AINn_ADC  (to MCU)
 | `D6`–`D13` | **BAV199** dual low-leakage silicon, SOT-23 | **not BAT54S** |
 | `U6` | TLV9004 quad op-amp, TSSOP-14 | **DNP.** 0 Ω jumpers bypass it by default |
 
+**BAV199 pin-out — the diodes are in SERIES, and that is what makes one 3-pin package do both jobs.**
+Nexperia BAV199 data sheet, 1 April 2023, §1 and Table 2 (`hardware/lib/datasheet-BAV199-nexperia.pdf`):
+
+| Pin | Datasheet symbol | What it is | **Connect to** |
+|---|---|---|---|
+| **1** | `A1` | anode of diode 1 | **`GND`** |
+| **2** | `K2` | cathode of diode 2 | **`+3V3`** |
+| **3** | `K1, A2` | cathode of D1 **and** anode of D2 — the internal series junction | **the sense net** |
+
+The sense net lands on **one pin, not two**. "Upper diode anode to the net, lower diode cathode to the
+net" describes the *electrical* intent correctly and reads as though the net connects twice; it does
+not. Pin 3 is both of those terminals at once, because the two diodes already meet inside the package.
+
+Check it by walking each diode:
+- **Pin 3 below ground** → D1 conducts pin 1 → pin 3, i.e. `GND` into the net. **Lower clamp.**
+- **Pin 3 above `+3V3`** → D2 conducts pin 3 → pin 2, i.e. the net into `+3V3`. **Upper clamp.**
+
+⚠ **A SOT-23 dual diode is the classic footgun**: BAV70 (common cathode), BAW56 (common anode) and
+BAV99/BAV199 (series) share a package, a silkscreen and an almost identical schematic symbol, and only
+the series part can clamp both rails from one net. Substituting "an equivalent SOT-23 dual" silently
+breaks this circuit.
+
+
 **Why BAV199 and not a Schottky:** the divider presents a 5 kΩ Thévenin source at the ADC node, and
 clamp leakage flowing into that impedance *is* signal. A BAT54S leaks 2 µA at 25 °C and ~100 µA at
 100 °C → 10 mV of offset cold and **500 mV hot**, a 20 % error on a 0–2.5 V channel in a dash we

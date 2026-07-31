@@ -235,6 +235,36 @@ AINn (J2) ──[ Rs 10 kΩ ]──┬── AINn_ADC  (to MCU)
 | `D6`–`D13` | **BAV199** dual low-leakage silicon diode, SOT-23 package | the clamp — **not BAT54S** |
 | `U6` | TLV9004 quad op-amp, TSSOP-14 | **DNP** (not fitted) by default — 0 Ω jumper resistors bypass it |
 
+**Which physical pin is which — the part has three, and until now these guides only told you about
+two.** The BAV199's two diodes are **connected in series inside the package**, which is exactly what
+lets one three-pin device clamp both directions. Nexperia BAV199 data sheet, 1 April 2023, Table 2:
+
+| Pin | Datasheet name | What's inside | **Wire it to** |
+|---|---|---|---|
+| **1** | `A1` | anode of diode 1 | **`GND`** |
+| **2** | `K2` | cathode of diode 2 | **`+3V3`** |
+| **3** | `K1, A2` | cathode of diode 1 *and* anode of diode 2 — the two diodes meet here | **the sense net** |
+
+Read the earlier description again with that in mind. "Upper diode anode to the net, lower diode
+cathode to the net" is electrically correct and *sounds* like the net connects to the part twice. It
+doesn't — **the net goes to pin 3 only**, because those two terminals are already joined inside the
+package. That's the whole trick, and it's why a three-pin part can do a two-diode job.
+
+Check it yourself rather than taking it on faith — walk each diode and ask which way current can go:
+
+- **Net drops below ground** → diode 1 conducts from pin 1 to pin 3, pulling `GND` into the net. That
+  stops it going far negative. **Lower clamp.**
+- **Net rises above 3.3 V** → diode 2 conducts from pin 3 to pin 2, dumping the excess into `+3V3`.
+  That stops it going far positive. **Upper clamp.**
+
+⚠ **This is the classic place to get a dual diode wrong, and the failure is silent.** SOT-23 dual
+diodes come in three internal arrangements that look identical on the board and nearly identical on a
+schematic: **common cathode** (BAV70), **common anode** (BAW56), and **series** (BAV99, BAV199). Only
+the series arrangement can clamp both rails from one net — with a common-cathode part you physically
+cannot wire this circuit, because both cathodes are stuck together. If anyone ever substitutes "an
+equivalent SOT-23 dual diode" for availability, that substitution has to be checked against the
+internal arrangement, not just the package and the leakage number.
+
 **Why BAV199 and not the more common BAT54S — read this one carefully, because it's the kind of
 choice someone "cleans up" later without realizing why it's there.** The `Rs`/`Rg` divider on each
 channel presents what's called a 5 kΩ Thévenin source at the ADC input — that's electronics shorthand

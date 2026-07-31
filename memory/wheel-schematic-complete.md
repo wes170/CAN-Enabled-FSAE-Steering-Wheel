@@ -270,7 +270,6 @@ fact and never verified is the kind of number that gets copied into a layout rev
 - `VDDA`'s `FB1` ferrite and its two capacitors form the analog supply filter — keep that loop tight
   and do not route digital signals through it.
 
-
 ### 3.2 HSE crystal — **selected and verified**
 
 `PF0-OSC_IN` = **LQFP-64 pin 5**, `PF1-OSC_OUT` = **pin 6**. Both are bonded on this package.
@@ -730,6 +729,28 @@ Per line (UP and DOWN):
 | **`R6b` / `R7b`** | **39 kΩ** 1 %, 0402 | **`PADDLE_UP_SNS` → `GND` / `PADDLE_DN_SNS` → `GND`** — the lower half of the divider. **Without this the pin sits at the full paddle-line voltage** (defect 1.8) |
 | `C14` / `C15` | 1 nF, 0402 | each `*_SNS` net → `GND`, at the MCU pin |
 | **`D14` / `D15`** | **BAV199** dual low-leakage silicon, SOT-23 | **Use BOTH halves on each net**, exactly as the dash DAQ clamps in `dash-schematic-complete.md` §3: **upper diode** anode → `*_SNS`, cathode → `+3V3`; **lower diode** cathode → `*_SNS`, anode → `GND`. The lower half is not optional — `D3`/`D4` are **bidirectional** SMAJ24CA parts, so a negative transient clamps at −38.9 V and the divider presents **−8.03 V** at the pin, against an absolute minimum of VSS − 0.3 V. **Load-bearing, not belt-and-braces** — see the transient box below (defect 8.7). Same part and same reasoning as the dash DAQ clamps |
+
+**BAV199 pin-out — the diodes are in SERIES, and that is what makes one 3-pin package do both jobs.**
+Nexperia BAV199 data sheet, 1 April 2023, §1 and Table 2 (`hardware/lib/datasheet-BAV199-nexperia.pdf`):
+
+| Pin | Datasheet symbol | What it is | **Connect to** |
+|---|---|---|---|
+| **1** | `A1` | anode of diode 1 | **`GND`** |
+| **2** | `K2` | cathode of diode 2 | **`+3V3`** |
+| **3** | `K1, A2` | cathode of D1 **and** anode of D2 — the internal series junction | **the sense net** |
+
+The sense net lands on **one pin, not two**. "Upper diode anode to the net, lower diode cathode to the
+net" describes the *electrical* intent correctly and reads as though the net connects twice; it does
+not. Pin 3 is both of those terminals at once, because the two diodes already meet inside the package.
+
+Check it by walking each diode:
+- **Pin 3 below ground** → D1 conducts pin 1 → pin 3, i.e. `GND` into the net. **Lower clamp.**
+- **Pin 3 above `+3V3`** → D2 conducts pin 3 → pin 2, i.e. the net into `+3V3`. **Upper clamp.**
+
+⚠ **A SOT-23 dual diode is the classic footgun**: BAV70 (common cathode), BAW56 (common anode) and
+BAV99/BAV199 (series) share a package, a silkscreen and an almost identical schematic symbol, and only
+the series part can clamp both rails from one net. Substituting "an equivalent SOT-23 dual" silently
+breaks this circuit.
 
 > ⚠ **The divider alone does not survive a paddle-line transient (defect 8.7).** `D3`/`D4` are
 > SMAJ24CA parts that clamp at **38.9 V**. The divider passes 38.9 × 39/189 = **8.03 V** to the pin —

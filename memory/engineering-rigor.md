@@ -239,7 +239,7 @@
   60 V converter than the wheel. Reading the datasheet *reduced* the BOM: one converter part now
   covers both boards. **Verification is not only a hunt for defects — unverified numbers are
   padded numbers, and padding costs parts.**
-- **L19 (2026-07, updated):** **Thirty-three defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and eighteen more in the Step 2 and Rev B.5 passes (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
+- **L19 (2026-07, updated):** **Thirty-five defects so far** — fifteen through Rev B.1 (STM32 pin map ×3, missing clock source, Sharp EXTMODE, TVS-vs-buck abs-max, BAT54S leakage, Riverdi backlight rail, AMS1117 ceramic cap, P-FET orientation, plus the J2 ground allocation caught in review), and twenty more in the Step 2, Rev B.5 and Rev B.8 passes (`datasheet-verification.md` §9). The two most expensive (BOOT0-on-CAN, TVS-above-abs-max)
   were both **interactions between two correct-looking choices**, not errors in either one alone.
   PB8 is a fine CAN pin. SMBJ33A is a fine TVS. A 35 V buck is a fine buck. Each fails only in
   combination. **Review pairs, not parts:** for every component, ask what else touches its net and
@@ -506,6 +506,22 @@
   invites a second look. **(b)** When you write a check, run it before you decide what it is for —
   the class of defect it catches is usually wider than the instance that prompted it, and the wider
   class is where the expensive one lives.
+
+- **L52 (2026-07, the user asked why a three-pin part had two pins described):** **Describing a
+  component electrically is not specifying it physically.** Every file said "upper diode anode to the
+  net, lower diode cathode to the net" — correct, and it names no pin, and it implies the net connects
+  twice when the part is a **series** dual whose two diodes already meet on pin 3 (defect 8.19). The
+  reader could not capture it. **For any part with more than two terminals, the documentation owes a
+  pin-number table, not a description of the topology** — and it owes the *internal arrangement* too,
+  because BAV70/BAW56/BAV99 share a package and a symbol and only one of them can do this job.
+
+- **L53 (2026-07, same investigation):** **A summary of a datasheet is not the datasheet.** The first
+  attempt to answer the pin question used a web fetch whose summariser confidently reported the BAV199
+  as *common cathode* — while stating it could not parse the PDF. Believing it would have "corrected" a
+  working circuit into an unbuildable one. Reading the actual pages showed **series**, in the first
+  sentence of §1. This is the third time in this project that opening the real document changed the
+  answer (ABM8 option codes, the Molex 24-position pinout, and now this). **When a tool hedges, that is
+  the finding — go to the source.**
 
 ## 5A. Planned future work (do not lose track of these)
 

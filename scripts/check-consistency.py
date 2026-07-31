@@ -422,6 +422,52 @@ def check_single_build():
               f"(+180 mA non-LED = {usb_cap + 180} of 500)")
 
 
+def check_multipin_part_pinouts():
+    """Defect 8.19. Every file described the BAV199 clamp electrically -- "upper
+    diode anode to the net, lower diode cathode to the net" -- and NO file gave a
+    physical pin number. That phrasing also implies the net connects twice, which
+    is wrong: the BAV199's diodes are in SERIES and meet on pin 3, so the net
+    lands on one pin. A reader could not capture the part from the documents.
+
+    The rule: a part with more than two terminals, described in a build-from
+    file, must have its pin numbers there too. Currently enforced for the parts
+    that have actually gone wrong; add rows as new ones appear.
+    """
+    PARTS = {
+        "BAV199": {
+            # Files that a person captures or assembles from.
+            "files": ["memory/wheel-schematic-complete.md",
+                      "memory/dash-schematic-complete.md",
+                      "memory/plain-english/wheel-guide.md",
+                      "memory/plain-english/dash-guide.md",
+                      "hardware/wheel/bom-FSAE-WHEEL-revB.csv",
+                      "hardware/dash/bom-FSAE-DASH-revB.csv"],
+            # Evidence the pinout is actually stated, not just the topology.
+            # Accept any punctuation joining the two symbols on pin 3 — the
+            # check is for the CONCEPT, not for one house style.
+            "needs": [r"K1\s*[,+/&]?\s*A2", r"\bA1\b", r"\bK2\b"],
+            "why": "series dual: pin1 A1 -> GND, pin2 K2 -> +3V3, pin3 K1+A2 -> the net",
+        },
+    }
+    for part, spec in PARTS.items():
+        for f in spec["files"]:
+            txt = DOCS.get(f, "")
+            if part not in txt:
+                continue                      # this file does not discuss it
+            missing = [rx for rx in spec["needs"] if not re.search(rx, txt)]
+            if missing:
+                fails.append(f"{f}: mentions {part} but never states its pin "
+                             f"numbers ({spec['why']}) — defect 8.19")
+        print(f"  {part} pinout stated wherever the part is described")
+
+    # Defect 8.20: the wheel guide carried only the UPPER clamp long after the
+    # schematic and the BOM had been corrected to use both halves (8.7).
+    g = DOCS.get("memory/plain-english/wheel-guide.md", "")
+    if "BAV199" in g and not re.search(r"both diodes|both halves|BOTH halves", g, re.I):
+        fails.append("memory/plain-english/wheel-guide.md: describes the BAV199 "
+                     "clamp without saying both halves are used (defect 8.20)")
+
+
 def check_boms_parse():
     for f in [k for k in DOCS if k.endswith(".csv")]:
         rows = list(csv.reader(DOCS[f].splitlines()))
@@ -503,6 +549,7 @@ for fn in (check_wheel_pin_table, check_pin_table_complete, check_adc_channels, 
            check_battery_rail_cap_ratings,
            check_no_rejected_parts_as_live_spec, check_stale_values, check_key_part_numbers,
            check_phantom_designators, check_single_build,
+           check_multipin_part_pinouts,
            check_boms_parse,
            check_bom_note_crossrefs):
     fn()

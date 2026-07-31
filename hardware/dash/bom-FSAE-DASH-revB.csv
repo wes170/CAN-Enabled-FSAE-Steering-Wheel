@@ -52,7 +52,7 @@ R7;R8,2,CC pull-downs,5.1k 1%,0402,spec,Commodity,Stock,
 R9-R16,8,AFE series limiter,10k 1%,0402,spec,Commodity,Stock,Limits a 12V-shorted sensor line to ~0.6mA into the clamps
 R17-R24,8,AFE divider lower leg,10k 1%,0402,spec,Commodity,Stock,Divide-by-2: 0-5V sensor -> 0-2.5V at ADC
 C24-C31,8,AFE filter,100nF,0402,spec,Commodity,Stock,fc ~320Hz — retune per channel if a fast signal is needed
-D6-D13,8,AFE clamp **LOW-LEAKAGE**,BAV199 dual low-leakage silicon,SOT-23,BAV199,Active,Stock,"*** BAT54S REJECTED: 2uA leak at 25C and ~100uA at 100C across the 5k Thevenin source = 10mV at room temp and 500mV hot (20pct error). BAV199 is 3pA. See datasheet-verification.md 5A"
+D6-D13,8,AFE clamp **LOW-LEAKAGE**,BAV199 dual low-leakage silicon,SOT-23,BAV199,Active,Stock,"*** BAT54S REJECTED: 2uA leak at 25C and ~100uA at 100C across the 5k Thevenin source = 10mV at room temp and 500mV hot (20pct error). BAV199 is 3pA. See datasheet-verification.md 5A BAV199 PINOUT (Nexperia DS 2023-04-01 Table 2, in hardware/lib/): the two diodes are IN SERIES -- pin1 = A1 (anode D1) -> GND, pin2 = K2 (cathode D2) -> +3V3, pin3 = K1+A2 (where the diodes meet) -> the sense net. The net goes to ONE pin, not two. *** NOT interchangeable with BAV70 (common cathode) or BAW56 (common anode): only the series arrangement can clamp both rails from one net (defect 8.19)"
 U6,1,Optional AFE buffer,quad rail-to-rail op-amp,TSSOP-14,TLV9004,Active,Stock,DNP — 0 ohm jumpers by default. Fit only if a sensor needs low-impedance drive
 ,,=== ARB SERVO OUTPUTS x2 (1.2b) ===,,,,,,
 U7,1,Servo signal buffer,74AHCT2G125 dual buffer 5V,VSSOP-8,74AHCT2G125,Active,Stock,"One package covers both channels. AHCT mandatory (TTL VIH 2.0V accepts 3.3V logic)"

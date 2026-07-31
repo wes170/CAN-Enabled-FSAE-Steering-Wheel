@@ -739,7 +739,7 @@ For each line (UP and DOWN):
 | `R6` / `R7` | 150 kΩ, 1%, 0402 | `PADDLE_UP` → `PADDLE_UP_SNS` / `PADDLE_DOWN` → `PADDLE_DN_SNS` |
 | `R6b` / `R7b` | 39 kΩ, 1%, 0402 | `PADDLE_UP_SNS` → `GND` / `PADDLE_DN_SNS` → `GND` — the lower half of the divider. Without it, the pin sees the full paddle-line voltage instead of a safe fraction of it. |
 | `C14` / `C15` | 1 nF, 0402 | each `*_SNS` net → `GND`, at the MCU pin |
-| `D14` / `D15` | **BAV199**, a dual low-leakage silicon diode, SOT-23 package | anode → `PADDLE_UP_SNS` / `PADDLE_DN_SNS`, cathode → `+3V3` |
+| `D14` / `D15` | **BAV199**, a dual low-leakage silicon diode, SOT-23 package | **both diodes are used, not one.** Pin 1 → `GND`, pin 2 → `+3V3`, pin 3 → `PADDLE_UP_SNS` / `PADDLE_DN_SNS`. See the pin table below |
 
 `PADDLE_UP` and `PADDLE_DOWN` run as plain copper from `J1` pins 4 and 5 straight out to wherever
 they're going — nothing on this board switches or buffers them. `R6`/`R7` and `R6b`/`R7b` together
@@ -764,6 +764,55 @@ not the all-clear.
 `D14`/`D15` supply the missing clamp directly at the pin: each one holds its sense net to about 3.9 V,
 comfortably under the 4.0 V limit, while the 150 kΩ upper leg of the divider limits the current
 through the diode to (38.9 − 3.9) / 150 kΩ = **0.23 mA** — nothing for a part rated for this.
+
+**Both halves of the diode are used, and this guide previously said otherwise.** The table above used
+to list only the upper clamp — anode to the sense net, cathode to `+3V3` — which is half the circuit.
+The reason the lower half matters is `D3`/`D4`: the **SMAJ24CA is bidirectional**, so it clamps a
+*negative* transient at −38.9 V just as it clamps a positive one at +38.9 V, and the same divider then
+presents **−8.03 V** at a pin whose specified minimum is below ground by a few tenths of a volt. A
+clamp that only handles one polarity leaves the other one entirely unprotected, and the schematic
+definition and the BOM have both said "use both halves" since that was caught (defect 8.7). This guide
+did not, until now — see defect 8.20.
+
+What the lower diode actually buys you is worth stating precisely, because a silicon diode clamps at
+roughly −0.7 V and that is itself past the pin's stated minimum. The MCU does have an internal
+protection diode on the negative side (unlike the positive side, where the datasheet says injection
+"is not possible"), so without `D14`/`D15` the pin would clamp itself at about the same voltage. The
+difference is **which diode carries the current**: an internal ESD structure is rated for one-off
+static discharges, not for conducting every time the car throws a negative transient. The external
+diode takes that duty instead. That is a good reason; it is not quite the reason the schematic file
+gives, which is flagged for a re-read of DS12288 Table 15 at G1.
+
+**Which physical pin is which — the part has three, and until now these guides only told you about
+two.** The BAV199's two diodes are **connected in series inside the package**, which is exactly what
+lets one three-pin device clamp both directions. Nexperia BAV199 data sheet, 1 April 2023, Table 2:
+
+| Pin | Datasheet name | What's inside | **Wire it to** |
+|---|---|---|---|
+| **1** | `A1` | anode of diode 1 | **`GND`** |
+| **2** | `K2` | cathode of diode 2 | **`+3V3`** |
+| **3** | `K1, A2` | cathode of diode 1 *and* anode of diode 2 — the two diodes meet here | **the sense net** |
+
+Read the earlier description again with that in mind. "Upper diode anode to the net, lower diode
+cathode to the net" is electrically correct and *sounds* like the net connects to the part twice. It
+doesn't — **the net goes to pin 3 only**, because those two terminals are already joined inside the
+package. That's the whole trick, and it's why a three-pin part can do a two-diode job.
+
+Check it yourself rather than taking it on faith — walk each diode and ask which way current can go:
+
+- **Net drops below ground** → diode 1 conducts from pin 1 to pin 3, pulling `GND` into the net. That
+  stops it going far negative. **Lower clamp.**
+- **Net rises above 3.3 V** → diode 2 conducts from pin 3 to pin 2, dumping the excess into `+3V3`.
+  That stops it going far positive. **Upper clamp.**
+
+⚠ **This is the classic place to get a dual diode wrong, and the failure is silent.** SOT-23 dual
+diodes come in three internal arrangements that look identical on the board and nearly identical on a
+schematic: **common cathode** (BAV70), **common anode** (BAW56), and **series** (BAV99, BAV199). Only
+the series arrangement can clamp both rails from one net — with a common-cathode part you physically
+cannot wire this circuit, because both cathodes are stuck together. If anyone ever substitutes "an
+equivalent SOT-23 dual diode" for availability, that substitution has to be checked against the
+internal arrangement, not just the package and the leakage number.
+
 
 **Why BAV199 and not a Schottky diode.** On a high-impedance sensing node like this one, a diode's own
 leakage current doesn't stay contained — it flows into the same net you're trying to measure and
