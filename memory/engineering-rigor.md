@@ -559,6 +559,16 @@
   this open instead of closing it wrongly. And when a vendor site 403s, try a different client before
   concluding the document is unavailable.
 
+- **L58 (2026-07, the user asked whether U5 wanted `NET_VBUS` or `NET_VBUS_OR`):** **A drawing derived
+  from a correct document can still be wrong, and the consistency script cannot see it.** §3.4 has
+  always said U5's VBUS pin ties to `NET_VBUS` — the connector side, before `D6`. The hookup diagram
+  drawn *from* §3.4 tapped it off `NET_VBUS_OR` instead, putting `D6`'s dynamic resistance in series
+  with the only component whose job is to be a low-impedance shunt. Nothing flagged it: the text was
+  right, the BOM was right, and `check-consistency.py` compares text to text, not geometry to text.
+  **Derived artifacts — diagrams, layouts, symbols — need their own review pass against the source,
+  because agreement between documents is not evidence that a picture matches them.** The same applies
+  to the Altium schematic itself when it is drawn from these files.
+
 ## 5A. Planned future work (do not lose track of these)
 
 | Item | Status | Where specified |

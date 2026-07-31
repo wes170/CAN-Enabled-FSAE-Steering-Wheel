@@ -209,10 +209,13 @@
         <path d="M454 129 H560" stroke="var(--power)" stroke-width="2.2" fill="none" marker-end="url(#ar)"/>
         <text x="596" y="134" text-anchor="middle" fill="var(--power)" font-size="14" font-weight="700">+5V</text>
 
-        <!-- VBUS tap down to U5 -->
-        <path d="M366 129 V236 H470" stroke="var(--power)" stroke-width="1.6" fill="none"
-              opacity=".75" stroke-dasharray="5 3"/>
-        <circle cx="366" cy="129" r="3.5" fill="var(--power)"/>
+        <!-- U5's VBUS pin taps the CONNECTOR side, before D6. Drawn as a labelled
+             stub rather than a routed wire -- same as you would draw it in Altium,
+             and it keeps the reference unambiguous. -->
+        <circle cx="243" cy="129" r="3.5" fill="var(--power)"/>
+        <path d="M243 129 H290 V175 A6 6 0 0 1 290 187 V217 A6 6 0 0 1 290 229 V252 H470"
+              stroke="var(--power)" stroke-width="1.6" fill="none" opacity=".8"/>
+        <text x="300" y="266" fill="var(--power)" font-size="10.5" font-weight="700">NET_VBUS &mdash; before D6</text>
 
         <!-- ================= Data path ================= -->
         <!-- D+ join -->
@@ -249,7 +252,7 @@
         <text x="781" y="268" text-anchor="middle" fill="currentColor" font-size="10" opacity=".6">pins 46 / 45</text>
 
         <!-- ================= CC pulldowns ================= -->
-        <path d="M186 269 H360" stroke="var(--config)" stroke-width="2.2" fill="none"/>
+        <path d="M186 269 H360" stroke-linecap="round" stroke="var(--config)" stroke-width="2.2" fill="none"/>
         <path d="M186 311 H360" stroke="var(--config)" stroke-width="2.2" fill="none"/>
         <rect x="360" y="259" width="52" height="20" rx="2" fill="var(--card)" stroke="var(--config)" stroke-width="2"/>
         <rect x="360" y="301" width="52" height="20" rx="2" fill="var(--card)" stroke="var(--config)" stroke-width="2"/>
@@ -414,6 +417,16 @@
 
   <section>
     <div class="note">
+      <h3>Why <span class="m">U5</span>'s VBUS pin goes to <span class="m">NET_VBUS</span>, not <span class="m">NET_VBUS_OR</span></h3>
+      <p>The clamp has to reference the node where the strike <em>arrives</em>. <span class="m">NET_VBUS</span>
+        is the connector side, unprotected, and that is where an ESD event lands. Referencing it to
+        <span class="m">NET_VBUS_OR</span> instead puts <span class="m">D6</span> in the discharge
+        path &mdash; adding the Schottky's dynamic resistance in series with the thing whose whole job
+        is to be a low-impedance shunt.</p>
+      <p>It is also what rigor rule 4 says in general: series impedance, filtering and clamp all go
+        <strong>at the connector</strong>. <em>(An earlier version of this diagram tapped it off
+        <span class="m">NET_VBUS_OR</span> &mdash; wrong, and corrected here.)</em></p>
+
       <h3>Two things this diagram cannot tell you</h3>
       <p><strong><span class="m">U5</span>'s pin numbers are not specified anywhere in the project.</strong>
         Every document describes it by function &mdash; I/O1, I/O2, VBUS, GND &mdash; and none gives a
