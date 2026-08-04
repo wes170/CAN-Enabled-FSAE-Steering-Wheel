@@ -1,0 +1,1792 @@
+SHEET: wheeldisplays
+Source: 7c74ea69-Copy_of_wheeldisplays.SchDoc
+Coordinates are in 10-mil units. Pin connection end resolved as: far (score far=112 base=0)
+
+==============================================================================
+COMPONENTS (58)
+==============================================================================
+
+C44  @(300,1320)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(300,1320)
+      pin 2    2                      Passive       @(300,1300)
+
+C45  @(480,1320)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(480,1320)
+      pin 2    2                      Passive       @(480,1300)
+
+C46  @(660,1320)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(660,1320)
+      pin 2    2                      Passive       @(660,1300)
+
+C47  @(840,1320)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(840,1320)
+      pin 2    2                      Passive       @(840,1300)
+
+C48  @(1030,1320)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(1030,1320)
+      pin 2    2                      Passive       @(1030,1300)
+
+C49  @(1210,1320)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(1210,1320)
+      pin 2    2                      Passive       @(1210,1300)
+
+C50  @(1390,1320)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(1390,1320)
+      pin 2    2                      Passive       @(1390,1300)
+
+C51  @(1570,1320)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(1570,1320)
+      pin 2    2                      Passive       @(1570,1300)
+
+C52  @(310,1210)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(310,1210)
+      pin 2    2                      Passive       @(310,1190)
+
+C53  @(490,1210)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(490,1210)
+      pin 2    2                      Passive       @(490,1190)
+
+C54  @(670,1210)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(670,1210)
+      pin 2    2                      Passive       @(670,1190)
+
+C55  @(850,1210)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(850,1210)
+      pin 2    2                      Passive       @(850,1190)
+
+C56  @(1040,1210)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(1040,1210)
+      pin 2    2                      Passive       @(1040,1190)
+
+C57  @(1220,1210)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(1220,1210)
+      pin 2    2                      Passive       @(1220,1190)
+
+C58  @(1400,1210)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(1400,1210)
+      pin 2    2                      Passive       @(1400,1190)
+
+C59  @(1580,1210)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(1580,1210)
+      pin 2    2                      Passive       @(1580,1190)
+
+C60  @(430,1080)
+    Description : Aluminum Electrolytic Capacitors (Radial Lead Type) 100uF ±20% 16V
+    LibRef      : a00bbbee19879c290e62620ae7e47b1
+    DesignItemID: CMP-05427-001316-1
+    Capacitance : 100uF
+    Case/Package: Radial
+    Comment     : ECEA1CKA101I
+    Diameter    : 6.3mm
+    Height      : 7mm
+    Height - Sea: 0.315inch
+    Lead Diamete: 0.45mm
+    Lead Pitch  : 2.5mm
+    Length      : 7mm
+    Life (Hours): 1000Hour
+    Max Operatin: 85°C
+    Min Operatin: -40°C
+    Mount       : Through Hole
+    Package Quan: 2000
+    Packaging   : Tape and Reel
+    Polarity    : Polar
+    Radiation Ha: No
+    Ripple Curre: 91mA
+    RoHS Complia: Yes
+    Series      : KA
+    Termination : Radial
+    Tolerance   : 20%
+    Voltage     : 16V
+    Voltage Rati: 16V
+    Voltage Rati: 16V
+      pin 1    C                      Passive       @(430,1060)
+      pin 2    A                      Passive       @(430,1080)
+
+C61  @(430,1020)
+    Description : Aluminum Electrolytic Capacitors (Radial Lead Type) 100uF ±20% 16V
+    LibRef      : a00bbbee19879c290e62620ae7e47b1
+    DesignItemID: CMP-05427-001316-1
+    Capacitance : 100uF
+    Case/Package: Radial
+    Comment     : ECEA1CKA101I
+    Diameter    : 6.3mm
+    Height      : 7mm
+    Height - Sea: 0.315inch
+    Lead Diamete: 0.45mm
+    Lead Pitch  : 2.5mm
+    Length      : 7mm
+    Life (Hours): 1000Hour
+    Max Operatin: 85°C
+    Min Operatin: -40°C
+    Mount       : Through Hole
+    Package Quan: 2000
+    Packaging   : Tape and Reel
+    Polarity    : Polar
+    Radiation Ha: No
+    Ripple Curre: 91mA
+    RoHS Complia: Yes
+    Series      : KA
+    Termination : Radial
+    Tolerance   : 20%
+    Voltage     : 16V
+    Voltage Rati: 16V
+    Voltage Rati: 16V
+      pin 1    C                      Passive       @(430,1000)
+      pin 2    A                      Passive       @(430,1020)
+
+C62  @(1130,1000)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(1130,1000)
+      pin 2    2                      Passive       @(1130,1020)
+
+C63  @(350,890)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(350,890)
+      pin 2    2                      Passive       @(350,870)
+
+C64  @(530,890)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(530,890)
+      pin 2    2                      Passive       @(530,870)
+
+C65  @(710,890)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(710,890)
+      pin 2    2                      Passive       @(710,870)
+
+C66  @(890,890)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(890,890)
+      pin 2    2                      Passive       @(890,870)
+
+C67  @(560,480)
+    Description : CAP CER 1UF 16V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-034679-1
+    Capacitance : 1uF
+    Case Code (I: 0402
+    Case Code (M: 1005
+    Case/Package: 0402
+    Comment     : 1 uF
+    Dielectric  : X5R
+    Dielectric M: Ceramic
+    Lead Free   : Lead Free
+    Length      : 0.039inch
+    Max Operatin: 85°C
+    Min Operatin: -55°C
+    Mount       : Surface Mount
+    Packaging   : Cut Tape
+    REACH SVHC  : No SVHC
+    RoHS Complia: Yes
+    Thickness   : 0.022inch
+    Tolerance   : 10%
+    Voltage Rati: 16V
+    Voltage Rati: 16V
+    Width       : 0.02inch
+      pin 1    1                      Passive       @(560,480)
+      pin 2    2                      Passive       @(560,460)
+
+C68  @(600,480)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(600,480)
+      pin 2    2                      Passive       @(600,460)
+
+C71  @(340,770)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(340,770)
+      pin 2    2                      Passive       @(340,750)
+
+C72  @(520,770)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(520,770)
+      pin 2    2                      Passive       @(520,750)
+
+C73  @(700,770)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(700,770)
+      pin 2    2                      Passive       @(700,750)
+
+C74  @(880,770)
+    Description : CAP CER 0.1UF 25V X5R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-014070-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF, 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 25V X5R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104M3PAC7867
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c104m3pac7867-kemet-84304880
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X5R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 25 V
+      pin 1    1                      Passive       @(880,770)
+      pin 2    2                      Passive       @(880,750)
+
+J4  @(310,610)
+    Description : Connectors for Connecting - 0.5/1-mm Pitch FPC/FFC - FH12 Series (HIROSE ELECTRIC)
+    LibRef      : FH12-10S-0_5SH_55
+    DesignItemID: CMP-00485-39503286-1
+    Actuator Mat: Polyphenylene
+    Color       : Beige, Brown
+    Comment     : FH12-10S-0.5SH(55)
+    Connector Ty: Receptacle
+    Contact Loca: Bottom
+    Contact Mate: Gold, Nickel
+    Contact Pitc: 500µm
+    Contact Plat: Gold
+    Contact Resi: 50mO
+    Contact Volt: 50V
+    Current Rati: 500mA
+    Depth       : 5.6mm
+    Flammability: UL94 V-0
+    Height      : 2mm
+    Insulation R: 500MO
+    Lead Free   : Lead Free
+    Lead Pitch  : 500µm
+    Length      : 9.1mm
+    Lifecycle St: Production
+    Material    : Polyamide
+    Max Current : 400mA
+    Max Operatin: 85°C
+    Max Voltage : 50V
+    Min Operatin: -40°C
+    Mount       : Surface Mount
+    Number of Co: 10
+    Number of Pi: 10
+    Number of Po: 10
+    Number of Ro: 1
+    Packaging   : Cut Tape
+    Pitch       : 500µm
+    REACH SVHC  : No SVHC
+    Radiation Ha: No
+    RoHS        : Compliant
+    Schedule B  : 8536694040, 8536694040
+    Termination : Solder
+    Voltage Rati: 50V
+    Voltage Rati: 50V
+    Width       : 9.1mm
+    Wire/Cable T: Straight
+      pin 1    1                      Passive       @(330,610)
+      pin 2    2                      Passive       @(330,590)
+      pin 3    3                      Passive       @(330,570)
+      pin 4    4                      Passive       @(330,550)
+      pin 5    5                      Passive       @(330,530)
+      pin 6    6                      Passive       @(330,510)
+      pin 7    7                      Passive       @(330,490)
+      pin 8    8                      Passive       @(330,470)
+      pin 9    9                      Passive       @(330,450)
+      pin 10   10                     Passive       @(330,430)
+      pin 11   MNT 1                  Passive       @(330,400)
+      pin 12   MNT 2                  Passive       @(330,380)
+
+LED1  @(300,1340)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(400,1330)
+      pin 2    GND                    Passive       @(400,1340)
+      pin 3    DI                     Passive       @(300,1340)
+      pin 4    VDD                    Passive       @(300,1330)
+
+LED10  @(490,1230)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(590,1220)
+      pin 2    GND                    Passive       @(590,1230)
+      pin 3    DI                     Passive       @(490,1230)
+      pin 4    VDD                    Passive       @(490,1220)
+
+LED11  @(670,1230)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(770,1220)
+      pin 2    GND                    Passive       @(770,1230)
+      pin 3    DI                     Passive       @(670,1230)
+      pin 4    VDD                    Passive       @(670,1220)
+
+LED12  @(850,1230)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(950,1220)
+      pin 2    GND                    Passive       @(950,1230)
+      pin 3    DI                     Passive       @(850,1230)
+      pin 4    VDD                    Passive       @(850,1220)
+
+LED13  @(1040,1230)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(1140,1220)
+      pin 2    GND                    Passive       @(1140,1230)
+      pin 3    DI                     Passive       @(1040,1230)
+      pin 4    VDD                    Passive       @(1040,1220)
+
+LED14  @(1220,1230)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(1320,1220)
+      pin 2    GND                    Passive       @(1320,1230)
+      pin 3    DI                     Passive       @(1220,1230)
+      pin 4    VDD                    Passive       @(1220,1220)
+
+LED15  @(1400,1230)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(1500,1220)
+      pin 2    GND                    Passive       @(1500,1230)
+      pin 3    DI                     Passive       @(1400,1230)
+      pin 4    VDD                    Passive       @(1400,1220)
+
+LED16  @(1580,1230)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(1680,1220)
+      pin 2    GND                    Passive       @(1680,1230)
+      pin 3    DI                     Passive       @(1580,1230)
+      pin 4    VDD                    Passive       @(1580,1220)
+
+LED17  @(350,910)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(450,900)
+      pin 2    GND                    Passive       @(450,910)
+      pin 3    DI                     Passive       @(350,910)
+      pin 4    VDD                    Passive       @(350,900)
+
+LED18  @(530,910)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(630,900)
+      pin 2    GND                    Passive       @(630,910)
+      pin 3    DI                     Passive       @(530,910)
+      pin 4    VDD                    Passive       @(530,900)
+
+LED19  @(710,910)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(810,900)
+      pin 2    GND                    Passive       @(810,910)
+      pin 3    DI                     Passive       @(710,910)
+      pin 4    VDD                    Passive       @(710,900)
+
+LED2  @(480,1340)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(580,1330)
+      pin 2    GND                    Passive       @(580,1340)
+      pin 3    DI                     Passive       @(480,1340)
+      pin 4    VDD                    Passive       @(480,1330)
+
+LED20  @(890,910)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(990,900)
+      pin 2    GND                    Passive       @(990,910)
+      pin 3    DI                     Passive       @(890,910)
+      pin 4    VDD                    Passive       @(890,900)
+
+LED21  @(340,790)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(440,780)
+      pin 2    GND                    Passive       @(440,790)
+      pin 3    DI                     Passive       @(340,790)
+      pin 4    VDD                    Passive       @(340,780)
+
+LED22  @(520,790)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(620,780)
+      pin 2    GND                    Passive       @(620,790)
+      pin 3    DI                     Passive       @(520,790)
+      pin 4    VDD                    Passive       @(520,780)
+
+LED23  @(700,790)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(800,780)
+      pin 2    GND                    Passive       @(800,790)
+      pin 3    DI                     Passive       @(700,790)
+      pin 4    VDD                    Passive       @(700,780)
+
+LED24  @(880,790)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(980,780)
+      pin 2    GND                    Passive       @(980,790)
+      pin 3    DI                     Passive       @(880,790)
+      pin 4    VDD                    Passive       @(880,780)
+
+LED3  @(660,1340)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(760,1330)
+      pin 2    GND                    Passive       @(760,1340)
+      pin 3    DI                     Passive       @(660,1340)
+      pin 4    VDD                    Passive       @(660,1330)
+
+LED4  @(840,1340)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(940,1330)
+      pin 2    GND                    Passive       @(940,1340)
+      pin 3    DI                     Passive       @(840,1340)
+      pin 4    VDD                    Passive       @(840,1330)
+
+LED5  @(1030,1340)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(1130,1330)
+      pin 2    GND                    Passive       @(1130,1340)
+      pin 3    DI                     Passive       @(1030,1340)
+      pin 4    VDD                    Passive       @(1030,1330)
+
+LED6  @(1210,1340)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(1310,1330)
+      pin 2    GND                    Passive       @(1310,1340)
+      pin 3    DI                     Passive       @(1210,1340)
+      pin 4    VDD                    Passive       @(1210,1330)
+
+LED7  @(1390,1340)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(1490,1330)
+      pin 2    GND                    Passive       @(1490,1340)
+      pin 3    DI                     Passive       @(1390,1340)
+      pin 4    VDD                    Passive       @(1390,1330)
+
+LED8  @(1570,1340)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(1670,1330)
+      pin 2    GND                    Passive       @(1670,1340)
+      pin 3    DI                     Passive       @(1570,1340)
+      pin 4    VDD                    Passive       @(1570,1330)
+
+LED9  @(310,1230)
+    Description : LED (Multiple)
+    LibRef      : WS2812B-2020
+    DesignItemID: WS2812B-2020
+    Comment     : WS2812B-2020
+    Datasheet Li: https://www.alldatasheet.com/datasheet-pdf/pdf/1134522/WORLDSEMI/WS2812B-2020.html
+    Height      : 0.84mm
+    Manufacturer: Worldsemi
+    Manufacturer: WS2812B-2020
+      pin 1    DO                     Passive       @(410,1220)
+      pin 2    GND                    Passive       @(410,1230)
+      pin 3    DI                     Passive       @(310,1230)
+      pin 4    VDD                    Passive       @(310,1220)
+
+R61  @(1440,1020)
+    Description : Anti-Sulfurated Chip Resistors Automotive Grade 300O 1% 100ppm/°C 0402
+    LibRef      : 1029c3af85768c4190bb7ad29bc67b5
+    DesignItemID: CMP-03412-050208-1
+    Case/Package: 0402
+    Comment     : 300 O, 0402
+    Features    : Moisture Resistant
+    Height      : 0.015inch
+    Length      : 0.039inch
+    Max Operatin: 155°C
+    Max Power Di: 63mW
+    Min Operatin: -55°C
+    Number of Te: 2
+    Packaging   : Tape and Reel
+    Resistance  : 300R
+    Resistor Typ: Thick Film
+    RoHS Complia: Yes
+    Series      : AF
+    Temperature : 100ppm/°C
+    Tolerance   : 1%
+    Width       : 0.02inch
+      pin 1    1                      Passive       @(1440,1020)
+      pin 2    2                      Passive       @(1510,1020)
+
+R62  @(440,470)
+    Description : ERJ-S030R00V Zero Ohm Resistor, Jumper, 0603 [1608 Metric], Thick Film, 100 mW, 1 A, Surface Mount
+    LibRef      : 1029c3af85768c4190bb7ad29bc67b5
+    DesignItemID: CMP-00287-39831190-1
+    Case Code (I: 0603
+    Case Code (M: 1608
+    Case/Package: 0603
+    Comment     : 0 O link
+    Composition : Thick Film
+    Contact Plat: Tin
+    Depth       : 800µm
+    Features    : Anti-Sulfur
+    Height      : 558.8µm
+    Lead Free   : Lead Free
+    Length      : 1.6mm
+    Lifecycle St: Production
+    Max Operatin: 155°C
+    Max Power Di: 100mW
+    Military Sta: Not
+    Min Operatin: -55°C
+    Mount       : Surface Mount
+    NexarPartId : 39831190
+    Number of Te: 2
+    Power Rating: 100mW
+    Resistance  : 0O
+    RoHS        : Compliant
+    Temperature : 100ppm/°C
+    Tolerance   : 5%
+    Voltage Rati: 100V
+    Width       : 800µm
+      pin 1    1                      Passive       @(440,470)
+      pin 2    2                      Passive       @(510,470)
+
+R63  @(440,400)
+    Description : ERJ-S030R00V Zero Ohm Resistor, Jumper, 0603 [1608 Metric], Thick Film, 100 mW, 1 A, Surface Mount
+    LibRef      : 1029c3af85768c4190bb7ad29bc67b5
+    DesignItemID: CMP-00287-39831190-1
+    Case Code (I: 0603
+    Case Code (M: 1608
+    Case/Package: 0603
+    Comment     : 0 O link
+    Composition : Thick Film
+    Contact Plat: Tin
+    Depth       : 800µm
+    Features    : Anti-Sulfur
+    Height      : 558.8µm
+    Lead Free   : Lead Free
+    Length      : 1.6mm
+    Lifecycle St: Production
+    Max Operatin: 155°C
+    Max Power Di: 100mW
+    Military Sta: Not
+    Min Operatin: -55°C
+    Mount       : Surface Mount
+    NexarPartId : 39831190
+    Number of Te: 2
+    Power Rating: 100mW
+    Resistance  : 0O
+    RoHS        : Compliant
+    Temperature : 100ppm/°C
+    Tolerance   : 5%
+    Voltage Rati: 100V
+    Width       : 800µm
+      pin 1    1                      Passive       @(440,400)
+      pin 2    2                      Passive       @(440,470)
+
+U6  @(1240,1020)
+    Description : IC BUF NON-INVERT 5.5V SOT353
+    LibRef      : a9261765559cd8b3e4ec806d470b415
+    DesignItemID: CMP-12739-000002-1
+    Case/Package: SOT-353
+    Comment     : 74AHCT1G125SE-7
+    High Level O: -8mA
+    Lead Free   : Lead Free
+    Logic Functi: Buffer
+    Low Level Ou: 8mA
+    Max Operatin: 125°C
+    Max Supply V: 5.5V
+    Min Operatin: -40°C
+    Min Supply V: 4.5V
+    Mount       : Surface Mount
+    Number of Bi: 1
+    Number of Ch: 1
+    Number of El: 1
+    Number of Fu: 1
+    Number of In: 1
+    Number of Ou: 1
+    Number of Pi: 5
+    Operating Su: 5V
+    Output Type : PUSH-PULL
+    Package Quan: 3000
+    Packaging   : Tape and Reel
+    Polarity    : Non-Inverting
+    Propagation : 11ns
+    Quiescent Cu: 1uA
+    REACH SVHC  : No SVHC
+    Radiation Ha: No
+    RoHS Complia: Yes
+    Series      : 74AHCT
+    Supply Volta: 5.5V
+    Technology  : CMOS
+    Turn-On Dela: 11ns
+      pin 1    O\E\                   Passive       @(1240,980)
+      pin 2    A                      Passive       @(1240,1000)
+      pin 3    GND                    Power         @(1370,980)
+      pin 4    Y                      Output        @(1370,1020)
+      pin 5    Vcc                    Power         @(1240,1020)
+
+==============================================================================
+NETS
+==============================================================================
+
++3V3  (5 pins)   [joined by name across 2 separate wire islands on this sheet]
+    C67.1(1)
+    C68.1(1)
+    J4.6(6)
+    J4.7(7)
+    R62.2(2)
+
++5V  (52 pins)   << MULTIPLE NAMES ON ONE NET: +5V, +5V_SH, +5V_TC >>   [joined by name across 3 separate wire islands on this sheet]
+    C44.1(1)
+    C45.1(1)
+    C46.1(1)
+    C47.1(1)
+    C48.1(1)
+    C49.1(1)
+    C50.1(1)
+    C51.1(1)
+    C52.1(1)
+    C53.1(1)
+    C54.1(1)
+    C55.1(1)
+    C56.1(1)
+    C57.1(1)
+    C58.1(1)
+    C59.1(1)
+    C60.2(A)
+    C61.2(A)
+    C62.2(2)
+    C63.1(1)
+    C64.1(1)
+    C65.1(1)
+    C66.1(1)
+    C71.1(1)
+    C72.1(1)
+    C73.1(1)
+    C74.1(1)
+    LED1.4(VDD)
+    LED10.4(VDD)
+    LED11.4(VDD)
+    LED12.4(VDD)
+    LED13.4(VDD)
+    LED14.4(VDD)
+    LED15.4(VDD)
+    LED16.4(VDD)
+    LED17.4(VDD)
+    LED18.4(VDD)
+    LED19.4(VDD)
+    LED2.4(VDD)
+    LED20.4(VDD)
+    LED21.4(VDD)
+    LED22.4(VDD)
+    LED23.4(VDD)
+    LED24.4(VDD)
+    LED3.4(VDD)
+    LED4.4(VDD)
+    LED5.4(VDD)
+    LED6.4(VDD)
+    LED7.4(VDD)
+    LED8.4(VDD)
+    LED9.4(VDD)
+    U6.5(Vcc) [Power]
+
+GND  (58 pins)   [joined by name across 55 separate wire islands on this sheet]
+    C44.2(2)
+    C45.2(2)
+    C46.2(2)
+    C47.2(2)
+    C48.2(2)
+    C49.2(2)
+    C50.2(2)
+    C51.2(2)
+    C52.2(2)
+    C53.2(2)
+    C54.2(2)
+    C55.2(2)
+    C56.2(2)
+    C57.2(2)
+    C58.2(2)
+    C59.2(2)
+    C60.1(C)
+    C61.1(C)
+    C62.1(1)
+    C63.2(2)
+    C64.2(2)
+    C65.2(2)
+    C66.2(2)
+    C67.2(2)
+    C68.2(2)
+    C71.2(2)
+    C72.2(2)
+    C73.2(2)
+    C74.2(2)
+    J4.10(10)
+    J4.9(9)
+    LED1.2(GND)
+    LED10.2(GND)
+    LED11.2(GND)
+    LED12.2(GND)
+    LED13.2(GND)
+    LED14.2(GND)
+    LED15.2(GND)
+    LED16.2(GND)
+    LED17.2(GND)
+    LED18.2(GND)
+    LED19.2(GND)
+    LED2.2(GND)
+    LED20.2(GND)
+    LED21.2(GND)
+    LED22.2(GND)
+    LED23.2(GND)
+    LED24.2(GND)
+    LED3.2(GND)
+    LED4.2(GND)
+    LED5.2(GND)
+    LED6.2(GND)
+    LED7.2(GND)
+    LED8.2(GND)
+    LED9.2(GND)
+    R63.1(1)
+    U6.1(O\E\)
+    U6.3(GND) [Power]
+
+LCD_DISP  (1 pin)
+    J4.5(5)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+LCD_EXTCOMIN  (1 pin)
+    J4.4(4)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+LCD_SCLK  (1 pin)
+    J4.1(1)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+LCD_SCS  (1 pin)
+    J4.3(3)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+LCD_SI  (1 pin)
+    J4.2(2)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+LED_DATA_3V3  (1 pin)
+    U6.2(A)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$1  (2 pins)
+    R61.1(1)
+    U6.4(Y) [Output]
+
+N$10  (2 pins)
+    LED1.1(DO)
+    LED2.3(DI)
+
+N$11  (2 pins)
+    LED3.1(DO)
+    LED4.3(DI)
+
+N$12  (2 pins)
+    LED2.1(DO)
+    LED3.3(DI)
+
+N$13  (2 pins)
+    LED5.1(DO)
+    LED6.3(DI)
+
+N$14  (2 pins)
+    LED7.1(DO)
+    LED8.3(DI)
+
+N$15  (2 pins)
+    LED6.1(DO)
+    LED7.3(DI)
+
+N$16  (2 pins)
+    LED4.1(DO)
+    LED5.3(DI)
+
+N$17  (2 pins)
+    LED1.3(DI)
+    LED16.1(DO)
+
+N$18  (2 pins)
+    LED17.1(DO)
+    LED18.3(DI)
+
+N$19  (2 pins)
+    LED19.1(DO)
+    LED20.3(DI)
+
+N$2  (2 pins)
+    LED9.3(DI)
+    R61.2(2)
+
+N$20  (2 pins)
+    LED18.1(DO)
+    LED19.3(DI)
+
+N$21  (3 pins)
+    J4.8(8)
+    R62.1(1)
+    R63.2(2)
+
+N$22  (2 pins)
+    LED21.1(DO)
+    LED22.3(DI)
+
+N$23  (2 pins)
+    LED23.1(DO)
+    LED24.3(DI)
+
+N$24  (2 pins)
+    LED22.1(DO)
+    LED23.3(DI)
+
+N$25  (1 pin)
+    LED20.1(DO)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$26  (2 pins)
+    LED17.3(DI)
+    LED8.1(DO)
+
+N$27  (1 pin)
+    J4.11(MNT 1)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$28  (1 pin)
+    J4.12(MNT 2)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$29  (1 pin)
+    LED21.3(DI)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$3  (2 pins)
+    LED10.3(DI)
+    LED9.1(DO)
+
+N$30  (1 pin)
+    LED24.1(DO)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$4  (2 pins)
+    LED11.1(DO)
+    LED12.3(DI)
+
+N$5  (2 pins)
+    LED10.1(DO)
+    LED11.3(DI)
+
+N$6  (2 pins)
+    LED13.1(DO)
+    LED14.3(DI)
+
+N$7  (2 pins)
+    LED15.1(DO)
+    LED16.3(DI)
+
+N$8  (2 pins)
+    LED14.1(DO)
+    LED15.3(DI)
+
+N$9  (2 pins)
+    LED12.1(DO)
+    LED13.3(DI)
+
+==============================================================================
+UNCONNECTED PINS (no wire, no label, no power port)
+==============================================================================
+  J4     pin 11   MNT 1                  Passive       @(330,400)
+  J4     pin 12   MNT 2                  Passive       @(330,380)
+  LED20  pin 1    DO                     Passive       @(990,900)
+  LED21  pin 3    DI                     Passive       @(340,790)
+  LED24  pin 1    DO                     Passive       @(980,780)
+
+Floating net labels / power ports (not touching any wire or pin):
+  (none)
+
+No-ERC markers placed: 0 
+Junctions: 34

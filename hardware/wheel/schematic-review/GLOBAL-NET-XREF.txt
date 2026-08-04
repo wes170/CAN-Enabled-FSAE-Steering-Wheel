@@ -1,0 +1,228 @@
+GLOBAL NET CROSS-REFERENCE - FSAE WHEEL
+==============================================================================
+
+This project uses NO ports and NO sheet-symbol entries. Every inter-sheet
+connection is made purely by matching net-label / power-port NAME. A net that
+appears on only one sheet therefore connects to nothing else in the design.
+
+Sheets: wheeldisplays, wheelhmi, wheelio, wheelmcu, wheelpower
+
+------------------------------------------------------------------------------
+NETS SPANNING MULTIPLE SHEETS
+------------------------------------------------------------------------------
+
++12V_IN   [on 2 sheets]
+   wheelio        *1.1(1)
+   wheelpower     F1.2(2)
+
++12V_P   [on 2 sheets]
+   wheelio        R10.1(1), R5.1(1)
+   wheelpower     C1.1(1), C4.1(1), C5.1(1), C8.1(1), D2.1(C), Q1.2(S), R65.2(2), U1.10(VIN) [Power], U1.2(VIN) [Power], U1.9(EN)
+
++3V3   [on 5 sheets]
+   wheeldisplays  C67.1(1), C68.1(1), J4.6(6), J4.7(7), R62.2(2)
+   wheelhmi       R13.1(1), R14.1(1), R21.1(1), R22.1(1), R23.1(1), R24.1(1), R25.1(1), R26.1(1), R27.1(1), R28.1(1), R41.1(1), R42.1(1), R43.1(1), R44.1(1), R45.1(1), R46.1(1), R47.1(1), R48.1(1), R55.1(1), R56.1(1), R57.1(1), R58.1(1), R59.1(1), R60.1(1)
+   wheelio        C15.1(1), D5.2(K), D7.2(K), J?.5(5), U4.5(VIO) [Power]
+   wheelmcu       C10.1(1), C11.1(1), C12.1(1), C13.1(1), C9.1(1), R?.2(2), U3.1(VBAT) [Power], U3.16(VDD) [Power], U3.32(VDD) [Power], U3.48(VDD) [Power], U3.64(VDD) [Power]
+   wheelpower     FB1.1(1), U2.5(VOUT) [Power]
+
++3V3A   [on 2 sheets]
+   wheelmcu       U3.29(VDDA) [Power]
+   wheelpower     FB1.2(2)
+
++5V   [on 3 sheets]
+   wheeldisplays  C44.1(1), C45.1(1), C46.1(1), C47.1(1), C48.1(1), C49.1(1), C50.1(1), C51.1(1), C52.1(1), C53.1(1), C54.1(1), C55.1(1), C56.1(1), C57.1(1), C58.1(1), C59.1(1), C60.2(A), C61.2(A), C62.2(2), C63.1(1), C64.1(1), C65.1(1), C66.1(1), C71.1(1), C72.1(1), C73.1(1), C74.1(1), LED1.4(VDD), LED10.4(VDD), LED11.4(VDD), LED12.4(VDD), LED13.4(VDD), LED14.4(VDD), LED15.4(VDD), LED16.4(VDD), LED17.4(VDD), LED18.4(VDD), LED19.4(VDD), LED2.4(VDD), LED20.4(VDD), LED21.4(VDD), LED22.4(VDD), LED23.4(VDD), LED24.4(VDD), LED3.4(VDD), LED4.4(VDD), LED5.4(VDD), LED6.4(VDD), LED7.4(VDD), LED8.4(VDD), LED9.4(VDD), U6.5(Vcc) [Power]
+   wheelio        C16.1(1), J2.A4(VBUS_1), J2.A9(VBUS_2), J2.B4(VBUS_3), J2.B9(VBUS_4), R_VBUS1.2(2), U4.3(VCC) [Power], U5.5(5)
+   wheelpower     C2.1(1), C3.1(1), C6.2(2), C7.1(1), L1.1(1), R1.2(2), R64.2(2), U2.1(VIN) [Power], U2.3(EN)
+
+BTN1   [on 2 sheets]
+   wheelhmi       C38.1(1), R49.1(1), R55.2(2)
+   wheelmcu       U3.2(PC13) [IO]
+
+BTN2   [on 2 sheets]
+   wheelhmi       C39.1(1), R50.1(1), R56.2(2)
+   wheelmcu       U3.55(PD2) [IO]
+
+BTN3   [on 2 sheets]
+   wheelhmi       C40.1(1), R51.1(1), R57.2(2)
+   wheelmcu       U3.17(PA3) [IO]
+
+BTN4   [on 2 sheets]
+   wheelhmi       C41.1(1), R52.1(1), R58.2(2)
+   wheelmcu       U3.30(PB10) [IO]
+
+BTN5   [on 2 sheets]
+   wheelhmi       C42.1(1), R53.1(1), R59.2(2)
+   wheelmcu       U3.33(PB11) [IO]
+
+BTN6   [on 2 sheets]
+   wheelhmi       C43.1(1), R54.1(1), R60.2(2)
+   wheelmcu       U3.34(PB12) [IO]
+
+CAN_RX   [on 2 sheets]
+   wheelio        U4.4(RXD) [Output]
+   wheelmcu       U3.61(PB8-BOOT0) [IO]
+
+CAN_TX   [on 2 sheets]
+   wheelio        U4.1(TXD)
+   wheelmcu       U3.62(PB9) [IO]
+
+DBG_RX   [on 2 sheets]
+   wheelio        J?.6(6)
+   wheelmcu       U3.44(PA10) [IO]
+
+DBG_TX   [on 2 sheets]
+   wheelio        J?.7(7)
+   wheelmcu       U3.43(PA9) [IO]
+
+ENC1_A   [on 2 sheets]
+   wheelhmi       C30.1(1), R33.1(1), R41.2(2)
+   wheelmcu       U3.8(PC0) [IO]
+
+ENC1_B   [on 2 sheets]
+   wheelhmi       C31.1(1), R34.1(1), R42.2(2)
+   wheelmcu       U3.9(PC1) [IO]
+
+ENC1_SW   [on 2 sheets]
+   wheelhmi       C29.1(1), R28.2(2), R32.1(1)
+   wheelmcu       U3.22(PC4) [IO]
+
+ENC2_A   [on 2 sheets]
+   wheelhmi       C32.1(1), R35.1(1), R43.2(2)
+   wheelmcu       U3.38(PC6) [IO], U3.59(PB6) [IO]
+
+ENC2_B   [on 2 sheets]
+   wheelhmi       C33.1(1), R36.1(1), R44.2(2)
+   wheelmcu       U3.39(PC7) [IO], U3.60(PB7) [IO]
+
+ENC2_SW   [on 2 sheets]
+   wheelhmi       C26.1(1), R25.2(2), R29.1(1)
+   wheelmcu       U3.23(PC5) [IO]
+
+ENC3_SW   [on 2 sheets]
+   wheelhmi       C27.1(1), R26.2(2), R30.1(1)
+   wheelmcu       U3.40(PC8) [IO]
+
+ENC4_A   [on 2 sheets]
+   wheelhmi       C36.1(1), R39.1(1), R47.2(2)
+   wheelmcu       U3.51(PA15) [IO]
+
+ENC4_B   [on 2 sheets]
+   wheelhmi       C37.1(1), R40.1(1), R48.2(2)
+   wheelmcu       U3.56(PB3) [IO]
+
+ENC4_SW   [on 2 sheets]
+   wheelhmi       C28.1(1), R27.2(2), R31.1(1)
+   wheelmcu       U3.41(PC9) [IO]
+
+ENC5_A   [on 2 sheets]
+   wheelhmi       C22.1(1), R17.1(1), R21.2(2)
+   wheelmcu       U3.26(PB2) [IO]
+
+ENC5_B   [on 2 sheets]
+   wheelhmi       C23.1(1), R18.1(1), R22.2(2)
+   wheelmcu       U3.10(PC2) [IO]
+
+ENC5_SW   [on 2 sheets]
+   wheelhmi       C20.1(1), R13.2(2), R15.1(1)
+   wheelmcu       U3.52(PC10) [IO]
+
+ENC6_A   [on 2 sheets]
+   wheelhmi       C24.1(1), R19.1(1), R23.2(2)
+   wheelmcu       U3.12(PA0) [IO]
+
+ENC6_B   [on 2 sheets]
+   wheelhmi       C25.1(1), R20.1(1), R24.2(2)
+   wheelmcu       U3.54(PC12) [IO]
+
+ENC6_SW   [on 2 sheets]
+   wheelhmi       C21.1(1), R14.2(2), R16.1(1)
+   wheelmcu       U3.53(PC11) [IO]
+
+GND   [on 5 sheets]
+   wheeldisplays  C44.2(2), C45.2(2), C46.2(2), C47.2(2), C48.2(2), C49.2(2), C50.2(2), C51.2(2), C52.2(2), C53.2(2), C54.2(2), C55.2(2), C56.2(2), C57.2(2), C58.2(2), C59.2(2), C60.1(C), C61.1(C), C62.1(1), C63.2(2), C64.2(2), C65.2(2), C66.2(2), C67.2(2), C68.2(2), C71.2(2), C72.2(2), C73.2(2), C74.2(2), J4.10(10), J4.9(9), LED1.2(GND), LED10.2(GND), LED11.2(GND), LED12.2(GND), LED13.2(GND), LED14.2(GND), LED15.2(GND), LED16.2(GND), LED17.2(GND), LED18.2(GND), LED19.2(GND), LED2.2(GND), LED20.2(GND), LED21.2(GND), LED22.2(GND), LED23.2(GND), LED24.2(GND), LED3.2(GND), LED4.2(GND), LED5.2(GND), LED6.2(GND), LED7.2(GND), LED8.2(GND), LED9.2(GND), R63.1(1), U6.1(O\E\), U6.3(GND) [Power]
+   wheelhmi       C20.2(2), C21.2(2), C22.2(2), C23.2(2), C24.2(2), C25.2(2), C26.2(2), C27.2(2), C28.2(2), C29.2(2), C30.2(2), C31.2(2), C32.2(2), C33.2(2), C34.2(2), C35.2(2), C36.2(2), C37.2(2), C38.2(2), C39.2(2), C40.2(2), C41.2(2), C42.2(2), C43.2(2), ENC1.C(COMMON), ENC1.D(CHANNEL D), ENC2.C(COMMON), ENC2.D(CHANNEL D), ENC3.C(COMMON), ENC3.D(CHANNEL D), ENC4.C(COMMON), ENC4.D(CHANNEL D), ENC5.C1(C_COMMON), ENC5.MH1(MH1), ENC5.MH2(MH2), ENC5.W1(W), ENC6.C1(C_COMMON), ENC6.MH1(MH1), ENC6.MH2(MH2), ENC6.W1(W), S1.1(NO_1), S1.2(NO_2), S2.1(NO_1), S2.2(NO_2), S3.1(NO_1), S3.2(NO_2), S4.1(NO_1), S4.2(NO_2), S5.1(NO_1), S5.2(NO_2), S6.1(NO_1), S6.2(NO_2)
+   wheelio        *1.6(6), C15.2(2), C16.2(2), C17.1(1), C18.2(2), C19.2(2), D3.3(CC), D5.1(A), D6.1(1), D7.1(A), D8.1(1), J2.A1(GND_1), J2.A12(GND_2), J2.B1(GND_3), J2.B12(GND_4), J?.4(4), J?.8(8), R12.1(1), R4.1(1), R6.1(1), R8.2(2), R9.1(1), U4.2(GND) [Power], U4.8(S), U5.2(2)
+   wheelmcu       C10.2(2), C11.2(2), C12.2(2), C13.2(2), C14.1(1), C9.2(2), C_X1.1(1), C_X2.1(1), U3.15(VSS) [Power], U3.27(VSSA) [Power], U3.31(VSS) [Power], U3.47(VSS) [Power], U3.63(VSS) [Power], Y1.2(2), Y1.4(4)
+   wheelpower     C1.2(2), C2.2(2), C3.2(2), C4.2(2), C5.2(2), C6.1(1), C69.2(2), C70.2(2), C8.2(2), C_VCC1.1(1), D1.2(A), D2.2(A), R2.2(2), R3.2(2), R66.1(1), R67.1(1), U1.1(PGND) [Power], U1.11(PGND) [Power], U1.6(AGND) [Power], U2.2(GND) [Power]
+
+LCD_DISP   [on 2 sheets]
+   wheeldisplays  J4.5(5)
+   wheelmcu       U3.11(PC3) [IO], U3.35(PB13) [IO]
+
+LCD_EXTCOMIN   [on 2 sheets]
+   wheeldisplays  J4.4(4)
+   wheelmcu       U3.42(PA8) [IO]
+
+LCD_SCLK   [on 2 sheets]
+   wheeldisplays  J4.1(1)
+   wheelmcu       U3.19(PA5) [IO]
+
+LCD_SCS   [on 2 sheets]
+   wheeldisplays  J4.3(3)
+   wheelmcu       U3.18(PA4) [IO]
+
+LCD_SI   [on 2 sheets]
+   wheeldisplays  J4.2(2)
+   wheelmcu       U3.21(PA7) [IO]
+
+LED_DATA_3V3   [on 2 sheets]
+   wheeldisplays  U6.2(A)
+   wheelmcu       U3.20(PA6) [IO]
+
+NRST   [on 2 sheets]
+   wheelio        J?.3(3)
+   wheelmcu       C14.2(2), R?.1(1), U3.7(PG10/R\S\T\) [IO]
+
+PADDLE_DN_SNS   [on 2 sheets]
+   wheelio        C19.1(1), D7.3(C), R11.1(1), R12.2(2)
+   wheelmcu       U3.25(PB1) [IO]
+
+PADDLE_UP_SNS   [on 2 sheets]
+   wheelio        C18.1(1), D5.3(C), R7.1(1), R9.2(2)
+   wheelmcu       U3.24(PB0) [IO]
+
+SWCLK   [on 2 sheets]
+   wheelio        J?.2(2)
+   wheelmcu       U3.50(PA14) [Output]
+
+SWDIO   [on 2 sheets]
+   wheelio        J?.1(1)
+   wheelmcu       U3.49(PA13) [IO]
+
+USB_DM   [on 2 sheets]
+   wheelio        U5.6(6)
+   wheelmcu       U3.45(PA11) [IO]
+
+USB_DP   [on 2 sheets]
+   wheelio        D4.2(A), U5.4(4)
+   wheelmcu       U3.46(PA12) [IO]
+
+V12_SENSE   [on 2 sheets]
+   wheelmcu       U3.13(PA1) [IO]
+   wheelpower     C70.1(1), R65.1(1), R67.2(2)
+
+V5_SENSE   [on 2 sheets]
+   wheelmcu       U3.14(PA2) [IO]
+   wheelpower     C69.1(1), R64.1(1), R66.2(2)
+
+------------------------------------------------------------------------------
+NETS APPEARING ON ONLY ONE SHEET (named, but no cross-sheet partner)
+------------------------------------------------------------------------------
+CAN_H                  wheelio        *1.2(2), D3.1(K1), U4.7(CANH)
+CAN_L                  wheelio        *1.3(3), D3.2(K2), U4.6(CANL)
+ENC3_A                 wheelhmi       C34.1(1), R37.1(1), R45.2(2)
+ENC3_B                 wheelhmi       C35.1(1), R38.1(1), R46.2(2)
+NET_OSC_IN             wheelmcu       C_X1.2(2), U3.5(PF0-OSC IN) [IO], Y1.1(1)
+NET_OSC_OUT            wheelmcu       R_X1.2(2), U3.6(PF1-OSC OUT) [IO]
+NET_VBUS_OR            wheelio        D4.1(C), R_VBUS1.1(1)
+NET_XOUT               wheelmcu       C_X2.2(2), R_X1.1(1), Y1.3(3)
+PADDLE_DN              wheelio        *1.5(5), D8.2(2), J3.1(1), R11.2(2)
+PADDLE_UP              wheelio        *1.4(4), D6.2(2), J1.1(1), R7.2(2)
+USB_DM_CON             wheelio        J2.A7(D-_1), J2.B7(D-_2), U5.1(1)
+USB_DP_CON             wheelio        J2.A6(D+_1), J2.B6(D+_2), U5.3(3)
+
+------------------------------------------------------------------------------
+NEAR-MISS NET NAMES (possible typos - names differing only by case/underscore)
+------------------------------------------------------------------------------
+  (none)

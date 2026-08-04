@@ -1,0 +1,706 @@
+SHEET: wheelpower
+Source: 726cd0a6-Copy_of_wheelpower.SchDoc
+Coordinates are in 10-mil units. Pin connection end resolved as: far (score far=46 base=0)
+
+==============================================================================
+COMPONENTS (27)
+==============================================================================
+
+C1  @(310,560)
+    Description : Cap Ceramic 4.7uF 50V X7S 20% Pad SMD 1206 Soft Termination  +125°C Automotive T/R
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-06035-023625-1
+    Comment     : 4.7µF
+      pin 1    1                      Passive       @(310,560)
+      pin 2    2                      Passive       @(310,540)
+
+C2  @(790,560)
+    Description : General Purpose Ceramic Capacitor, 0402, 1uF, 20%, X5R, 15%, 16V
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-04427-002736-1
+    Capacitance : 1uF
+    Case/Package: 0402
+    Comment     : 1µF
+    Dielectric  : X5R
+    Max Operatin: 85°C
+    Min Operatin: -55°C
+    Package Quan: 10000
+    Packaging   : Tape and Reel
+    RoHS Complia: Yes
+    Tolerance   : 20%
+    Voltage Rati: 16V
+      pin 1    1                      Passive       @(790,560)
+      pin 2    2                      Passive       @(790,540)
+
+C3  @(830,560)
+    Description : CAP CER 0.1UF 50V X7R 0402
+    LibRef      : 11868f565c42a9108669ba33697ecf6
+    DesignItemID: CMP-45632-000010-1
+    Capacitance : 100nF
+    Case Code (I: 0402
+    Case Code (M: 1005
+    Case/Package: 0402
+    Comment     : 100nF
+    Max Operatin: 125°C
+    Min Operatin: -55°C
+    Mount       : Surface Mount
+    Packaging   : Cut Tape
+    RoHS Complia: Yes
+    Series      : -
+    Tolerance   : 10%
+    Voltage Rati: 50V
+      pin 1    1                      Passive       @(830,560)
+      pin 2    2                      Passive       @(830,540)
+
+C4  @(230,550)
+    Description : CAP 220nF 50V ±20% 1812 (4532 Metric) Thickness 1.1mm SMD
+    LibRef      : CAP
+    DesignItemID: CMP-1040-01441-1
+    Case-EIA    : 1812
+    Case-Metric : 4532
+    Comment     : 220 nF
+    Max Thicknes: 1.1 mm
+    Rated Voltag: 50 V
+    Technology  : SMT
+    Tolerance   : Â±20%
+    Value       : 220nF
+      pin 1    1                      Passive       @(220,560)
+      pin 2    2                      Passive       @(220,530)
+
+C5  @(270,550)
+    Description : CAP 220nF 50V ±20% 1812 (4532 Metric) Thickness 1.1mm SMD
+    LibRef      : CAP
+    DesignItemID: CMP-1040-01441-1
+    Case-EIA    : 1812
+    Case-Metric : 4532
+    Comment     : 220 nF
+    Max Thicknes: 1.1 mm
+    Rated Voltag: 50 V
+    Technology  : SMT
+    Tolerance   : Â±20%
+    Value       : 220nF
+      pin 1    1                      Passive       @(260,560)
+      pin 2    2                      Passive       @(260,530)
+
+C6  @(750,540)
+    Description : General Purpose Ceramic Capacitor, 0402, 1uF, 20%, X5R, 15%, 16V
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-04427-002736-1
+    Capacitance : 1uF
+    Case/Package: 0402
+    Comment     : 1µF
+    Dielectric  : X5R
+    Max Operatin: 85°C
+    Min Operatin: -55°C
+    Package Quan: 10000
+    Packaging   : Tape and Reel
+    RoHS Complia: Yes
+    Tolerance   : 20%
+    Voltage Rati: 16V
+      pin 1    1                      Passive       @(750,540)
+      pin 2    2                      Passive       @(750,560)
+
+C69  @(620,320)
+    Description : CAP CER 0.1UF 50V X7R 0402
+    LibRef      : 11868f565c42a9108669ba33697ecf6
+    DesignItemID: CMP-45632-000010-1
+    Capacitance : 100nF
+    Case Code (I: 0402
+    Case Code (M: 1005
+    Case/Package: 0402
+    Comment     : 100nF
+    Max Operatin: 125°C
+    Min Operatin: -55°C
+    Mount       : Surface Mount
+    Packaging   : Cut Tape
+    RoHS Complia: Yes
+    Series      : -
+    Tolerance   : 10%
+    Voltage Rati: 50V
+      pin 1    1                      Passive       @(620,320)
+      pin 2    2                      Passive       @(620,300)
+
+C7  @(700,490)
+    Description : C0402 20 pF X8R 2.00% 16 V
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-007179-1
+    Automotive  : No
+    Capacitance : 20 pF
+    Category    : Cap
+    Comment     : 20pF 0402
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C200G4HACAUTO
+    Material    : Ceramic
+    Octopart    : https://octopart.com/c0402c200g4hacauto-kemet-88080670
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X8R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.02
+    Value       : 20 pF
+    Voltage Rati: 16 V
+      pin 1    1                      Passive       @(700,490)
+      pin 2    2                      Passive       @(680,490)
+
+C70  @(790,300)
+    Description : CAP CER 0.1UF 50V X7R 0402
+    LibRef      : 11868f565c42a9108669ba33697ecf6
+    DesignItemID: CMP-45632-000010-1
+    Capacitance : 100nF
+    Case Code (I: 0402
+    Case Code (M: 1005
+    Case/Package: 0402
+    Comment     : 100nF
+    Max Operatin: 125°C
+    Min Operatin: -55°C
+    Mount       : Surface Mount
+    Packaging   : Cut Tape
+    RoHS Complia: Yes
+    Series      : -
+    Tolerance   : 10%
+    Voltage Rati: 50V
+      pin 1    1                      Passive       @(790,300)
+      pin 2    2                      Passive       @(790,280)
+
+C8  @(300,170)
+    Description : CAP CER 0.1UF 100V 20% X7R 1206
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-006462-1
+    Automotive  : Yes
+    Automotive G: Grade 0
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : 100 nF X7R
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1007_X8R_ULTRA_150C_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 100V 20% X7R 1206
+    Height      : 0.88mm
+    Ipc Land Pat: CAPC320160X78
+    Lead Free   : Yes
+    Manufacturer: KEMET
+    Manufacturer: C1206C104M1RACTU
+    Material    : Ceramic
+    Mouser Descr: Multilayer Ceramic Capacitors MLCC - SMD/SMT 100volts 0.1uF X7R 20%
+    Octopart    : https://octopart.com/c1206c104m1ractu-kemet-9138656
+    Package     : C1206C-EB
+    RoHS        : TRUE
+    Temperature : -55°C to +150°C
+    Temperature : X7R
+    Temperature : 15%
+    Temperature : +150°C
+    Temperature : -55°C
+    Tolerance   : 0.2
+    Value       : 0.10 µF
+    Voltage Rati: 100 V
+      pin 1    1                      Passive       @(300,170)
+      pin 2    2                      Passive       @(300,150)
+
+C_BOOT1  @(560,600)
+    Description : Cap Ceramic 100nF 25V X7R ±10% SMD 0402 +125°C Paper T/R
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-13271-001643-1
+    Capacitance : 100nF
+    Case Code (I: 0402
+    Case Code (M: 1005
+    Case/Package: 0402
+    Comment     : CL05B104KA5NNNC
+    Length      : 0.039inch
+    Max Operatin: 125°C
+    Min Operatin: -55°C
+    Mount       : Surface Mount
+    Packaging   : Tape and Reel
+    Thickness   : 0.022inch
+    Tolerance   : 10%
+    Voltage Rati: 25V
+    Voltage Rati: 25V
+    Width       : 0.02inch
+      pin 1    1                      Passive       @(560,600)
+      pin 2    2                      Passive       @(580,600)
+
+C_VCC1  @(290,610)
+    Description : 
+    LibRef      : CAP
+    DesignItemID: CMP-1035-02738-2
+    Comment     : C0603C105M4RACTU
+    Manufacturer: Kemet
+    Part Number : C0603C105M4RACTU
+      pin 1    1                      Passive       @(280,600)
+      pin 2    2                      Passive       @(310,600)
+
+D1  @(130,240)
+    Description : Zener Voltage Regulator, 500 mW, 2-Pin SOD-123, Pb-Free, Tape and Reel
+    LibRef      : ONSC-K1A2-2
+    DesignItemID: CMP-1060-00624-1
+    Comment     : SZMMSZ4699T1G
+    ComponentLin: Manufacturer URL
+    ComponentLin: http://www.onsemi.com/
+    ComponentLin: Datasheet
+    ComponentLin: http://www.onsemi.com/pub_link/Collateral/MMSZ4678T1-D.PDF
+    ComponentLin: Package Specification
+    ComponentLin: http://www.onsemi.com/pub_link/Collateral/425-04.PDF
+    DatasheetVer: Rev. 9
+    Manufacturer: On Semiconductor
+    Mounting Tec: Surface Mount
+    P Max (W)   : 0.5
+    PackageDescr: 2-Pin SOD, Body 1.6 x 2.69 mm
+    PackageRefer: SOD-123-2-425-04
+    PackageVersi: Rev. G, 10/2009
+    Packing     : Tape and Reel
+    PartNumber  : SZMMSZ4699T1G
+    RoHS        : Pb-Free
+    VZ Typ (V)  : 12
+      pin 1    K                      Passive       @(150,250)
+      pin 2    A                      Passive       @(100,250)
+
+D2  @(230,130)
+    Description : TVS DIODE 33V 53.3V DO214AA
+    LibRef      : f813f71cba58e380607f5dd3caf9714
+    DesignItemID: CMP-2000-07095-2
+    Automotive  : No
+    Breakdown Vo: 36.7V
+    Category    : Diode
+    Clamping Vol: 53.3V
+    Comment     : SMBJ33A
+    ComponentLin: Datasheet
+    ComponentLin: https://www.littelfuse.com/~/media/electronics/datasheets/tvs_diodes/littelfuse_tvs_diode_smbj_datasheet.pdf.pdf
+    Device Class: Circuit Protection
+    Device Class: TVS Diodes
+    Device Class: unset
+    Digikey Desc: TVS DIODE 33V 53.3V DO214AA
+    Direction   : Unidirectional
+    Height      : 2.61mm
+    Lead Free   : Yes
+    Manufacturer: Littelfuse Inc
+    Manufacturer: SMBJ33A
+    Max Junction: +150°C
+    Mouser Descr: TVS DIODE 33V 53.3V DO214AA
+    Number Of Ch: 1
+    Octopart    : https://octopart.com/smbj33a-littelfuse-350829
+    Package     : SMBJ
+    Peak Pulse C: 11.3A
+    Peak Pulse P: 600W
+    Reverse Stan: 33V
+    RoHS        : TRUE
+    Temperature : -65°C to +150°C
+    Temperature : +150°C
+    Temperature : -65°C
+      pin 1    C                      Passive       @(230,190)
+      pin 2    A                      Passive       @(230,130)
+
+F1  @(230,280)
+    Description : PTC RESET FUSE 33V 1.1A 2016
+    LibRef      : 5af511f7d2c929e267f2f1dcde4dd25
+    DesignItemID: CMP-08606-000021-1
+    Ambient Temp: +85°C
+    Ambient Temp: -40°C
+    Automotive  : No
+    Category    : Fuse
+    Comment     : 1.1 A hold / 2.2 A trip / 30 V
+    ComponentLin: Datasheet
+    ComponentLin: https://www.littelfuse.com/~/media/electronics/datasheets/resettable_ptcs/littelfuse_ptc_2016l_datasheet.pdf.pdf
+    Current Rati: 40A
+    Device Class: Circuit Protection
+    Device Class: PTC Resettable Fuses
+    Device Class: unset
+    Digikey Desc: PTC RESET FUSE 33V 1.1A 2016
+    Height      : 1.25mm
+    Hold Current: 1.1A
+    Lead Free   : Yes
+    Manufacturer: Littelfuse Inc
+    Manufacturer: 2016L100/33DR
+    Mouser Descr: Resettable Fuses - PPTC 55PTC 33V 2016 1.10A POLYFUSE
+    Octopart    : https://octopart.com/2016l100%2F33dr-littelfuse-673707
+    Package     : 2016L
+    Resistance  : 0.1-0.4O
+    RoHS        : TRUE
+    Temperature : -40°C to +85°C
+    Temperature : +85°C
+    Temperature : -40°C
+    Trip Current: 2.2A
+    Trip Time   : 0.5s
+    Value       : 0.1-0.4O
+    Voltage Rati: 33V
+      pin 1    1                      Passive       @(230,280)
+      pin 2    2                      Passive       @(230,350)
+
+FB1  @(510,220)
+    Description : Chip Ferrite Bead, 0805, 600O @ 100MHz, 0.2O, 25%, 700mA
+    LibRef      : 5f30dd21d616792df468990f7003faa
+    DesignItemID: CMP-06046-002725-1
+    Comment     : BLM21AG601BH1D
+    RoHS Complia: Yes
+      pin 1    1                      Passive       @(510,220)
+      pin 2    2                      Passive       @(510,270)
+
+L1  @(640,560)
+    Description : Inductor Power Shielded Wirewound 10uH 20% 100KHz Ferrite 4.1A 32.5mO DCR T/R
+    LibRef      : 725321dda6339637d4d059423bc1c3c
+    DesignItemID: CMP-14484-000424-1
+    Case/Package: Nonstandard
+    Comment     : NR10050T100M
+    Core Materia: Ferrite
+    Current Rati: 4.1A
+    DC Resistanc: 32.5mR
+    Halogen Free: Halogen Free
+    Height      : 5mm
+    Height - Sea: 0.197inch
+    Inductance  : 10uH
+    Inductance T: 20%
+    Lead Free   : Lead Free
+    Length      : 0.394inch
+    Max DC Curre: 4.7A
+    Max Operatin: 105°C
+    Min Operatin: -25°C
+    Mount       : Surface Mount
+    Number of Pi: 2
+    Package Quan: 500
+    Packaging   : Tape and Reel
+    RMS Current : 4.1A
+    Resistor Typ: Wirewound
+    RoHS Complia: Yes
+    Saturation C: 4.7A
+    Self Resonan: 15MHz
+    Series      : NR
+    Shielding   : Shielded
+    Termination : SMD/SMT
+    Test Frequen: 100kHz
+    Tolerance   : 20%
+    Width       : 0.386inch
+      pin 1    1                      Passive       @(640,560)
+      pin 2    2                      Passive       @(600,560)
+
+Q1  @(190,250)
+    Description : MOSFET P-CH 30V 4.3A SOT23
+    LibRef      : 3507fbd38817b7dfe0387b5158f670f
+    DesignItemID: CMP-12801-000002-1
+    Automotive  : No
+    Automotive G: NA
+    Category    : Trans
+    Comment     : DMP3056L-7
+    ComponentLin: Datasheet
+    ComponentLin: https://www.diodes.com/assets/Datasheets/DMP3056L.pdf
+    Continuous D: -4.3A
+    Depletion Mo: False
+    Device Class: Discrete Semiconductors
+    Device Class: Transistors
+    Device Class: MOSFETs
+    Digikey Desc: MOSFET P-CH 30V 4.3A SOT23
+    Drain To Sou: -30V
+    Drain To Sou: 35mO
+    Drain To Sou: -30V
+    Footprint Ur: https://www.diodes.com/assets/Package-Files/SOT23.pdf
+    Gate Charge : 11.8nC @ -10V
+    Gate To Sour: 25V
+    Height      : 1.1mm
+    Input Capaci: 642pF @ -25V
+    Lead Free   : Yes
+    Manufacturer: Diodes Inc.
+    Manufacturer: DMP3056L-7
+    Max Forward : -1.2V
+    Max Junction: +150°C
+    Mouser Descr: MOSFET 30V P-Ch Enh Mode 50mOhm -10Vgs -4.3A
+    Number Of Ch: 1
+    Number Of P : 1
+    Octopart    : https://octopart.com/dmp3056l-7-diodes+inc.-54102746
+    Package     : SOT23
+    Power Dissip: 1.38W
+    Pulse Drain : -20A
+    RoHS        : TRUE
+    Rthja Max   : 91°C/W
+    Standoff Hei: 0.013mm
+    Temperature : -55°C to +150°C
+    Temperature : +150°C
+    Temperature : -55°C
+    Threshold Vg: -2.1V
+    Threshold Vg: -1V
+    Turn Off Del: 35.2ns
+    Turn On Dela: 4.9ns
+      pin 1    G                      Passive       @(190,250)
+      pin 2    S                      Passive       @(230,220)
+      pin 3    D                      Passive       @(230,280)
+
+R1  @(680,530)
+    Description : 
+    LibRef      : RES
+    DesignItemID: CMP-2002-08126-1
+    Comment     : 100k ohm
+    Manufacturer: Vishay Dale
+    Part Number : CRCW0402100KJNTD
+      pin 1    1                      Passive       @(670,520)
+      pin 2    2                      Passive       @(710,520)
+
+R2  @(620,490)
+    Description : 
+    LibRef      : RES
+    DesignItemID: CMP-2002-00404-1
+    Comment     : 24.9kohm
+    Manufacturer: Vishay Dale
+    Part Number : CRCW040224K9FKTD
+      pin 1    1                      Passive       @(610,500)
+      pin 2    2                      Passive       @(610,460)
+
+R3  @(140,260)
+    Description : 
+    LibRef      : RES
+    DesignItemID: CMP-2002-01842-1
+    Comment     : 10 kO 1%
+    Manufacturer: Yageo
+    Part Number : RE0402FRE0710KL
+      pin 1    1                      Passive       @(150,250)
+      pin 2    2                      Passive       @(150,290)
+
+R64  @(660,330)
+    Description : RES 8.2kO ±5% 0.063W 0402
+    LibRef      : 1029c3af85768c4190bb7ad29bc67b5
+    DesignItemID: CMP-03412-039346-1
+    Case Code (I: 0402
+    Case Code (M: 1005
+    Case/Package: 0402
+    Comment     : 8.2 kOhm
+    Features    : Moisture Resistant
+    Height      : 0.015inch
+    Length      : 0.039inch
+    Max Operatin: 155°C
+    Max Power Di: 63mW
+    Min Operatin: -55°C
+    Number of Te: 2
+    Packaging   : Cut Tape
+    Resistance  : 8.2kR
+    Resistor Typ: Thick Film
+    RoHS Complia: Yes
+    Series      : AC
+    Temperature : 100ppm/°C
+    Tolerance   : 5%
+    Width       : 0.02inch
+      pin 1    1                      Passive       @(660,330)
+      pin 2    2                      Passive       @(660,400)
+
+R65  @(840,310)
+    Description : RES 43.2kO ±1% 0.063W 0402
+    LibRef      : 1029c3af85768c4190bb7ad29bc67b5
+    DesignItemID: CMP-03412-026105-2
+    Case/Package: 0402
+    Comment     : 43.2kO
+    Features    : Moisture Resistant
+    Height      : 0.015inch
+    Length      : 0.039inch
+    Max Operatin: 155°C
+    Max Power Di: 63mW
+    Min Operatin: -55°C
+    Number of Te: 2
+    Packaging   : Tape and Reel
+    Resistance  : 43.2kR
+    Resistor Typ: Thick Film
+    RoHS Complia: Yes
+    Series      : AC
+    Temperature : 100ppm/°C
+    Tolerance   : 1%
+    Width       : 0.02inch
+      pin 1    1                      Passive       @(840,310)
+      pin 2    2                      Passive       @(840,380)
+
+R66  @(650,300)
+    Description : 
+    LibRef      : RES
+    DesignItemID: CMP-2002-01842-1
+    Comment     : 10 kO 1%
+    Manufacturer: Yageo
+    Part Number : RE0402FRE0710KL
+      pin 1    1                      Passive       @(660,290)
+      pin 2    2                      Passive       @(660,330)
+
+R67  @(830,270)
+    Description : 
+    LibRef      : RES
+    DesignItemID: CMP-2002-01707-1
+    Comment     : 10.0kO
+    Manufacturer: Vishay Dale
+    Part Number : TNPW040210K0BETD
+      pin 1    1                      Passive       @(840,260)
+      pin 2    2                      Passive       @(840,300)
+
+U1  @(380,580)
+    Description : IC REGULATOR BUCK
+    LibRef      : 99e4bd940d99564b2ae52ecd99d70d2
+    DesignItemID: CMP-04918-000354-1
+    Comment     : LMR36015BRNXT
+      pin 1    PGND                   Power         @(520,490)
+      pin 2    VIN                    Power         @(380,570)
+      pin 3    NC                     Passive       @(380,480)
+      pin 4    BOOT                   Passive       @(520,580)
+      pin 5    VCC                    Power         @(380,580)
+      pin 6    AGND                   Power         @(520,500)
+      pin 7    FB                     Passive       @(520,520)
+      pin 8    PG                     OpenCollector @(520,540)
+      pin 9    EN                     Passive       @(380,530)
+      pin 10   VIN                    Power         @(380,560)
+      pin 11   PGND                   Power         @(520,480)
+      pin 12   SW                     Passive       @(520,560)
+
+U2  @(390,220)
+    Description : IC REG LINEAR 3.3V 600MA SOT25
+    LibRef      : c8ab751aee5229183125ab046a11caa
+    DesignItemID: CMP-12756-000035-1
+    Accuracy    : 1.5%
+    Case/Package: SOT-23-5
+    Comment     : AP2112K-3.3TRG1
+    Dropout Volt: 250mV
+    Height      : 1.3mm
+    Lead Free   : Lead Free
+    Length      : 3.1mm
+    Max Input Vo: 6V
+    Max Operatin: 85°C
+    Max Output C: 600mA
+    Min Input Vo: 2.5V
+    Min Operatin: -40°C
+    Mount       : Surface Mount
+    Number of Ou: 1
+    Number of Pi: 5
+    Number of Re: 1
+    Output Curre: 600mA
+    Output Type : Fixed
+    Output Volta: 3.3V
+    Package Quan: 1
+    Packaging   : Tape and Reel
+    Polarity    : Positive
+    Quiescent Cu: 55uA
+    Width       : 1.7mm
+      pin 1    VIN                    Power         @(390,220)
+      pin 2    GND                    Power         @(510,180)
+      pin 3    EN                     Passive       @(390,180)
+      pin 4    NC                     Passive       @(510,200)
+      pin 5    VOUT                   Power         @(510,220)
+
+==============================================================================
+NETS
+==============================================================================
+
++12V_IN  (1 pin)
+    F1.2(2)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
++12V_P  (10 pins)   [joined by name across 4 separate wire islands on this sheet]
+    C1.1(1)
+    C4.1(1)
+    C5.1(1)
+    C8.1(1)
+    D2.1(C)
+    Q1.2(S)
+    R65.2(2)
+    U1.10(VIN) [Power]
+    U1.2(VIN) [Power]
+    U1.9(EN)
+
++3V3  (2 pins)
+    FB1.1(1)
+    U2.5(VOUT) [Power]
+
++3V3A  (1 pin)
+    FB1.2(2)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
++5V  (9 pins)   [joined by name across 4 separate wire islands on this sheet]
+    C2.1(1)
+    C3.1(1)
+    C6.2(2)
+    C7.1(1)
+    L1.1(1)
+    R1.2(2)
+    R64.2(2)
+    U2.1(VIN) [Power]
+    U2.3(EN)
+
+GND  (20 pins)   [joined by name across 15 separate wire islands on this sheet]
+    C1.2(2)
+    C2.2(2)
+    C3.2(2)
+    C4.2(2)
+    C5.2(2)
+    C6.1(1)
+    C69.2(2)
+    C70.2(2)
+    C8.2(2)
+    C_VCC1.1(1)
+    D1.2(A)
+    D2.2(A)
+    R2.2(2)
+    R3.2(2)
+    R66.1(1)
+    R67.1(1)
+    U1.1(PGND) [Power]
+    U1.11(PGND) [Power]
+    U1.6(AGND) [Power]
+    U2.2(GND) [Power]
+
+N$1  (2 pins)
+    C_VCC1.2(2)
+    U1.5(VCC) [Power]
+
+N$2  (2 pins)
+    C_BOOT1.1(1)
+    U1.4(BOOT)
+
+N$3  (3 pins)
+    D1.1(K)
+    Q1.1(G)
+    R3.1(1)
+
+N$4  (4 pins)
+    C_BOOT1.2(2)
+    L1.2(2)
+    U1.12(SW)
+    U1.3(NC)
+
+N$5  (4 pins)
+    C7.2(2)
+    R1.1(1)
+    R2.1(1)
+    U1.7(FB)
+
+N$6  (2 pins)
+    F1.1(1)
+    Q1.3(D)
+
+N$7  (1 pin)
+    U1.8(PG) [OpenCollector]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$8  (1 pin)
+    U2.4(NC)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+V12_SENSE  (3 pins)
+    C70.1(1)
+    R65.1(1)
+    R67.2(2)
+
+V5_SENSE  (3 pins)
+    C69.1(1)
+    R64.1(1)
+    R66.2(2)
+
+==============================================================================
+UNCONNECTED PINS (no wire, no label, no power port)
+==============================================================================
+  U1     pin 8    PG                     OpenCollector @(520,540)
+  U2     pin 4    NC                     Passive       @(510,200)
+
+Floating net labels / power ports (not touching any wire or pin):
+  (none)
+
+No-ERC markers placed: 2 [(520, 540), (510, 200)]
+Junctions: 23

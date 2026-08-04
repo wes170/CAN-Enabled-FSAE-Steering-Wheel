@@ -1,0 +1,631 @@
+SHEET: wheelmcu
+Source: 9f681036-Copy_of_wheelmcu.SchDoc
+Coordinates are in 10-mil units. Pin connection end resolved as: far (score far=25 base=1)
+
+==============================================================================
+COMPONENTS (12)
+==============================================================================
+
+C10  @(200,610)
+    Description : CAP CER 0.1UF 10V X7R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-2008-03086-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : C0402C104K8RACTU
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 10V X7R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104K8RACTU
+    Material    : Ceramic
+    Mouser Descr: Multilayer Ceramic Capacitors MLCC - SMD/SMT 10volts 0.1uF X7R 10%
+    Octopart    : https://octopart.com/c0402c104k8ractu-kemet-106349
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X7R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.1
+    Value       : 0.10 µF
+    Voltage Rati: 10 V
+      pin 1    1                      Passive       @(200,610)
+      pin 2    2                      Passive       @(200,630)
+
+C11  @(150,590)
+    Description : CAP CER 0.1UF 10V X7R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-2008-03086-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : C0402C104K8RACTU
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 10V X7R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104K8RACTU
+    Material    : Ceramic
+    Mouser Descr: Multilayer Ceramic Capacitors MLCC - SMD/SMT 10volts 0.1uF X7R 10%
+    Octopart    : https://octopart.com/c0402c104k8ractu-kemet-106349
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X7R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.1
+    Value       : 0.10 µF
+    Voltage Rati: 10 V
+      pin 1    1                      Passive       @(150,590)
+      pin 2    2                      Passive       @(150,610)
+
+C12  @(200,550)
+    Description : CAP CER 0.1UF 10V X7R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-2008-03086-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : C0402C104K8RACTU
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 10V X7R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104K8RACTU
+    Material    : Ceramic
+    Mouser Descr: Multilayer Ceramic Capacitors MLCC - SMD/SMT 10volts 0.1uF X7R 10%
+    Octopart    : https://octopart.com/c0402c104k8ractu-kemet-106349
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X7R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.1
+    Value       : 0.10 µF
+    Voltage Rati: 10 V
+      pin 1    1                      Passive       @(200,550)
+      pin 2    2                      Passive       @(200,570)
+
+C13  @(140,530)
+    Description : CAP CER 4.7UF 16V X7R 0805
+    LibRef      : 11868f565c42a9108669ba33697ecf6
+    DesignItemID: CMP-03422-000207-1
+    Automotive  : No
+    Capacitance : 4.7 uF
+    Category    : Cap
+    Comment     : 4.7 u
+    ComponentLin: Datasheet
+    ComponentLin: http://www.yageo.com/documents/recent/UPY-GPHC_Y5V_6.3V-to-50V_8.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 4.7UF 16V X7R 0805
+    Footprint Ur: http://www.yageo.com/exep/pages/download/literatures/UPY-C_GEN_24.pdf
+    Height      : 0.95mm
+    Ipc Land Pat: CAPC200125X85
+    Lead Free   : Yes
+    Manufacturer: Yageo
+    Manufacturer: CC0805KKX7R7BB475
+    Material    : Ceramic
+    Mouser Descr: Multilayer Ceramic Capacitors MLCC - SMD/SMT 4.7M pF 10% 16 Volts
+    Octopart    : https://octopart.com/cc0805kkx7r7bb475-yageo-34429188
+    Package     : CC0805-0.85
+    RoHS        : TRUE
+    Temperature : -30°C to +85°C
+    Temperature : X7R
+    Temperature : +85°C
+    Temperature : -30°C
+    Tolerance   : 0.1
+    Value       : 4.7 uF
+    Voltage Rati: 16 V
+      pin 1    1                      Passive       @(140,530)
+      pin 2    2                      Passive       @(140,550)
+
+C14  @(650,210)
+    Description : CAP CER 0.1UF 50V X7R 0402
+    LibRef      : 11868f565c42a9108669ba33697ecf6
+    DesignItemID: CMP-45632-000010-1
+    Capacitance : 100nF
+    Case Code (I: 0402
+    Case Code (M: 1005
+    Case/Package: 0402
+    Comment     : 0402B104K500CT
+    Max Operatin: 125°C
+    Min Operatin: -55°C
+    Mount       : Surface Mount
+    Packaging   : Cut Tape
+    RoHS Complia: Yes
+    Series      : -
+    Tolerance   : 10%
+    Voltage Rati: 50V
+      pin 1    1                      Passive       @(650,210)
+      pin 2    2                      Passive       @(650,230)
+
+C9  @(150,650)
+    Description : CAP CER 0.1UF 10V X7R 0402
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-2008-03086-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : C0402C104K8RACTU
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Digikey Desc: CAP CER 0.1UF 10V X7R 0402
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104K8RACTU
+    Material    : Ceramic
+    Mouser Descr: Multilayer Ceramic Capacitors MLCC - SMD/SMT 10volts 0.1uF X7R 10%
+    Octopart    : https://octopart.com/c0402c104k8ractu-kemet-106349
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X7R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.1
+    Value       : 0.10 µF
+    Voltage Rati: 10 V
+      pin 1    1                      Passive       @(150,650)
+      pin 2    2                      Passive       @(150,670)
+
+C_X1  @(650,450)
+    Description : 
+    LibRef      : CAP
+    DesignItemID: CMP-2008-02413-1
+    Comment     : 04025A6R0DAT2A
+    Manufacturer: AVX Interconnect / Elco
+    Part Number : 04025A6R0DAT2A
+      pin 1    1                      Passive       @(640,460)
+      pin 2    2                      Passive       @(640,430)
+
+C_X2  @(700,280)
+    Description : 
+    LibRef      : CAP
+    DesignItemID: CMP-2008-02413-1
+    Comment     : 04025A6R0DAT2A
+    Manufacturer: AVX Interconnect / Elco
+    Part Number : 04025A6R0DAT2A
+      pin 1    1                      Passive       @(710,270)
+      pin 2    2                      Passive       @(710,300)
+
+R?  @(550,300)
+    Description : 
+    LibRef      : RES
+    DesignItemID: CMP-2002-01682-1
+    Comment     : 10k ohm
+    Manufacturer: Vishay BCcomponents
+    Part Number : TNPW040210K0DEED
+      pin 1    1                      Passive       @(540,290)
+      pin 2    2                      Passive       @(580,290)
+
+R_X1  @(670,320)
+    Description : 
+    LibRef      : RES
+    DesignItemID: CMP-2002-06970-1
+    Comment     : RC0402JR-100RL
+    Manufacturer: Yageo
+    Part Number : RC0402JR-100RL
+      pin 1    1                      Passive       @(680,330)
+      pin 2    2                      Passive       @(640,330)
+
+U3  @(320,580)
+    Description : MAINSTREAM ARM CORTEX-M4 CORE WI
+    LibRef      : f7e4c2ab6713028e27effac94efeea5
+    DesignItemID: CMP-12105-000051-1
+    Ambient Temp: +85°C
+    Ambient Temp: -40°C
+    Automotive  : No
+    Category    : IC
+    Comment     : STM32G474RET6
+    ComponentLin: Datasheet
+    ComponentLin: https://www.st.com/resource/en/datasheet/stm32g474cb.pdf
+    Core Archite: ARM Cortex-M4
+    Data Bus Wid: 32bits
+    Device Class: Integrated Circuits (ICs)
+    Device Class: Embedded Processors and Controllers
+    Device Class: Microcontrollers
+    Digikey Desc: MAINSTREAM ARM CORTEX-M4 CORE WI
+    Frequency   : 170MHz
+    Height      : 1.6mm
+    Interface   : I2C,SPI,UART,USART,CAN,USB,LIN,IrDA,I2S,SMBus,Other
+    Lead Free   : Yes
+    Manufacturer: STMicroelectronics
+    Manufacturer: STM32G474RET6
+    Max Junction: +105°C
+    Max Supply V: 3.6V
+    Memory Size : 512KBytes
+    Memory Type : FLASH
+    Min Supply V: 1.71V
+    Mouser Descr: Microcontroller 32-Bit ARM Cortex-M4 RISC 512KB Flash 1.71V to 3.6V 64-Pin LQFP
+    Number Of A/: 5
+    Number Of Ad: 26
+    Number Of Co: 1
+    Number Of I/: 52
+    Number Of I2: 4
+    Number Of Pw: 32
+    Number Of Sp: 3
+    Number Of Ti: 14
+    Number Of Ua: 6
+    Number Of Us: 1
+    Octopart    : https://octopart.com/stm32g474ret6-stmicroelectronics-102308483
+    Package     : LQFP64-5W
+    Ram Size    : 128KBytes
+    RoHS        : TRUE
+    Standoff Hei: 0.05mm
+    Temperature : -40°C to +105°C
+    Temperature : +105°C
+    Temperature : -40°C
+      pin 1    VBAT                   Power         @(320,520)
+      pin 2    PC13                   IO            @(540,440)
+      pin 3    PC14-OSC32 IN          IO            @(540,420)
+      pin 4    PC15-OSC32 OUT         IO            @(540,410)
+      pin 5    PF0-OSC IN             IO            @(540,350)
+      pin 6    PF1-OSC OUT            IO            @(540,340)
+      pin 7    PG10/R\S\T\            IO            @(540,310)
+      pin 8    PC0                    IO            @(540,570)
+      pin 9    PC1                    IO            @(540,560)
+      pin 10   PC2                    IO            @(540,550)
+      pin 11   PC3                    IO            @(540,540)
+      pin 12   PA0                    IO            @(320,480)
+      pin 13   PA1                    IO            @(320,470)
+      pin 14   PA2                    IO            @(320,460)
+      pin 15   VSS                    Power         @(540,200)
+      pin 16   VDD                    Power         @(320,580)
+      pin 17   PA3                    IO            @(320,450)
+      pin 18   PA4                    IO            @(320,440)
+      pin 19   PA5                    IO            @(320,430)
+      pin 20   PA6                    IO            @(320,420)
+      pin 21   PA7                    IO            @(320,410)
+      pin 22   PC4                    IO            @(540,530)
+      pin 23   PC5                    IO            @(540,520)
+      pin 24   PB0                    IO            @(320,310)
+      pin 25   PB1                    IO            @(320,300)
+      pin 26   PB2                    IO            @(320,290)
+      pin 27   VSSA                   Power         @(540,160)
+      pin 28   VREF+                  Power         @(320,500)
+      pin 29   VDDA                   Power         @(320,540)
+      pin 30   PB10                   IO            @(320,210)
+      pin 31   VSS                    Power         @(540,190)
+      pin 32   VDD                    Power         @(320,570)
+      pin 33   PB11                   IO            @(320,200)
+      pin 34   PB12                   IO            @(320,190)
+      pin 35   PB13                   IO            @(320,180)
+      pin 36   PB14                   IO            @(320,170)
+      pin 37   PB15                   IO            @(320,160)
+      pin 38   PC6                    IO            @(540,510)
+      pin 39   PC7                    IO            @(540,500)
+      pin 40   PC8                    IO            @(540,490)
+      pin 41   PC9                    IO            @(540,480)
+      pin 42   PA8                    IO            @(320,400)
+      pin 43   PA9                    IO            @(320,390)
+      pin 44   PA10                   IO            @(320,380)
+      pin 45   PA11                   IO            @(320,370)
+      pin 46   PA12                   IO            @(320,360)
+      pin 47   VSS                    Power         @(540,180)
+      pin 48   VDD                    Power         @(320,560)
+      pin 49   PA13                   IO            @(320,350)
+      pin 50   PA14                   Output        @(320,340)
+      pin 51   PA15                   IO            @(320,330)
+      pin 52   PC10                   IO            @(540,470)
+      pin 53   PC11                   IO            @(540,460)
+      pin 54   PC12                   IO            @(540,450)
+      pin 55   PD2                    IO            @(540,380)
+      pin 56   PB3                    IO            @(320,280)
+      pin 57   PB4                    IO            @(320,270)
+      pin 58   PB5                    IO            @(320,260)
+      pin 59   PB6                    IO            @(320,250)
+      pin 60   PB7                    IO            @(320,240)
+      pin 61   PB8-BOOT0              IO            @(320,230)
+      pin 62   PB9                    IO            @(320,220)
+      pin 63   VSS                    Power         @(540,170)
+      pin 64   VDD                    Power         @(320,550)
+
+Y1  @(690,400)
+    Description : Description
+    LibRef      : ABM8-16.000MHZ-7-1-U-T
+    DesignItemID: ABM8-16.000MHZ-7-1-U-T
+    Comment     : ABM8-16.000MHZ-7-1-U-T
+    Copyright   : Copyright (C) 2026 Ultra Librarian. All rights reserved.
+    Manufacturer: Abracon
+    Manufacturer: ABM8-16.000MHZ-7-1-U-T
+    RefDes      : RefDes
+    Type        : Type
+      pin 1    1                      Passive       @(690,400)
+      pin 2    2                      Passive       @(690,390)
+      pin 3    3                      Passive       @(790,390)
+      pin 4    4                      Passive       @(790,400)
+
+==============================================================================
+NETS
+==============================================================================
+
++3V3  (11 pins)   [joined by name across 6 separate wire islands on this sheet]
+    C10.1(1)
+    C11.1(1)
+    C12.1(1)
+    C13.1(1)
+    C9.1(1)
+    R?.2(2)
+    U3.1(VBAT) [Power]
+    U3.16(VDD) [Power]
+    U3.32(VDD) [Power]
+    U3.48(VDD) [Power]
+    U3.64(VDD) [Power]
+
++3V3A  (1 pin)
+    U3.29(VDDA) [Power]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+BTN1  (1 pin)
+    U3.2(PC13) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+BTN2  (1 pin)
+    U3.55(PD2) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+BTN3  (1 pin)
+    U3.17(PA3) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+BTN4  (1 pin)
+    U3.30(PB10) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+BTN5  (1 pin)
+    U3.33(PB11) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+BTN6  (1 pin)
+    U3.34(PB12) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+CAN_RX  (1 pin)
+    U3.61(PB8-BOOT0) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+CAN_TX  (1 pin)
+    U3.62(PB9) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+DBG_RX  (1 pin)
+    U3.44(PA10) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+DBG_TX  (1 pin)
+    U3.43(PA9) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC1_A  (1 pin)
+    U3.8(PC0) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC1_B  (1 pin)
+    U3.9(PC1) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC1_SW  (1 pin)
+    U3.22(PC4) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC2_A  (2 pins)   [joined by name across 2 separate wire islands on this sheet]
+    U3.38(PC6) [IO]
+    U3.59(PB6) [IO]
+
+ENC2_B  (2 pins)   [joined by name across 2 separate wire islands on this sheet]
+    U3.39(PC7) [IO]
+    U3.60(PB7) [IO]
+
+ENC2_SW  (1 pin)
+    U3.23(PC5) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC3_SW  (1 pin)
+    U3.40(PC8) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC4_A  (1 pin)
+    U3.51(PA15) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC4_B  (1 pin)
+    U3.56(PB3) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC4_SW  (1 pin)
+    U3.41(PC9) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC5_A  (1 pin)
+    U3.26(PB2) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC5_B  (1 pin)
+    U3.10(PC2) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC5_SW  (1 pin)
+    U3.52(PC10) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC6_A  (1 pin)
+    U3.12(PA0) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC6_B  (1 pin)
+    U3.54(PC12) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+ENC6_SW  (1 pin)
+    U3.53(PC11) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+GND  (15 pins)   [joined by name across 15 separate wire islands on this sheet]
+    C10.2(2)
+    C11.2(2)
+    C12.2(2)
+    C13.2(2)
+    C14.1(1)
+    C9.2(2)
+    C_X1.1(1)
+    C_X2.1(1)
+    U3.15(VSS) [Power]
+    U3.27(VSSA) [Power]
+    U3.31(VSS) [Power]
+    U3.47(VSS) [Power]
+    U3.63(VSS) [Power]
+    Y1.2(2)
+    Y1.4(4)
+
+LCD_DISP  (2 pins)   [joined by name across 2 separate wire islands on this sheet]
+    U3.11(PC3) [IO]
+    U3.35(PB13) [IO]
+
+LCD_EXTCOMIN  (1 pin)
+    U3.42(PA8) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+LCD_SCLK  (1 pin)
+    U3.19(PA5) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+LCD_SCS  (1 pin)
+    U3.18(PA4) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+LCD_SI  (1 pin)
+    U3.21(PA7) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+LED_DATA_3V3  (1 pin)
+    U3.20(PA6) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$1  (1 pin)
+    U3.3(PC14-OSC32 IN) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$2  (1 pin)
+    U3.4(PC15-OSC32 OUT) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$3  (1 pin)
+    U3.28(VREF+) [Power]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$4  (1 pin)
+    U3.57(PB4) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$5  (1 pin)
+    U3.58(PB5) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$6  (1 pin)
+    U3.36(PB14) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$7  (1 pin)
+    U3.37(PB15) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+NET_OSC_IN  (3 pins)
+    C_X1.2(2)
+    U3.5(PF0-OSC IN) [IO]
+    Y1.1(1)
+
+NET_OSC_OUT  (2 pins)
+    R_X1.2(2)
+    U3.6(PF1-OSC OUT) [IO]
+
+NET_XOUT  (3 pins)
+    C_X2.2(2)
+    R_X1.1(1)
+    Y1.3(3)
+
+NRST  (3 pins)
+    C14.2(2)
+    R?.1(1)
+    U3.7(PG10/R\S\T\) [IO]
+
+PADDLE_DN_SNS  (1 pin)
+    U3.25(PB1) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+PADDLE_UP_SNS  (1 pin)
+    U3.24(PB0) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+SWCLK  (1 pin)
+    U3.50(PA14) [Output]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+SWDIO  (1 pin)
+    U3.49(PA13) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+USB_DM  (1 pin)
+    U3.45(PA11) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+USB_DP  (1 pin)
+    U3.46(PA12) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+V12_SENSE  (1 pin)
+    U3.13(PA1) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+V5_SENSE  (1 pin)
+    U3.14(PA2) [IO]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+==============================================================================
+UNCONNECTED PINS (no wire, no label, no power port)
+==============================================================================
+  U3     pin 28   VREF+                  Power         @(320,500)
+  U3     pin 3    PC14-OSC32 IN          IO            @(540,420)
+  U3     pin 36   PB14                   IO            @(320,170)
+  U3     pin 37   PB15                   IO            @(320,160)
+  U3     pin 4    PC15-OSC32 OUT         IO            @(540,410)
+  U3     pin 57   PB4                    IO            @(320,270)
+  U3     pin 58   PB5                    IO            @(320,260)
+
+Floating net labels / power ports (not touching any wire or pin):
+  (none)
+
+No-ERC markers placed: 4 [(320, 270), (320, 260), (320, 170), (320, 160)]
+Junctions: 10

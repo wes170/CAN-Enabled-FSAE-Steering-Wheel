@@ -1,0 +1,988 @@
+SHEET: wheelio
+Source: a9e4a5c8-Copy_of_wheelio.SchDoc
+Coordinates are in 10-mil units. Pin connection end resolved as: far (score far=52 base=6)
+
+==============================================================================
+COMPONENTS (28)
+==============================================================================
+
+*1  @(930,210)
+    Description : Amphenol BoardLock, 6-pos waterproof PCB header, straight
+    LibRef      : ATM15-6P-BM01
+    DesignItemID: ATM15-6P-BM01
+    Comment     : ATM15-6P-BM01
+      pin 1    1                      Passive       @(930,210)
+      pin 2    2                      Passive       @(930,250)
+      pin 3    3                      Passive       @(930,280)
+      pin 4    4                      Passive       @(970,280)
+      pin 5    5                      Passive       @(970,250)
+      pin 6    6                      Passive       @(970,210)
+
+C15  @(190,710)
+    Description : C0402 0.10 µF X7R 5.00% 10 V
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-013601-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : C0402C104J8RACAUTO
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104J8RACAUTO
+    Material    : Ceramic
+    Mouser Descr: Cap Ceramic 0.1uF 10V X7R 5% SMD 0402 125°C Paper T/R
+    Octopart    : https://octopart.com/c0402c104j8racauto-kemet-95437016
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X7R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.05
+    Value       : 0.10 µF
+    Voltage Rati: 10 V
+      pin 1    1                      Passive       @(190,710)
+      pin 2    2                      Passive       @(190,690)
+
+C16  @(230,690)
+    Description : C0402 0.10 µF X7R 5.00% 10 V
+    LibRef      : b4654b650e69147ec39a6b967a45e02
+    DesignItemID: CMP-03020-013601-2
+    Automotive  : No
+    Capacitance : 0.10 µF
+    Category    : Cap
+    Comment     : C0402C104J8RACAUTO
+    ComponentLin: Datasheet
+    ComponentLin: https://content.kemet.com/datasheets/KEM_C1002_X7R_SMD.pdf
+    Device Class: Passive Components
+    Device Class: Capacitors
+    Device Class: Ceramic Capacitors
+    Height      : 0.55mm
+    Ipc Land Pat: CAPC10050X50
+    Lead Free   : Yes
+    Manufacturer: Kemet
+    Manufacturer: C0402C104J8RACAUTO
+    Material    : Ceramic
+    Mouser Descr: Cap Ceramic 0.1uF 10V X7R 5% SMD 0402 125°C Paper T/R
+    Octopart    : https://octopart.com/c0402c104j8racauto-kemet-95437016
+    Package     : C0402-BB
+    RoHS        : TRUE
+    Temperature : -55°C to +125°C
+    Temperature : X7R
+    Temperature : 15%
+    Temperature : +125°C
+    Temperature : -55°C
+    Tolerance   : 0.05
+    Value       : 0.10 µF
+    Voltage Rati: 10 V
+      pin 1    1                      Passive       @(230,690)
+      pin 2    2                      Passive       @(230,670)
+
+C17  @(740,560)
+    Description : CAP 4.7nF 50V ±10% 0402 (1005 Metric) Thickness 0.6mm SMD
+    LibRef      : CAP
+    DesignItemID: CMP-1034-01816-1
+    Case-EIA    : 0402
+    Case-Metric : 1005
+    Comment     : CAP 4.7nF
+    Max Thicknes: 0.6 mm
+    Rated Voltag: 50 V
+    Technology  : SMT
+    Tolerance   : Â±10%
+    Value       : 4.7nF
+      pin 1    1                      Passive       @(730,550)
+      pin 2    2                      Passive       @(760,550)
+
+C18  @(210,420)
+    Description : 
+    LibRef      : CAP
+    DesignItemID: CMP-2008-02428-1
+    Comment     : 04025A102JAT2A
+    Manufacturer: AVX Interconnect / Elco
+    Part Number : 04025A102JAT2A
+      pin 1    1                      Passive       @(200,430)
+      pin 2    2                      Passive       @(200,400)
+
+C19  @(200,150)
+    Description : 
+    LibRef      : CAP
+    DesignItemID: CMP-2008-02428-1
+    Comment     : 04025A102JAT2A
+    Manufacturer: AVX Interconnect / Elco
+    Part Number : 04025A102JAT2A
+      pin 1    1                      Passive       @(190,160)
+      pin 2    2                      Passive       @(190,130)
+
+D3  @(530,750)
+    Description : TVS DIODE 24VWM 42VC TO236AB
+    LibRef      : e1aa1e71a25486d94450bfc930cdd33
+    DesignItemID: CMP-14436-000014-1
+    Comment     : PESD2CANFD24V-TR
+      pin 1    K1                     Passive       @(530,750)
+      pin 2    K2                     Passive       @(530,710)
+      pin 3    CC                     Passive       @(630,730)
+
+D4  @(1330,630)
+    Description : DIODE SCHOTTKY 10V 3A SOD323-2
+    LibRef      : 1d6ec82d83fb6aee721767c19dac4b9
+    DesignItemID: CMP-32890-000004-1
+    Average Rect: 3A
+    Case/Package: SOD-323-2
+    Comment     : BAT60AE6327HTSA1
+    Contact Plat: Tin
+    Current Rati: 3A
+    Element Conf: Single
+    Forward Curr: 3A
+    Forward Volt: 370mV
+    Halogen Free: Not Halogen Free
+    Lead Free   : Lead Free
+    Max Operatin: 85°C
+    Max Repetiti: 10V
+    Max Reverse : 10V
+    Min Operatin: -55°C
+    Mount       : Surface Mount
+    Number of Pi: 2
+    Output Curre: 3A
+    Packaging   : Tape and Reel
+    Peak Non-Rep: 5A
+    Polarity    : Standard
+    REACH SVHC  : No SVHC
+    Radiation Ha: No
+    Voltage Rati: 10V
+      pin 1    C                      Passive       @(1330,690)
+      pin 2    A                      Passive       @(1330,630)
+
+D5  @(250,560)
+    Description : Dual Surface Mount Low Leakage Diode, 1.25 V, -65 to 150 degC, 3-Pin SOT23, RoHS, Tape and Reel
+    LibRef      : D-AKC-3
+    DesignItemID: CMP-2000-05931-1
+    Brand       : DiodesIncorporated
+    Comment     : BAV199-7-F
+    Configuratio: DualSeries
+    Datasheet UR: http://www.diodes.com/_files/datasheets/ds30232.pdf
+    Datasheet Ve: Rev. 9-2, 01/2012
+    Factory Pack: 3000
+    Height      : 1mm
+    If - Forward: 0.16A
+    Ir - Reverse: 0.005uAat75V
+    Length      : 3.05mm
+    Manufacturer: DiodesIncorporated
+    Manufacturer: http://www.diodes.com/
+    Max Surge Cu: 4A
+    Maximum Oper: +150C
+    Minimum Oper: -65C
+    Mounting Sty: SMD/SMT
+    Mounting Tec: SurfaceMount
+    Package / Ca: SOT-23
+    Package Desc: 3-Pin Small Outline Transistor, Body 2.9 x 1.3 mm, Pitch 0.95 mm
+    Package Refe: SOT23-3
+    Packaging   : Reel
+    Pd - Power D: 0.25W
+    Product Cate: Diodes-GeneralPurpose,Power,Switching
+    Recovery Tim: 3000ns
+    RoHS        : True
+    Series      : BAV199
+    Type        : DualSurfaceMountLowLeakageDiode
+    Unit Weight : 0.000282oz
+    Vf - Forward: 1.25Vat15A
+    Vr - Reverse: 85V
+    Width       : 1.4mm
+      pin 1    A                      Passive       @(270,560)
+      pin 2    K                      Passive       @(190,560)
+      pin 3    C                      Passive       @(230,530)
+
+D6  @(390,390)
+    Description : TVS DIODE 24V 38.9V DO214AC
+    LibRef      : 876f4347bf90aa6f500f43e3cd03972
+    DesignItemID: CMP-2000-07087-2
+    Automotive  : No
+    Breakdown Vo: 26.7V
+    Category    : Diode
+    Clamping Vol: 38.9V
+    Comment     : SMAJ24CA
+    ComponentLin: Datasheet
+    ComponentLin: https://www.littelfuse.com/~/media/electronics/datasheets/tvs_diodes/littelfuse_tvs_diode_smaj_datasheet.pdf.pdf
+    Device Class: Circuit Protection
+    Device Class: TVS Diodes
+    Device Class: unset
+    Digikey Desc: TVS DIODE 24V 38.9V DO214AC
+    Direction   : Bidirectional
+    Height      : 2.29mm
+    Lead Free   : Yes
+    Manufacturer: Littelfuse
+    Manufacturer: SMAJ24CA
+    Max Junction: +150°C
+    Mouser Descr: In a Pack of 25, Littelfuse SMAJ24CA, Bi-Directional TVS Diode, 400W, 2-Pin DO-214AC
+    Number Of Ch: 1
+    Octopart    : https://octopart.com/smaj24ca-littelfuse-350011
+    Package     : SMAJ-CA
+    Peak Pulse C: 10.3A
+    Peak Pulse P: 400W
+    Reverse Stan: 24V
+    RoHS        : TRUE
+    Temperature : -65°C to +150°C
+    Temperature : +150°C
+    Temperature : -65°C
+      pin 1    1                      Passive       @(390,390)
+      pin 2    2                      Passive       @(390,470)
+
+D7  @(240,290)
+    Description : Dual Surface Mount Low Leakage Diode, 1.25 V, -65 to 150 degC, 3-Pin SOT23, RoHS, Tape and Reel
+    LibRef      : D-AKC-3
+    DesignItemID: CMP-2000-05931-1
+    Brand       : DiodesIncorporated
+    Comment     : BAV199-7-F
+    Configuratio: DualSeries
+    Datasheet UR: http://www.diodes.com/_files/datasheets/ds30232.pdf
+    Datasheet Ve: Rev. 9-2, 01/2012
+    Factory Pack: 3000
+    Height      : 1mm
+    If - Forward: 0.16A
+    Ir - Reverse: 0.005uAat75V
+    Length      : 3.05mm
+    Manufacturer: DiodesIncorporated
+    Manufacturer: http://www.diodes.com/
+    Max Surge Cu: 4A
+    Maximum Oper: +150C
+    Minimum Oper: -65C
+    Mounting Sty: SMD/SMT
+    Mounting Tec: SurfaceMount
+    Package / Ca: SOT-23
+    Package Desc: 3-Pin Small Outline Transistor, Body 2.9 x 1.3 mm, Pitch 0.95 mm
+    Package Refe: SOT23-3
+    Packaging   : Reel
+    Pd - Power D: 0.25W
+    Product Cate: Diodes-GeneralPurpose,Power,Switching
+    Recovery Tim: 3000ns
+    RoHS        : True
+    Series      : BAV199
+    Type        : DualSurfaceMountLowLeakageDiode
+    Unit Weight : 0.000282oz
+    Vf - Forward: 1.25Vat15A
+    Vr - Reverse: 85V
+    Width       : 1.4mm
+      pin 1    A                      Passive       @(260,290)
+      pin 2    K                      Passive       @(180,290)
+      pin 3    C                      Passive       @(220,260)
+
+D8  @(380,120)
+    Description : TVS DIODE 24V 38.9V DO214AC
+    LibRef      : 876f4347bf90aa6f500f43e3cd03972
+    DesignItemID: CMP-2000-07087-2
+    Automotive  : No
+    Breakdown Vo: 26.7V
+    Category    : Diode
+    Clamping Vol: 38.9V
+    Comment     : SMAJ24CA
+    ComponentLin: Datasheet
+    ComponentLin: https://www.littelfuse.com/~/media/electronics/datasheets/tvs_diodes/littelfuse_tvs_diode_smaj_datasheet.pdf.pdf
+    Device Class: Circuit Protection
+    Device Class: TVS Diodes
+    Device Class: unset
+    Digikey Desc: TVS DIODE 24V 38.9V DO214AC
+    Direction   : Bidirectional
+    Height      : 2.29mm
+    Lead Free   : Yes
+    Manufacturer: Littelfuse
+    Manufacturer: SMAJ24CA
+    Max Junction: +150°C
+    Mouser Descr: In a Pack of 25, Littelfuse SMAJ24CA, Bi-Directional TVS Diode, 400W, 2-Pin DO-214AC
+    Number Of Ch: 1
+    Octopart    : https://octopart.com/smaj24ca-littelfuse-350011
+    Package     : SMAJ-CA
+    Peak Pulse C: 10.3A
+    Peak Pulse P: 400W
+    Reverse Stan: 24V
+    RoHS        : TRUE
+    Temperature : -65°C to +150°C
+    Temperature : +150°C
+    Temperature : -65°C
+      pin 1    1                      Passive       @(380,120)
+      pin 2    2                      Passive       @(380,200)
+
+J1  @(540,470)
+    Description : 43650-0223 Conn Power HDR 2 POS 3mm Solder ST SMD 2 Terminal 1 Port Micro-Fit 3.0 Embossed T/R
+    LibRef      : 56ec3178a87b3978bdc1b3682cd516a
+    DesignItemID: CMP-00257-07669182-1
+    Color       : Black
+    Comment     : 43650-0223
+    Connector Ty: Male Pin
+    Contact Mate: Brass, Gold, Nickel
+    Contact Plat: Gold
+    Country of O: US
+    Current Rati: 5A
+    Depth       : 5.57mm
+    Fastening Ty: Ramp
+    Height      : 10.15mm
+    Housing Mate: Thermoplastic
+    Length      : 9.65mm
+    Lifecycle St: Production
+    Manufacturer: ACTIVE
+    Max Operatin: 105°C
+    Min Operatin: -40°C
+    Mount       : Surface Mount
+    NexarPartId : 7669182
+    Number of Ci: 2
+    Number of Co: 2
+    Number of Po: 1
+    Number of Po: 2
+    Number of Ro: 1
+    Number of Te: 2
+    Orientation : Vertical
+    Pitch       : 3mm
+    Plating     : Tin
+    RoHS        : Compliant
+    Termination : Solder
+    Voltage Rati: 600V
+      pin 1    1                      Passive       @(540,470)
+      pin 2    2                      Passive       @(540,490)
+      pin 3    MNT 1                  Passive       @(540,520)
+      pin 4    MNT 2                  Passive       @(540,540)
+
+J2  @(940,450)
+    Description : Connector
+    LibRef      : 204711-0001
+    DesignItemID: 204711-0001
+    Comment     : 204711-0001
+    Datasheet Li: https://www.molex.com/content/dam/molex/molex-dot-com/products/automated/en-us/salesdrawingpdf/204/204711/2047110001_sd.pdf
+    Height      : 10mm
+    Manufacturer: Molex
+    Manufacturer: 204711-0001
+    Mouser Part : 538-204711-0001
+    Mouser Price: https://www.mouser.co.uk/ProductDetail/Molex/204711-0001?qs=XeJtXLiO41T4bJ08%252B2ONwQ%3D%3D
+      pin A1   GND_1                  Passive       @(940,450)
+      pin A2   TX1+                   Passive       @(940,460)
+      pin A3   TX1-                   Passive       @(940,470)
+      pin A4   VBUS_1                 Passive       @(940,480)
+      pin A5   CC1                    Passive       @(940,490)
+      pin A6   D+_1                   Passive       @(940,500)
+      pin A7   D-_1                   Passive       @(940,510)
+      pin A8   SBU1                   Passive       @(940,520)
+      pin A9   VBUS_2                 Passive       @(940,530)
+      pin B1   GND_3                  Passive       @(940,570)
+      pin B2   TX2+                   Passive       @(940,580)
+      pin B3   TX2-                   Passive       @(940,590)
+      pin B4   VBUS_3                 Passive       @(810,450)
+      pin B5   CC2                    Passive       @(810,460)
+      pin B6   D+_2                   Passive       @(810,470)
+      pin B7   D-_2                   Passive       @(810,480)
+      pin B8   SBU2                   Passive       @(810,490)
+      pin B9   VBUS_4                 Passive       @(810,500)
+      pin A10  RX2-                   Passive       @(940,540)
+      pin A11  RX2+                   Passive       @(940,550)
+      pin A12  GND_2                  Passive       @(940,560)
+      pin B10  RX1-                   Passive       @(810,510)
+      pin B11  RX1+                   Passive       @(810,520)
+      pin B12  GND_4                  Passive       @(810,530)
+      pin MH1  MH1                    Passive       @(810,540)
+      pin MH2  MH2                    Passive       @(810,550)
+      pin MH3  MH3                    Passive       @(810,560)
+      pin MH4  MH4                    Passive       @(810,570)
+      pin MH5  MH5                    Passive       @(810,580)
+      pin MH6  MH6                    Passive       @(810,590)
+
+J3  @(540,200)
+    Description : 43650-0223 Conn Power HDR 2 POS 3mm Solder ST SMD 2 Terminal 1 Port Micro-Fit 3.0 Embossed T/R
+    LibRef      : 56ec3178a87b3978bdc1b3682cd516a
+    DesignItemID: CMP-00257-07669182-1
+    Color       : Black
+    Comment     : 43650-0223
+    Connector Ty: Male Pin
+    Contact Mate: Brass, Gold, Nickel
+    Contact Plat: Gold
+    Country of O: US
+    Current Rati: 5A
+    Depth       : 5.57mm
+    Fastening Ty: Ramp
+    Height      : 10.15mm
+    Housing Mate: Thermoplastic
+    Length      : 9.65mm
+    Lifecycle St: Production
+    Manufacturer: ACTIVE
+    Max Operatin: 105°C
+    Min Operatin: -40°C
+    Mount       : Surface Mount
+    NexarPartId : 7669182
+    Number of Ci: 2
+    Number of Co: 2
+    Number of Po: 1
+    Number of Po: 2
+    Number of Ro: 1
+    Number of Te: 2
+    Orientation : Vertical
+    Pitch       : 3mm
+    Plating     : Tin
+    RoHS        : Compliant
+    Termination : Solder
+    Voltage Rati: 600V
+      pin 1    1                      Passive       @(540,200)
+      pin 2    2                      Passive       @(540,220)
+      pin 3    MNT 1                  Passive       @(540,250)
+      pin 4    MNT 2                  Passive       @(540,270)
+
+J?  @(1250,370)
+    Description : CONN HEADER VERT 8POS 2.5MM
+    LibRef      : 99ec2b232beb5d2356d4d77f6a047f0
+    DesignItemID: CMP-17439-000637-1
+    Color       : Green
+    Comment     : B8B-XH-AM(LF)(SN)
+    Connector Ty: Header
+    Contact Fini: TIN
+    Contact Mate: Brass
+    Contact Plat: Tin
+    Contact Shap: Square
+    Contact Type: Male Pin
+    Fastening Ty: Detent
+    Flammability: UL94 V-0
+    Insulation C: Natural
+    Insulation M: Nylon
+    Lead Free   : Lead Free
+    Mated Stacki: 9.8mm
+    Mount       : Through Hole
+    Number of Po: 8
+    Number of Ro: 1
+    Packaging   : Bulk
+    Pitch       : 2.5mm
+    Series      : XH
+    Termination : Press-Fit
+    Voltage Rati: 250V
+      pin 1    1                      Passive       @(1250,370)
+      pin 2    2                      Passive       @(1250,350)
+      pin 3    3                      Passive       @(1250,330)
+      pin 4    4                      Passive       @(1250,310)
+      pin 5    5                      Passive       @(1250,290)
+      pin 6    6                      Passive       @(1250,270)
+      pin 7    7                      Passive       @(1250,250)
+      pin 8    8                      Passive       @(1250,230)
+
+R10  @(470,220)
+    Description : 2.2kO ±5% 0.125W 0805 Thick Film Chip Resistor AEC-Q200 compliant
+    LibRef      : 1029c3af85768c4190bb7ad29bc67b5
+    DesignItemID: CMP-26527-000088-1
+    Case Code (I: 0805
+    Case Code (M: 2012
+    Case/Package: 0805
+    Comment     : 2.2k ohm
+    Construction: Rectangular
+    Contact Plat: Tin
+    Depth       : 1.25mm
+    Features    : Automotive AEC-Q200
+    Height      : 0.026inch
+    Lead Free   : Lead Free
+    Length      : 2mm
+    Max Operatin: 155°C
+    Max Power Di: 125mW
+    Military Sta: Not
+    Min Operatin: -55°C
+    Mount       : Surface Mount
+    Number of Te: 2
+    Packaging   : Tape and Reel
+    Power Rating: 125mW
+    Radiation Ha: No
+    Resistance  : 2.2kR
+    Resistor Typ: Thick Film
+    RoHS Complia: Yes
+    Series      : RMCF
+    Size Code   : 0805
+    Temperature : 100ppm/°C
+    Tolerance   : 5%
+    Width       : 0.049inch
+      pin 1    1                      Passive       @(470,220)
+      pin 2    2                      Passive       @(540,220)
+
+R11  @(280,210)
+    Description : 
+    LibRef      : RES
+    DesignItemID: CMP-2002-00379-1
+    Comment     : CRCW0402150KFKTD
+    Manufacturer: Vishay Dale
+    Part Number : CRCW0402150KFKTD
+      pin 1    1                      Passive       @(270,200)
+      pin 2    2                      Passive       @(310,200)
+
+R12  @(220,100)
+    Description : RES 43kO ±1% 0.063W 0402
+    LibRef      : 1029c3af85768c4190bb7ad29bc67b5
+    DesignItemID: CMP-03412-011926-2
+    Case/Package: 0402
+    Comment     : 43kohm 0402
+    Features    : Moisture Resistant
+    Height      : 0.015inch
+    Lead Free   : Lead Free
+    Length      : 0.039inch
+    Max Operatin: 155°C
+    Max Power Di: 63mW
+    Min Operatin: -55°C
+    Number of Te: 2
+    Packaging   : Tape and Reel
+    Power Rating: 63mW
+    Resistance  : 43kR
+    Resistor Typ: Thick Film
+    RoHS Complia: Yes
+    Series      : AC
+    Size Code   : 0402
+    Temperature : 100ppm/°C
+    Tolerance   : 1%
+    Width       : 0.02inch
+      pin 1    1                      Passive       @(220,100)
+      pin 2    2                      Passive       @(220,170)
+
+R4  @(710,590)
+    Description : RES 1MO ±1% 0.125W 0402
+    LibRef      : 1029c3af85768c4190bb7ad29bc67b5
+    DesignItemID: CMP-03412-040456-1
+    Comment     : 1 M?
+      pin 1    1                      Passive       @(710,590)
+      pin 2    2                      Passive       @(780,590)
+
+R5  @(470,490)
+    Description : 2.2kO ±5% 0.125W 0805 Thick Film Chip Resistor AEC-Q200 compliant
+    LibRef      : 1029c3af85768c4190bb7ad29bc67b5
+    DesignItemID: CMP-26527-000088-1
+    Case Code (I: 0805
+    Case Code (M: 2012
+    Case/Package: 0805
+    Comment     : 2.2k ohm
+    Construction: Rectangular
+    Contact Plat: Tin
+    Depth       : 1.25mm
+    Features    : Automotive AEC-Q200
+    Height      : 0.026inch
+    Lead Free   : Lead Free
+    Length      : 2mm
+    Max Operatin: 155°C
+    Max Power Di: 125mW
+    Military Sta: Not
+    Min Operatin: -55°C
+    Mount       : Surface Mount
+    Number of Te: 2
+    Packaging   : Tape and Reel
+    Power Rating: 125mW
+    Radiation Ha: No
+    Resistance  : 2.2kR
+    Resistor Typ: Thick Film
+    RoHS Complia: Yes
+    Series      : RMCF
+    Size Code   : 0805
+    Temperature : 100ppm/°C
+    Tolerance   : 5%
+    Width       : 0.049inch
+      pin 1    1                      Passive       @(470,490)
+      pin 2    2                      Passive       @(540,490)
+
+R6  @(1060,490)
+    Description : 5.1kO ±1% 0.063W 0402 Thick Film Chip Resistor AEC-Q200 compliant
+    LibRef      : 1029c3af85768c4190bb7ad29bc67b5
+    DesignItemID: CMP-26527-005947-1
+    Case Code (I: 0402
+    Case Code (M: 1005
+    Case/Package: 0402
+    Comment     : 5.1kO ±1% 0.063W 0402
+    Contact Plat: Tin
+    Features    : Automotive AEC-Q200
+    Height      : 0.016inch
+    Length      : 0.039inch
+    Max Operatin: 155°C
+    Max Power Di: 63mW
+    Min Operatin: -55°C
+    Mount       : Surface Mount
+    Number of Te: 2
+    Packaging   : Tape and Reel
+    Power Rating: 62.5mW
+    Radiation Ha: No
+    Resistance  : 5.1kR
+    Resistor Typ: Thick Film
+    RoHS Complia: Yes
+    Series      : RMCF
+    Temperature : 100ppm/°C
+    Tolerance   : 1%
+    Width       : 0.02inch
+      pin 1    1                      Passive       @(1060,490)
+      pin 2    2                      Passive       @(990,490)
+
+R7  @(290,480)
+    Description : 
+    LibRef      : RES
+    DesignItemID: CMP-2002-00379-1
+    Comment     : CRCW0402150KFKTD
+    Manufacturer: Vishay Dale
+    Part Number : CRCW0402150KFKTD
+      pin 1    1                      Passive       @(280,470)
+      pin 2    2                      Passive       @(320,470)
+
+R8  @(710,460)
+    Description : 5.1kO ±1% 0.063W 0402 Thick Film Chip Resistor AEC-Q200 compliant
+    LibRef      : 1029c3af85768c4190bb7ad29bc67b5
+    DesignItemID: CMP-26527-005947-1
+    Case Code (I: 0402
+    Case Code (M: 1005
+    Case/Package: 0402
+    Comment     : 5.1kO ±1% 0.063W 0402
+    Contact Plat: Tin
+    Features    : Automotive AEC-Q200
+    Height      : 0.016inch
+    Length      : 0.039inch
+    Max Operatin: 155°C
+    Max Power Di: 63mW
+    Min Operatin: -55°C
+    Mount       : Surface Mount
+    Number of Te: 2
+    Packaging   : Tape and Reel
+    Power Rating: 62.5mW
+    Radiation Ha: No
+    Resistance  : 5.1kR
+    Resistor Typ: Thick Film
+    RoHS Complia: Yes
+    Series      : RMCF
+    Temperature : 100ppm/°C
+    Tolerance   : 1%
+    Width       : 0.02inch
+      pin 1    1                      Passive       @(710,460)
+      pin 2    2                      Passive       @(710,390)
+
+R9  @(230,370)
+    Description : RES 43kO ±1% 0.063W 0402
+    LibRef      : 1029c3af85768c4190bb7ad29bc67b5
+    DesignItemID: CMP-03412-011926-2
+    Case/Package: 0402
+    Comment     : 43kohm 0402
+    Features    : Moisture Resistant
+    Height      : 0.015inch
+    Lead Free   : Lead Free
+    Length      : 0.039inch
+    Max Operatin: 155°C
+    Max Power Di: 63mW
+    Min Operatin: -55°C
+    Number of Te: 2
+    Packaging   : Tape and Reel
+    Power Rating: 63mW
+    Resistance  : 43kR
+    Resistor Typ: Thick Film
+    RoHS Complia: Yes
+    Series      : AC
+    Size Code   : 0402
+    Temperature : 100ppm/°C
+    Tolerance   : 1%
+    Width       : 0.02inch
+      pin 1    1                      Passive       @(230,370)
+      pin 2    2                      Passive       @(230,440)
+
+R_VBUS1  @(1380,730)
+    Description : 
+    LibRef      : RES
+    DesignItemID: CMP-2002-06970-1
+    Comment     : RC0402JR-100RL
+    Manufacturer: Yageo
+    Part Number : RC0402JR-100RL
+      pin 1    1                      Passive       @(1370,720)
+      pin 2    2                      Passive       @(1410,720)
+
+U4  @(280,760)
+    Description : High-Speed CAN Transceiver, 3 to 5 V, 8-Pin SOIC (SOT96-1), RoHS, Tape and Reel
+    LibRef      : NXP-TJA1051T_3-SOIC-8
+    DesignItemID: CMP-2000-07245-1
+    Category    : Transceiver
+    Comment     : TJA1051T/3,118
+    DELETED     : Compliant
+    Data Rate   : 1Mbps
+    Datasheet UR: http://www.nxp.com/documents/data_sheet/TJA1051.pdf
+    Datasheet Ve: Rev. 7, 01/2015
+    Manufacturer: NXP
+    Manufacturer: http://www.nxp.com/
+    Mounting    : SurfaceMount
+    Mounting Tec: SurfaceMount
+    Number of Tr: 1
+    Operating Su: 5.5V
+    Operating Su: 4.5V
+    Operating Su: 5V
+    Operating Te: 125C
+    Operating Te: -40C
+    Operating Te: Automotive
+    Package Desc: 8-Pin Small Outline Integrated Circuit, Body 4.9 x 3.9 mm, Pitch 1.27 mm
+    Package Refe: SOT96-1
+    Package Type: SO
+    Packaging   : TapeandReel
+    Pin Count   : 8
+    Power Down M: Normal/Silent
+    Rad Hardened: No
+    Standard Sup: ISO11898-2
+    Supply Curre: 70mA
+      pin 1    TXD                    Passive       @(260,750)
+      pin 2    GND                    Power         @(380,690)
+      pin 3    VCC                    Power         @(260,690)
+      pin 4    RXD                    Output        @(260,730)
+      pin 5    VIO                    Power         @(260,710)
+      pin 6    CANL                   Passive       @(380,730)
+      pin 7    CANH                   Passive       @(380,750)
+      pin 8    S                      Passive       @(380,710)
+
+U5  @(1230,530)
+    Description : ESD Protection for USB 2.0 High Speed
+    LibRef      : USBLC6-2SC6
+    DesignItemID: USBLC6-2SC6
+    Comment     : USBLC6-2SC6
+    Copyright   : Copyright (C) 2025 Ultra Librarian. All rights reserved.
+    Manufacturer: STMicroelectronics
+    Manufacturer: USBLC6-2SC6
+    RefDes      : RefDes
+    Type        : Type
+      pin 1    1                      Passive       @(1230,530)
+      pin 2    2                      Passive       @(1230,510)
+      pin 3    3                      Passive       @(1230,490)
+      pin 4    4                      Passive       @(1360,490)
+      pin 5    5                      Passive       @(1360,510)
+      pin 6    6                      Passive       @(1360,530)
+
+==============================================================================
+NETS
+==============================================================================
+
++12V_IN  (1 pin)
+    *1.1(1)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
++12V_P  (2 pins)   [joined by name across 2 separate wire islands on this sheet]
+    R10.1(1)
+    R5.1(1)
+
++3V3  (5 pins)   [joined by name across 4 separate wire islands on this sheet]
+    C15.1(1)
+    D5.2(K)
+    D7.2(K)
+    J?.5(5)
+    U4.5(VIO) [Power]
+
++5V  (8 pins)   [joined by name across 7 separate wire islands on this sheet]
+    C16.1(1)
+    J2.A4(VBUS_1)
+    J2.A9(VBUS_2)
+    J2.B4(VBUS_3)
+    J2.B9(VBUS_4)
+    R_VBUS1.2(2)
+    U4.3(VCC) [Power]
+    U5.5(5)
+
+CAN_H  (3 pins)   [joined by name across 2 separate wire islands on this sheet]
+    *1.2(2)
+    D3.1(K1)
+    U4.7(CANH)
+
+CAN_L  (3 pins)   [joined by name across 2 separate wire islands on this sheet]
+    *1.3(3)
+    D3.2(K2)
+    U4.6(CANL)
+
+CAN_RX  (1 pin)
+    U4.4(RXD) [Output]
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+CAN_TX  (1 pin)
+    U4.1(TXD)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+DBG_RX  (1 pin)
+    J?.6(6)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+DBG_TX  (1 pin)
+    J?.7(7)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+GND  (25 pins)   [joined by name across 24 separate wire islands on this sheet]
+    *1.6(6)
+    C15.2(2)
+    C16.2(2)
+    C17.1(1)
+    C18.2(2)
+    C19.2(2)
+    D3.3(CC)
+    D5.1(A)
+    D6.1(1)
+    D7.1(A)
+    D8.1(1)
+    J2.A1(GND_1)
+    J2.A12(GND_2)
+    J2.B1(GND_3)
+    J2.B12(GND_4)
+    J?.4(4)
+    J?.8(8)
+    R12.1(1)
+    R4.1(1)
+    R6.1(1)
+    R8.2(2)
+    R9.1(1)
+    U4.2(GND) [Power]
+    U4.8(S)
+    U5.2(2)
+
+N$1  (2 pins)
+    J2.A5(CC1)
+    R6.2(2)
+
+N$10  (1 pin)
+    J2.B3(TX2-)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$11  (1 pin)
+    J2.B8(SBU2)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$12  (1 pin)
+    J2.B10(RX1-)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$13  (1 pin)
+    J2.B11(RX1+)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$14  (2 pins)
+    J3.2(2)
+    R10.2(2)
+
+N$15  (1 pin)
+    J3.3(MNT 1)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$16  (1 pin)
+    J3.4(MNT 2)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$17  (2 pins)
+    J1.2(2)
+    R5.2(2)
+
+N$18  (1 pin)
+    J1.3(MNT 1)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$19  (1 pin)
+    J1.4(MNT 2)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$2  (2 pins)
+    J2.B5(CC2)
+    R8.1(1)
+
+N$3  (8 pins)
+    C17.2(2)
+    J2.MH1(MH1)
+    J2.MH2(MH2)
+    J2.MH3(MH3)
+    J2.MH4(MH4)
+    J2.MH5(MH5)
+    J2.MH6(MH6)
+    R4.2(2)
+
+N$4  (1 pin)
+    J2.A2(TX1+)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$5  (1 pin)
+    J2.A3(TX1-)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$6  (1 pin)
+    J2.A8(SBU1)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$7  (1 pin)
+    J2.A10(RX2-)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$8  (1 pin)
+    J2.A11(RX2+)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+N$9  (1 pin)
+    J2.B2(TX2+)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+NET_VBUS_OR  (2 pins)
+    D4.1(C)
+    R_VBUS1.1(1)
+
+NRST  (1 pin)
+    J?.3(3)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+PADDLE_DN  (4 pins)   [joined by name across 2 separate wire islands on this sheet]
+    *1.5(5)
+    D8.2(2)
+    J3.1(1)
+    R11.2(2)
+
+PADDLE_DN_SNS  (4 pins)
+    C19.1(1)
+    D7.3(C)
+    R11.1(1)
+    R12.2(2)
+
+PADDLE_UP  (4 pins)   [joined by name across 2 separate wire islands on this sheet]
+    *1.4(4)
+    D6.2(2)
+    J1.1(1)
+    R7.2(2)
+
+PADDLE_UP_SNS  (4 pins)
+    C18.1(1)
+    D5.3(C)
+    R7.1(1)
+    R9.2(2)
+
+SWCLK  (1 pin)
+    J?.2(2)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+SWDIO  (1 pin)
+    J?.1(1)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+USB_DM  (1 pin)
+    U5.6(6)
+    ** single-pin net on this sheet -- verify it is driven from another sheet **
+
+USB_DM_CON  (3 pins)
+    J2.A7(D-_1)
+    J2.B7(D-_2)
+    U5.1(1)
+
+USB_DP  (2 pins)
+    D4.2(A)
+    U5.4(4)
+
+USB_DP_CON  (3 pins)
+    J2.A6(D+_1)
+    J2.B6(D+_2)
+    U5.3(3)
+
+==============================================================================
+UNCONNECTED PINS (no wire, no label, no power port)
+==============================================================================
+  J1     pin 3    MNT 1                  Passive       @(540,520)
+  J1     pin 4    MNT 2                  Passive       @(540,540)
+  J2     pin A10  RX2-                   Passive       @(940,540)
+  J2     pin A11  RX2+                   Passive       @(940,550)
+  J2     pin A2   TX1+                   Passive       @(940,460)
+  J2     pin A3   TX1-                   Passive       @(940,470)
+  J2     pin A8   SBU1                   Passive       @(940,520)
+  J2     pin B10  RX1-                   Passive       @(810,510)
+  J2     pin B11  RX1+                   Passive       @(810,520)
+  J2     pin B2   TX2+                   Passive       @(940,580)
+  J2     pin B3   TX2-                   Passive       @(940,590)
+  J2     pin B8   SBU2                   Passive       @(810,490)
+  J3     pin 3    MNT 1                  Passive       @(540,250)
+  J3     pin 4    MNT 2                  Passive       @(540,270)
+
+Floating net labels / power ports (not touching any wire or pin):
+  (none)
+
+No-ERC markers placed: 10 [(940, 590), (940, 580), (940, 550), (940, 540), (940, 520), (940, 470), (940, 460), (810, 490), (810, 520), (810, 510)]
+Junctions: 19
