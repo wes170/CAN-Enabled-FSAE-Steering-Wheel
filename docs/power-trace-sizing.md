@@ -77,10 +77,11 @@ Width required for a given current, by copper weight and layer.
 | 3.00 A | 53.8 mil | 35.3 mil | 26.9 mil | 17.7 mil | 140 mil |
 | 5.00 A | 109 mil | 71.5 mil | 54.4 mil | 35.7 mil | 283 mil |
 
-Below roughly 0.5 A the thermal requirement falls under any sane minimum
-feature size. **Those traces are sized by voltage drop, impedance to transients,
+Below roughly 0.5 A the thermal requirement falls under JLC's 4 mil minimum
+track width. **Those traces are sized by voltage drop, impedance to transients,
 and mechanical robustness — not by heat.** Do not route a 3.3 V rail at 2 mils
-just because the table allows it.
+just because the table allows it; see
+[Checked against JLCPCB capabilities](#checked-against-jlcpcb-capabilities).
 
 ## Power budget
 
@@ -119,15 +120,12 @@ demand is negligible.
 | `+3V3A` | < 20 mA | negligible | **12 mil / 0.3 mm** | Practical minimum; keep off the switching node |
 | `GND` | — | — | **Solid plane** | Return path integrity |
 
-### Copper weight: 1 oz is fine, keep the JLC default
+### Copper weight: 1 oz is fine
 
-The widest rail needs 25.4 mil of the 40 mil budgeted. No reason to pay for
-2 oz.
-
-**One caveat if this is a 4-layer board:** JLCPCB's 4-layer default is 1 oz
-outer / **0.5 oz inner**. The `+5V` trunk on a 0.5 oz inner layer would need
-~132 mil to hit the same ΔT. Keep the power path on outer layers, or use a
-filled plane region rather than a routed trace if it must go inside.
+The widest rail needs 25.4 mil of the 40 mil budgeted, against a JLC minimum of
+4 mil. No reason to pay for 2 oz — and 2 oz would *raise* the minimum feature
+size. Details in [Checked against JLCPCB
+capabilities](#checked-against-jlcpcb-capabilities).
 
 ## LED current sensitivity
 
@@ -190,11 +188,132 @@ the load as routing allows, not at the regulator output.
 
 ## Vias in the power path
 
-Budget **~1 A per 0.3 mm (12 mil) plated via** as a conservative rule of thumb,
-and use **a minimum of two vias** anywhere a rail above 0.5 A changes layer. For
+Budget **~1 A per 0.3 mm (12 mil) plated via** as a conservative rule of thumb —
+the IPC calculation gives ~1.8 A for that barrel at ΔT 10 °C, so this carries
+close to 2× derating. Use **a minimum of two vias** anywhere a rail above 0.5 A
+changes layer. For
 the `+5V` trunk at 1.74 A that means **two minimum, three preferred**; the
 `+5V_SH` branch at 0.96 A wants two. Stitch generously under the buck and around
 the connector — vias are cheap, a burned-through barrel on a car is not.
+
+**Use 0.3 mm drill / 0.6 mm diameter vias in the power path**, not JLC's 0.15 mm
+minimum. A 0.15 mm barrel carries roughly half the current (~0.6 A derated), and
+sub-0.3 mm drills can attract extra tooling cost — smaller is the wrong direction
+on both counts here.
+
+## Checked against JLCPCB capabilities
+
+Verified against JLC's published capability page rather than assumed.
+
+| Parameter | JLC capability (1 oz) | Our most demanding use | Margin |
+|---|---|---:|---|
+| Min track width | 0.10 mm / **4 mil** (2-layer)<br>0.09 mm / **3.5 mil** (multilayer) | 12 mil (`+3V3A`) | **3× clear** |
+| Min spacing | same as above | designer's choice | — |
+| Min via hole | 0.15 mm | 0.3 mm recommended | 2× above min |
+| Min via diameter | 0.25 mm | 0.6 mm recommended | 2.4× above min |
+| PTH annular ring | ≥ 0.20 mm | — | — |
+| Copper to board edge | ≥ 0.2 mm | — | — |
+
+**Nothing in the recommendation table comes close to a JLC limit.** The
+narrowest thing specified is 12 mil against a 4 mil floor. There is no
+manufacturability risk in the power path — the widths are set by current and
+drop, exactly as they should be.
+
+Note that some resellers and older guides quote 5 mil as the practical minimum
+for the cheapest 2-layer tier. Immaterial here for the same reason.
+
+### Where the master table goes below what JLC can build
+
+Rows at 0.5 A and under produce thermal widths of 0.3–4.5 mil, which is at or
+under JLC's 4 mil floor. **Those rows are informational, not routable.** Treat
+4 mil as a hard floor and 8–10 mil as a sensible practical minimum for anything
+carrying real current.
+
+### A second reason to stay at 1 oz
+
+2 oz copper raises JLC's own minimum track/space to **0.16 mm (6.5 mil)** on
+2-layer, because thicker copper over-etches laterally. Not binding at our
+widths, but it confirms the direction: 1 oz is the right call, and it is the
+cheaper tier.
+
+### If this is a 4-layer board
+
+JLC's 4-layer inner-layer default is **0.5 oz**, confirmed. The `+5V` trunk on
+0.5 oz inner copper would need roughly **132 mil** for the same 10 °C rise.
+Keep the power path on outer layers, or upgrade inner copper to 1 oz at extra
+cost. Outer layers on 4-layer support 1 oz / 2 oz; inner supports 0.5 / 1 / 2 oz.
+
+Confirm the copper weight actually selected on the order page at checkout — the
+default differs between 2-layer and 4-layer product lines.
+
+## Setting per-net widths in Altium
+
+Yes — this is what the **Width** design rule plus **net classes** is for, and
+the autorouter honours it.
+
+### 1. Create the net classes
+
+In the PCB editor: **Design → Classes…** → right-click **Net Classes** →
+**Add Class**, then move nets in. (There is also a schematic-side route via
+**Place → Directive → Parameter Set** if you would rather the classes live in
+the `.SchDoc` files and come across on *Update PCB Document*.)
+
+### 2. Add a Width rule per class
+
+**Design → Rules… → Routing → Width**, one rule per class, scoped with a query
+like `InNetClass('PWR_5V_TRUNK')` (or `InNet('+5V')` for a single net):
+
+| Net class | Nets | Min | **Preferred** | Max |
+|---|---|---:|---:|---:|
+| `PWR_12V` | `+12V_P` | 15 mil | **25 mil** | 60 mil |
+| `PWR_5V_TRUNK` | `+5V` | 26 mil | **40 mil** | 120 mil |
+| `PWR_5V_SH` | `+5V_SH` | 12 mil | **20 mil** | 60 mil |
+| `PWR_5V_TC` | `+5V_TC` | 8 mil | **15 mil** | 60 mil |
+| `PWR_3V3` | `+3V3`, `+3V3A` | 10 mil | **15 mil** | 40 mil |
+| *(existing catch-all)* | `All` | 5 mil | 8 mil | 20 mil |
+
+How the three values are used:
+
+- **Preferred** — what the autorouter and interactive routing actually lay down.
+  This is the one that makes the widths happen.
+- **Min / Max** — enforced by online and batch DRC, and they bound what
+  interactive routing will let you draw.
+
+Set **Min at or just above the thermal minimum**, so DRC catches a trace necked
+down to squeeze past a via. Set **Max generously** — if Max equals Preferred you
+cannot hand-widen a trace or fatten a polygon connection without tripping DRC.
+
+### 3. Fix the rule priority — this is the step people miss
+
+Altium applies **only the highest-priority matching rule**. The existing
+catch-all `All` Width rule matches every net including yours, so if it sits
+above the new rules they do nothing.
+
+**Design → Rules… → Priorities…** and move every net-class rule *above* the
+catch-all. Verify with **Tools → Design Rule Check**, or right-click a net and
+use *Applicable Unary Rules* to confirm which rule actually binds.
+
+### 4. Don't autoroute the power path
+
+The rules will make Situs use the right widths, but width is not the hard part
+of power distribution. An autorouter will not know to:
+
+- feed the shift bar from the **centre** rather than one end (the 4× drop
+  improvement above — it is a topology decision, and the router optimises length)
+- keep the buck's switching node small
+- keep the return path under the outgoing trace
+
+**Route `+12V_P`, `+5V`, `+5V_SH`, `+5V_TC` and the buck loop by hand first, lock
+them** (select → Properties panel → Lock), then let the autorouter or ActiveRoute
+handle the signal nets around them. The rules still earn their keep: they drive
+DRC and constrain your interactive routing, which is where the real protection is.
+
+For the `+5V` trunk specifically, a **polygon pour** on the net is often better
+than a 40 mil track — lower resistance and it doubles as a heat spreader for U1.
+
+If you do autoroute, there is a separate **Routing → Routing Priority** rule that
+sets which nets get routed first; give the power nets high values so they claim
+the good paths.
 
 ## Knock-on items the LED count raises
 
