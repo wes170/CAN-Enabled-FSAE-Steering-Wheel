@@ -2,15 +2,28 @@
 
 ## Status of the inputs
 
-**There is no power budget in this repository.** The rail structure below was
-reconstructed from net names and components referenced in
-[`schematic-fixes.md`](schematic-fixes.md); the per-rail currents are *reference
-estimates*, not measured or specified values. Every current in the
-"Reference" column needs to be replaced with a real number before this goes to
-fab — see [What's still needed](#whats-still-needed).
+No power budget existed in this repository; it is derived below from the LED
+count and copper weight supplied by the team, plus datasheet figures for the
+named parts.
 
-The widths in the master table are exact for whatever current you plug in, so
-that part of the work stands regardless.
+**Confirmed inputs:** 1 oz copper (JLCPCB default). 24 addressable RGB LEDs —
+16 in the shift bar, 8 for traction-control activation / lockup.
+
+**Still assumed:** per-LED current of 60 mA at full white (WS2812B class). This
+is the one number the whole budget pivots on — see
+[LED current sensitivity](#led-current-sensitivity) for how the answer moves if
+the part is different.
+
+### The `+5V_SH` / `+5V_TC` aliases are the LED groups
+
+`schematic-fixes.md` filed "`+5V` has multiple names (`+5V_SH`, `+5V_TC`)" under
+*no action needed — cosmetic only*. With the 16/8 LED split, those names read as
+**SH = shift bar** and **TC = traction control lights**, which makes them the
+two LED branch feeds rather than redundant labels.
+
+**Do not rename them to plain `+5V`.** They are the natural place to split the
+LED load into separately-sized branches, and the tables below do exactly that.
+Collapsing them to one net erases the distinction at layout time.
 
 ## Rails in the design
 
@@ -29,11 +42,9 @@ USBLC6-2SC6 ESD array, a Sharp-type memory LCD (`LCD_EXTCOMIN` implies the
 common-inversion drive of a memory-in-pixel panel), paddle-shift inputs, debug
 header.
 
-**The dominant unknown is the shift-light / RGB LED string.** On an FSAE wheel
-this is normally the largest single load by a wide margin, and it is not
-described anywhere in the repo. The `+5V_SH` alias may well be that rail. If
-there is an LED bar, its current sets the `+5V` and `+12V_P` widths and nothing
-else comes close.
+**The LED array dominates the budget**: 1.44 A of the 1.74 A `+5V` total, or
+83 %. Everything else on the board is rounding error by comparison, which is why
+the sizing work below concentrates on the `+5V` path.
 
 ## Method
 
@@ -71,23 +82,71 @@ feature size. **Those traces are sized by voltage drop, impedance to transients,
 and mechanical robustness — not by heat.** Do not route a 3.3 V rail at 2 mils
 just because the table allows it.
 
+## Power budget
+
+Worst case is **all 24 LEDs at full white simultaneously**. That is not a
+contrived condition — most teams flash the full array during power-on self test,
+and a lockup event can light the TC group while the bar is at redline.
+
+| Load | Current @ 5 V | Basis |
+|---|---:|---|
+| Shift bar, 16 LED (`+5V_SH`) | 0.96 A | 16 × 60 mA |
+| TC / lockup, 8 LED (`+5V_TC`) | 0.48 A | 8 × 60 mA |
+| STM32G474 @ 170 MHz | ~50 mA | run mode, peripherals active |
+| CAN transceiver | ~70 mA | worst-case dominant |
+| LCD + misc | ~50 mA | allowance |
+| 3V3 regulator overhead | ~130 mA | included in the 0.30 A logic figure below |
+| **`+5V` total** | **1.74 A** | LEDs 1.44 A + logic 0.30 A |
+| **`+12V_P` input** | **1.02 A** | 8.7 W out, 85 % efficiency, at Vin = 10 V |
+
+The 12 V figure is computed at **Vin = 10 V, not 12 V** — a buck draws its
+highest input current at its lowest input voltage, and a cranking dip is the
+worst case for this rail, not nominal running voltage. At 14.4 V charging it is
+only ~0.71 A.
+
 ## Per-rail recommendation
 
-Sized against the reference currents, external layer, 1 oz, ΔT ≤ 10 °C, with
-practical minimums applied where thermal demand is negligible.
+External layer, 1 oz, ΔT ≤ 10 °C, with practical minimums applied where thermal
+demand is negligible.
 
-| Rail | Reference current | Thermal minimum | **Recommended width** | Driver of the choice |
+| Rail | Current | Thermal minimum | **Recommended width** | Driver of the choice |
 |---|---:|---:|---:|---|
-| `+12V_P` in | ~1.0 A (est.) | 11.8 mil | **30 mil / 0.75 mm** | Robustness + transient headroom; car-side rail |
-| `+5V` | ~2.0 A (est., LED-dominated) | 30.8 mil | **40 mil / 1.0 mm**, pour preferred | Thermal; widen if LED count is high |
-| `+3V3` | ~0.25 A (est.) | 1.8 mil | **15 mil / 0.4 mm** | Drop + practical minimum, not heat |
-| `+3V3A` | < 20 mA | negligible | **12 mil / 0.3 mm** | Practical minimum; keep away from switching node |
+| `+12V_P` in | 1.02 A | 12.2 mil | **25 mil / 0.64 mm** | Robustness + load-dump headroom |
+| `+5V` trunk | 1.74 A | 25.4 mil | **40 mil / 1.0 mm**, pour preferred | Thermal |
+| `+5V_SH` branch | 0.96 A | 11.2 mil | **20 mil / 0.5 mm** | Thermal + drop along the bar |
+| `+5V_TC` branch | 0.48 A | 4.3 mil | **15 mil / 0.4 mm** | Drop + practical minimum |
+| `+3V3` | 0.25 A | 1.7 mil | **15 mil / 0.4 mm** | Drop + practical minimum, not heat |
+| `+3V3A` | < 20 mA | negligible | **12 mil / 0.3 mm** | Practical minimum; keep off the switching node |
 | `GND` | — | — | **Solid plane** | Return path integrity |
 
-Reference currents assume: STM32G474 ~50 mA run, CAN transceiver ~70 mA worst
-case dominant, memory LCD low-mA, and a shift-light string in the 0.5–1.5 A
-band at 5 V. The 12 V figure back-computes from ~10 W output at ~85 % buck
-efficiency. **Replace all of these.**
+### Copper weight: 1 oz is fine, keep the JLC default
+
+The widest rail needs 25.4 mil of the 40 mil budgeted. No reason to pay for
+2 oz.
+
+**One caveat if this is a 4-layer board:** JLCPCB's 4-layer default is 1 oz
+outer / **0.5 oz inner**. The `+5V` trunk on a 0.5 oz inner layer would need
+~132 mil to hit the same ΔT. Keep the power path on outer layers, or use a
+filled plane region rather than a routed trace if it must go inside.
+
+## LED current sensitivity
+
+The budget above assumes 60 mA/LED. If the part differs, the `+5V` trunk moves:
+
+| Per-LED @ full white | String total | `+5V` trunk | Thermal min | Recommended |
+|---:|---:|---:|---:|---:|
+| 20 mA | 0.48 A | 0.78 A | 8.4 mil | 20 mil |
+| 40 mA | 0.96 A | 1.26 A | 16.3 mil | 30 mil |
+| **60 mA (assumed)** | **1.44 A** | **1.74 A** | **25.4 mil** | **40 mil** |
+| 80 mA | 1.92 A | 2.22 A | 35.5 mil | 50 mil |
+
+The 40 mil recommendation covers everything through 60 mA/LED with margin, and
+is only marginally light at 80 mA. **Route 40 mil and the LED part choice stops
+being a layout risk.**
+
+A firmware brightness cap does not justify sizing below these numbers unless the
+cap cannot be bypassed. Size the copper for what the hardware can draw, not for
+what the current firmware asks it to draw.
 
 ## Voltage drop check
 
@@ -98,37 +157,74 @@ R_trace = 0.5 mΩ × (length_inches × 1000 / width_mils)      [1 oz]
         = 0.25 mΩ × (...)                                    [2 oz]
 ```
 
-Worked example — `+5V` at 40 mil, 3 in run, 1 oz, 2 A:
-squares = 3000/40 = 75 → R = 37.5 mΩ → **75 mV drop** (1.5 %). Acceptable.
+Worked example — `+5V` trunk at 40 mil, 3 in run, 1 oz, 1.74 A:
+squares = 3000/40 = 75 → R = 37.5 mΩ → **65 mV drop** (1.3 %). Acceptable.
 
-Same geometry at 15 mil would be 100 mΩ → 200 mV (4 %), which starts to matter
-for LED brightness matching across a bar. Budget ≤ 2 % on `+5V` and ≤ 1 % on
-`+3V3` if the ADC accuracy of `V12_SENSE` / `V5_SENSE` matters to you — those
-dividers measure the rail, so IR drop between the divider tap and the load is
-invisible to the firmware and becomes measurement error.
+### Drop along the shift bar
+
+The 16-LED bar is a *distributed* load, not a lump at the end — the trace
+current tapers as each LED taps off. For a one-end feed the effective drop is
+`I_total × R_total / 2`, not `I × R`.
+
+At 20 mil, 1 oz, across an 8 in bar carrying 0.96 A:
+
+| Feed strategy | Drop at the far end |
+|---|---:|
+| One end | 96 mV |
+| **Centre injection** | **24 mV** |
+
+**Feed the bar from the middle, or from both ends.** It is a free 4× improvement
+— same copper, one extra via drop — and it halves the worst-case current in any
+one trace segment, which is why 20 mil suffices for a 0.96 A branch.
+
+This matters more than the raw thermal number: WS2812-class parts shift colour
+noticeably as VDD sags, and a gradient across a shift bar is visible to the
+driver at exactly the moment they are looking at it.
+
+### Rail sense accuracy
+
+Budget ≤ 2 % drop on `+5V` and ≤ 1 % on `+3V3`. The `V12_SENSE` / `V5_SENSE`
+dividers measure at their tap point, so any IR drop between the tap and the load
+is invisible to firmware and becomes measurement error — tap them as close to
+the load as routing allows, not at the regulator output.
 
 ## Vias in the power path
 
 Budget **~1 A per 0.3 mm (12 mil) plated via** as a conservative rule of thumb,
 and use **a minimum of two vias** anywhere a rail above 0.5 A changes layer. For
-the `+5V` rail at the reference 2 A that means three or more. Stitch generously
-under the buck and around the connector — vias are cheap, a burned-through
-barrel on a car is not.
+the `+5V` trunk at 1.74 A that means **two minimum, three preferred**; the
+`+5V_SH` branch at 0.96 A wants two. Stitch generously under the buck and around
+the connector — vias are cheap, a burned-through barrel on a car is not.
 
-## What's still needed
+## Knock-on items the LED count raises
 
-To turn the reference column into a real budget:
+These fall outside trace sizing but are implied by a 1.74 A `+5V` rail, and are
+cheaper to fix now than after fab:
 
-1. **Shift-light / RGB LED count, part number, and drive current at full white.**
-   This single number dominates the `+5V` and `+12V_P` widths.
-2. Display part number(s) and whether either `+5V_SH` / `+5V_TC` feeds a
-   backlight.
-3. CAN transceiver part number (dominant-state supply current varies ~2× across
-   common parts).
-4. Buck (U1) part number and efficiency at the actual load point.
-5. Copper weight and layer stack actually being ordered — the table assumes 1 oz
-   outer; 2 oz halves every width.
-6. Fuse rating on the car side, which should sit above worst-case draw and below
-   the `+12V_P` trace's fusing current.
+1. **Check U1's current rating.** The buck now needs to deliver 1.74 A
+   continuous at 5 V. Confirm the part and its inductor are rated for it with
+   margin, and check the efficiency curve at that load point rather than at the
+   datasheet's headline figure.
+2. **The 3V3 regulator may need a package change.** If `+3V3` is an LDO from
+   5 V at 250 mA, it dissipates (5 − 3.3) × 0.25 = **0.43 W**. That is too much
+   for SOT-23; it wants SOT-223 or a buck. Worth confirming which one is on the
+   sheet.
+3. **Bulk decoupling for the LED array.** 24 addressable LEDs switching together
+   is a substantial transient load. Budget ≥ 100 µF bulk at the `+5V` feed, plus
+   100 nF per LED (or per 2–3 LEDs at minimum) local to each package.
+4. **Inrush at power-on self test.** If firmware flashes all 24 white at boot,
+   that step coincides with bulk-cap charging. Size the car-side fuse for it —
+   a 2 A or 3 A fuse suits a 1.02 A worst-case draw without nuisance-blowing.
 
-Once 1–5 are known, read the widths straight out of the master table.
+## Remaining unknowns
+
+Only one input still materially affects trace width:
+
+- **LED part number**, to replace the assumed 60 mA/LED. The
+  [sensitivity table](#led-current-sensitivity) shows the 40 mil trunk
+  recommendation holds anywhere in the 20–60 mA range, so this is a confirmation
+  rather than a blocker.
+
+Lower-impact confirmations: CAN transceiver part number (dominant-state current
+varies ~2× across common parts, but it is ~4 % of the budget either way), and
+whether the board is 2- or 4-layer, for the 0.5 oz inner-layer caveat above.
