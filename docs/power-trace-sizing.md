@@ -14,16 +14,33 @@ is the one number the whole budget pivots on — see
 [LED current sensitivity](#led-current-sensitivity) for how the answer moves if
 the part is different.
 
-### The `+5V_SH` / `+5V_TC` aliases are the LED groups
+### The `+5V_SH` / `+5V_TC` aliases are the LED groups — but need a schematic fix first
 
-`schematic-fixes.md` filed "`+5V` has multiple names (`+5V_SH`, `+5V_TC`)" under
-*no action needed — cosmetic only*. With the 16/8 LED split, those names read as
-**SH = shift bar** and **TC = traction control lights**, which makes them the
-two LED branch feeds rather than redundant labels.
+`schematic-fixes.md` originally filed "`+5V` has multiple names (`+5V_SH`,
+`+5V_TC`)" under *no action needed — cosmetic only*. With the 16/8 LED split,
+those names read as **SH = shift bar** and **TC = traction control lights** —
+the two LED branch feeds, not redundant labels.
 
-**Do not rename them to plain `+5V`.** They are the natural place to split the
-LED load into separately-sized branches, and the tables below do exactly that.
-Collapsing them to one net erases the distinction at layout time.
+**But as drawn, they really are the same net.** The labels sit on `+5V` with no
+component between them, so Altium's compiler merges them: the PCB editor only
+ever sees one `+5V` net, not three. That's confirmed in-tool — after compiling,
+the PCB panel's Nets list shows no separate `+5V_SH` / `+5V_TC` entries to build
+net classes from, which is exactly what merging looks like in practice.
+
+**Fix:** add a 0 Ω link resistor in series on each branch (`R_SH`, `R_TC`, 0805,
+between `+5V` and each branch label) — see `schematic-fixes.md` item 7. This is
+electrically a no-op but stops the compiler from merging the nets, so
+`+5V_SH` / `+5V_TC` come back as real, independently net-classable nets. Do
+**not** rename everything to plain `+5V` to clear the warning — that was the
+original suggestion and it's the wrong direction; it would make the merge
+permanent and remove any way to size or protect the branches independently.
+
+If the link resistors aren't added, fall back to sizing `+5V` as one net for
+the full 1.74 A worst case (40 mil trunk width covers it) and taper copper
+toward each LED group by hand during layout — DRC just won't enforce the
+per-branch split. The [per-rail table](#per-rail-recommendation) below assumes
+the link resistors are in place; drop the `+5V_SH` / `+5V_TC` rows and treat
+`+5V` as the only rail if you go that route instead.
 
 ## Rails in the design
 
@@ -267,11 +284,19 @@ required — the classic editor is still fully supported.
 
 ### 1. Create the net classes (same for both systems)
 
-Open the **PCB** panel, set the dropdown to **Nets**, select the nets belonging
-to one rail, right-click in the **Classes** region → **Add Class**, name it.
-Repeat per rail. (Also reachable via **Design → Classes** — the Object Class
-Explorer — moving nets between **Non-Members** / **Members** with the arrow
-buttons.)
+**Prerequisite for `PWR_5V_SH` / `PWR_5V_TC`:** these only work once
+`schematic-fixes.md` item 7 (the `R_SH` / `R_TC` link resistors) is placed and
+the project recompiled — otherwise `+5V_SH` / `+5V_TC` don't exist as separate
+nets to build a class from. `PWR_12V`, `PWR_5V_TRUNK`, and `PWR_3V3` aren't
+affected and can be created regardless.
+
+To create each class: open the **PCB** panel, set the dropdown to **Nets**,
+select the net(s) belonging to one rail (**Ctrl+click** for more than one),
+right-click on the selection → **Add Class**. The **Edit Net Class** dialog
+opens — type the class name into the **Name** field, use the **`>`** button to
+move any not-yet-included nets from **Non-Members** to **Members**, click
+**OK**. Repeat per rail. (Also reachable via **Design → Classes** — the Object
+Class Explorer — moving nets between the same two panes.)
 
 ### 2a. Constraint Manager path
 

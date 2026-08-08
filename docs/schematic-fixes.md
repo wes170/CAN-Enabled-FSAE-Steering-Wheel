@@ -42,6 +42,36 @@ Place a header with these labeled pins:
 
 Can be one combined connector or two separate ones. A 2×5 0.05" ARM SWD header covers the SWD group in the standard form factor if preferred.
 
+## wheel-displays.SchDoc
+
+### 7. Split `+5V_SH` / `+5V_TC` back into real nets (new — power trace sizing)
+
+`+5V_SH` (16-LED shift bar, ~0.96 A) and `+5V_TC` (8-LED TC/lockup group,
+~0.48 A) are currently just net labels tied directly to `+5V` with no
+component between them. Altium's compiler merges same-node labels into one
+net, so the PCB only ever sees a single `+5V` net carrying the full 1.74 A —
+there is no way to give the two LED branches independent trace-width rules or
+independent overcurrent protection as the schematic stands today.
+
+Add a 0 Ω link resistor in series on each branch, right where the label
+changes from `+5V` to `+5V_SH` / `+5V_TC`:
+
+| Ref | Value | Package | Wiring |
+|---|---|---|---|
+| `R_SH` | 0 Ω | 0805 | `+5V` → R_SH → `+5V_SH` (feeds the 16-LED shift bar) |
+| `R_TC` | 0 Ω | 0805 | `+5V` → R_TC → `+5V_TC` (feeds the 8-LED TC/lockup group) |
+
+0805 rather than 0402/0603: standard 0 Ω jumpers in 0805 are typically rated
+around 2 A, giving the 0.96 A shift-bar branch roughly 2× margin. A 0603 part
+would be closer to its ~1 A rating on that branch — fine on paper, no reason
+to run it that close. Check the specific part's datasheet current rating
+before substituting.
+
+This is a functional no-op — same DC connection, 0 Ω adds no meaningful drop
+or noise — but it restores `+5V_SH` and `+5V_TC` as independent nets after the
+next compile, which is what per-branch net classes and Width rules require.
+See `docs/power-trace-sizing.md` for the width values once the nets are back.
+
 ## wheel-mcu.SchDoc
 
 ### 4. Assign LCD_EXTCOMIN
@@ -61,5 +91,9 @@ This forces "always boot from flash," permanently freeing PB8 for CAN_RX with no
 ## No action needed
 
 - **`NetC7_2` no driving source** — this is the FB divider's tap node (R1, R2, C7, U1 pin 7). Passive dividers always trip this warning; it confirms the divider is wired correctly.
-- **`+5V` has multiple names** (`+5V_SH`, `+5V_TC`) — traced the actual wires: both are deliberately tied to `+5V` on `wheel-displays.SchDoc`, not an accidental short. Rename to plain `+5V` to clear the warning, or leave it — cosmetic only.
 - **CAN_RX mixed pin types** — normal for an MCU RX line; the real substance of this one is the BOOT0 item above.
+
+~~**`+5V` has multiple names** (`+5V_SH`, `+5V_TC`)~~ — no longer filed as
+cosmetic. See item 7 above: the merge is real (no isolating component between
+the labels), and it blocks per-branch trace sizing in the PCB editor. Add the
+link resistors instead of renaming everything to plain `+5V`.
