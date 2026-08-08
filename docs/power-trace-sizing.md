@@ -248,20 +248,52 @@ default differs between 2-layer and 4-layer product lines.
 
 ## Setting per-net widths in Altium
 
-Yes — this is what the **Width** design rule plus **net classes** is for, and
-the autorouter honours it.
+Yes — via net classes plus a **Width** constraint per class, and the autorouter
+honours the Preferred value. **Which dialog you use depends on the project, not
+the Altium version** — as of AD 25/26 there are two coexisting rule systems.
 
-### 1. Create the net classes
+### 0. Check which system this project uses
 
-In the PCB editor: **Design → Classes…** → right-click **Net Classes** →
-**Add Class**, then move nets in. (There is also a schematic-side route via
-**Place → Directive → Parameter Set** if you would rather the classes live in
-the `.SchDoc` files and come across on *Update PCB Document*.)
+Open the PCB document, click **Design** in the main menu:
 
-### 2. Add a Width rule per class
+- Menu shows **Constraint Manager** → this project uses the new system (default
+  for projects created in AD 25+)
+- Menu shows **Rules** instead → this project uses the classic PCB Rules and
+  Constraints Editor
 
-**Design → Rules… → Routing → Width**, one rule per class, scoped with a query
-like `InNetClass('PWR_5V_TRUNK')` (or `InNet('+5V')` for a single net):
+A one-way migration exists (**Design → Migrate Project to Constraint Manager
+Flow**) if you want to move an old project onto the new system, but it isn't
+required — the classic editor is still fully supported.
+
+### 1. Create the net classes (same for both systems)
+
+Open the **PCB** panel, set the dropdown to **Nets**, select the nets belonging
+to one rail, right-click in the **Classes** region → **Add Class**, name it.
+Repeat per rail. (Also reachable via **Design → Classes** — the Object Class
+Explorer — moving nets between **Non-Members** / **Members** with the arrow
+buttons.)
+
+### 2a. Constraint Manager path
+
+1. **Design → Constraint Manager**
+2. Click **Physical** (top-left) to switch to the physical constraints view
+3. Expand the net-class tree (right-click → **Expand All** if a class doesn't
+   show) and find your class row
+4. Click the cell in the **Width** column for that class — a panel opens below
+   with **Min Width / Preferred Width / Max Width**
+5. Enter the values from the table below, save with **Ctrl+S**
+
+**No manual priority step here.** Constraint Manager orders priority
+automatically — All Nets (lowest) → net class → individual net (highest) — so a
+class-level constraint wins over the board default without extra setup.
+
+### 2b. Classic Rules and Constraints Editor path
+
+1. **Design → Rules… → Routing → Width** → right-click → **New Rule**
+2. Set the rule's scope query to `InNetClass('PWR_5V_TRUNK')` (or
+   `InNet('+5V')` for a single net)
+3. Enter **Min Width / Preferred Width / Max Width**
+4. Repeat per class
 
 | Net class | Nets | Min | **Preferred** | Max |
 |---|---|---:|---:|---:|
@@ -272,28 +304,30 @@ like `InNetClass('PWR_5V_TRUNK')` (or `InNet('+5V')` for a single net):
 | `PWR_3V3` | `+3V3`, `+3V3A` | 10 mil | **15 mil** | 40 mil |
 | *(existing catch-all)* | `All` | 5 mil | 8 mil | 20 mil |
 
-How the three values are used:
+How the three values are used, in both systems:
 
 - **Preferred** — what the autorouter and interactive routing actually lay down.
-  This is the one that makes the widths happen.
-- **Min / Max** — enforced by online and batch DRC, and they bound what
-  interactive routing will let you draw.
+  Press **3** while placing a track in interactive routing to cycle
+  min/preferred/max/custom live.
+- **Min / Max** — enforced by online and batch DRC, and bound what interactive
+  routing will let you draw.
 
 Set **Min at or just above the thermal minimum**, so DRC catches a trace necked
 down to squeeze past a via. Set **Max generously** — if Max equals Preferred you
 cannot hand-widen a trace or fatten a polygon connection without tripping DRC.
 
-### 3. Fix the rule priority — this is the step people miss
+**This is the step people miss in the classic editor, and the reason the
+Constraint Manager table above says "no manual step":** the classic dialog
+applies only the single highest-priority *matching* rule, and the existing
+catch-all `All` Width rule matches your nets too. If it sits above the new
+rules, they silently do nothing. Open **Priorities…** at the bottom of the
+Rules dialog, select each new rule, **Increase Priority** to move it above the
+catch-all. Verify with **Tools → Design Rule Check**, or right-click a net →
+**Applicable Unary Rules** to confirm which rule actually binds. Constraint
+Manager projects skip this entirely — that's the practical advantage of the
+newer system for exactly this kind of per-net-class setup.
 
-Altium applies **only the highest-priority matching rule**. The existing
-catch-all `All` Width rule matches every net including yours, so if it sits
-above the new rules they do nothing.
-
-**Design → Rules… → Priorities…** and move every net-class rule *above* the
-catch-all. Verify with **Tools → Design Rule Check**, or right-click a net and
-use *Applicable Unary Rules* to confirm which rule actually binds.
-
-### 4. Don't autoroute the power path
+### 3. Don't autoroute the power path
 
 The rules will make Situs use the right widths, but width is not the hard part
 of power distribution. An autorouter will not know to:
