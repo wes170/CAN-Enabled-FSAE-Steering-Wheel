@@ -379,6 +379,17 @@ adding a new SMD Neckdown Rule`** — informational only. Fires whenever
 Preferred width exceeds some component's own pad width (e.g. a 0402 cap);
 Situs auto-necks the track at the pad regardless. Safe to ignore.
 
+*Optional, if you want explicit control over the taper rather than leaving it
+to Situs:* the rule lives under a different category than Width/Clearance —
+**SMT → SMD Neck-Down** in the classic editor, or the SMT section of
+Constraint Manager's Physical view. Single field, **Neck-Down %** — the max
+ratio of track width to pad width before Situs is forced to taper further.
+No enforced default; 50% is a reasonable starting point (against a 40 mil
+trunk trace and ~20–24 mil 0402 pads, that lands the neck around 10–12 mil,
+matching the practical-minimum widths already in this doc). Scope it `All` —
+one board-wide rule, not per-net. This changes how the taper is drawn, not
+whether the connection is valid; skipping it entirely is fine.
+
 **Catch hiding in the warning text, not the error count:** the `+5V` rule as
 actually entered read `Min=0.254mm (10mil) / Max=3.048mm (120mil) /
 Preferred=0.381mm (15mil)` — Max matches the trunk spec above, but Min/Preferred
