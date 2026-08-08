@@ -352,6 +352,44 @@ catch-all. Verify with **Tools → Design Rule Check**, or right-click a net →
 Manager projects skip this entirely — that's the practical advantage of the
 newer system for exactly this kind of per-net-class setup.
 
+### Situs report errors seen in practice
+
+First autoroute attempt on this board produced 39 errors and 4 warnings.
+Recorded here since both classes of problem are likely to resurface on a
+re-route.
+
+**39× `Pad ... Appears to be unroutable. Violation against Rule - Clearance
+Clearance Constraint (Gap=0.254mm) (All),(All)`** — this is the board-wide
+**Clearance** rule (a different rule type from Width, untouched by the setup
+above), still at Altium's 10 mil default. Hit fine-pitch/dense parts: the
+MCU (LQFP corner pins), a USB-C receptacle (`A4/A5/A9/B4/B5/B9` pin naming),
+LED pads, and clustered decoupling caps — pads on these sit closer than 10 mil
+apart even before routing starts, so Situs correctly refuses. JLC's real floor
+is 0.10 mm (3.9 mil) 2-layer / 0.09 mm multilayer (see
+[Checked against JLCPCB capabilities](#checked-against-jlcpcb-capabilities)),
+so 10 mil was never load-bearing. **Fix: lower the board-wide `All`–`All`
+Clearance rule to 0.15 mm (6 mil)** — ~1.5× the fab floor, clears dense parts
+without going anywhere near unmanufacturable. If specific fine-pitch pads are
+still tight at 6 mil, add a second, higher-priority Clearance rule scoped to
+just that component (`InComponent('U3')`) rather than shrinking the whole
+board further.
+
+**4× `Preferred routing width is greater than some pad dimensions... Consider
+adding a new SMD Neckdown Rule`** — informational only. Fires whenever
+Preferred width exceeds some component's own pad width (e.g. a 0402 cap);
+Situs auto-necks the track at the pad regardless. Safe to ignore.
+
+**Catch hiding in the warning text, not the error count:** the `+5V` rule as
+actually entered read `Min=0.254mm (10mil) / Max=3.048mm (120mil) /
+Preferred=0.381mm (15mil)` — Max matches the trunk spec above, but Min/Preferred
+had been left at the `+3V3` pattern (10/15/40) instead of the trunk's 26/40/120.
+15 mil at the trunk's 1.74 A worst case runs **~24 °C rise**, more than double
+the 10 °C design target (40 mil is ~5 °C — see the
+[verification](#method) for the formula). Worth an explicit double-check against
+this table after entering rules by hand: the report will state each rule's
+actual Min/Max/Preferred verbatim, which makes catching an out-of-family value
+easy — just diff it against the table above.
+
 ### 3. Don't autoroute the power path
 
 The rules will make Situs use the right widths, but width is not the hard part
